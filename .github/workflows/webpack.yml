@@ -37,6 +37,9 @@ jobs:
           name: dist
           path: dist
 
+      - name: Copy files to dist
+        run: cp -r build/* dist/
+        
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
