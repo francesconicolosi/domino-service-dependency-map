@@ -49,7 +49,7 @@ button:hover {
     border: 1px solid #ccc;
 }
 h1, text, .legend, #serviceInfo, label, button {
-    font-family: "Gucci Sans Pro", Arial, sans-serif;
+    font-family: Arial, sans-serif;
 }
 text {
     font-size: 12px;
