@@ -1,5 +1,9 @@
 import * as d3 from 'd3';
 
+document.getElementById('csvFileInput').addEventListener('change', function() {
+    document.getElementById('fileName').textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen';
+});
+
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
     const file = event.target.files[0];
     const reader = new FileReader();
