@@ -44,7 +44,9 @@ function updateVisualization(node, link, labels) {
             const relatedNodes = new Set();
             const relatedLinks = links.filter(link => {
                 let isStatusServiceOK = !hideStoppedServices || (filteredLinks.includes(link));
-                let isExpectedResulFromSearch = searchTerm === "" || (link.source.id.toLowerCase().includes(searchTerm) || link.target.id.toLowerCase().includes(searchTerm));
+                let isExpectedResulFromSearch = searchTerm === "" ||
+                    Object.values(link.source).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm)) ||
+                    Object.values(link.target).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
                 if (isStatusServiceOK && isExpectedResulFromSearch) {
                     relatedNodes.add(link.source.id);
                     relatedNodes.add(link.target.id);
