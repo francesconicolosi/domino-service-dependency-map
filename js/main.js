@@ -101,7 +101,13 @@ function createMap() {
             .on('start', dragstarted)
             .on('drag', dragged)
             .on('end', dragended))
-        .on('mouseover', mouseover)
+        .on('mouseover', function (event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.transition().duration(200).style('opacity', .9);
+            tooltip.html(d['Description'] || 'No description available')
+                .style('left', (event.pageX + 5) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        })
         .on('mouseout', mouseout)
         .on('click', function(event, d) {
             document.getElementById('serviceInfo').style.display = 'block';
@@ -172,15 +178,7 @@ function createMap() {
         d.fy = d.y;
     }
 
-    function mouseover(event, d) {
-        const tooltip = d3.select('#tooltip');
-        tooltip.transition().duration(200).style('opacity', .9);
-        tooltip.html(d.description)
-            .style('left', (event.pageX + 5) + 'px')
-            .style('top', (event.pageY - 28) + 'px');
-    }
-
-    function mouseout(event, d) {
+    function mouseout() {
         const tooltip = d3.select('#tooltip');
         tooltip.transition().duration(500).style('opacity', 0);
     }
