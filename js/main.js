@@ -1,6 +1,32 @@
 import * as d3 from 'd3';
 
+let nodes = [];
+let links = [];
+let hideStoppedServices = false;
+let searchTerm = "";
+let activeServiceNodes;
+let activeServiceNodeIds;
+
+function getDecommButtonLabel() {
+    return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
+}
+
+function resetVisualization() {
+    d3.select('#map').selectAll('*').remove();
+    d3.select('#tooltip').style('opacity', 0);
+    d3.select('#legend').selectAll('*').remove();
+    d3.select('#serviceDetails').innerHTML = '';
+    nodes = [];
+    links = [];
+    hideStoppedServices = false;
+    searchTerm = "";
+    activeServiceNodes = [];
+    activeServiceNodeIds = [];
+    document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
+}
+
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
+    resetVisualization();
     const file = event.target.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -9,12 +35,8 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
         processData(data);
     };
     reader.readAsText(file);
-});
 
-let nodes = [];
-let links = [];
-let hideStoppedServices = false;
-let searchTerm = "";
+});
 
 function processData(data) {
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -32,31 +54,40 @@ function processData(data) {
         ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? { source: d['Service Name'], target: dep } : null),
         ...d['Used by'].split('\n').map(used => nodeIds.has(used) ? { source: used, target: d['Service Name'] } : null)
     ]).filter(link => link !== null);
+
+    activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && !d['Decommission Date']));
+    activeServiceNodeIds = new Set(activeServiceNodes.map(d => d.id));
+
     createMap();
     createLegend(colorScale);
 }
 
 function updateVisualization(node, link, labels) {
-    const filteredNodes = nodes.filter(d => !hideStoppedServices || (d.Status !== 'Stopped' && !d['Decommission Date']));
-    const filteredNodeIds = new Set(filteredNodes.map(d => d.id));
-    const filteredLinks = links.filter(link => filteredNodeIds.has(link.source.id) && filteredNodeIds.has(link.target.id));
+    const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
 
-            const relatedNodes = new Set();
-            const relatedLinks = links.filter(link => {
-                let isStatusServiceOK = !hideStoppedServices || (filteredLinks.includes(link));
-                let isExpectedResulFromSearch = searchTerm === "" ||
-                    Object.values(link.source).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm)) ||
-                    Object.values(link.target).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
-                if (isStatusServiceOK && isExpectedResulFromSearch) {
-                    relatedNodes.add(link.source.id);
-                    relatedNodes.add(link.target.id);
-                    return true;
-                }
-                return false;
-            });
-            node.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
-            link.style('display', d => relatedLinks.includes(d) ? 'block' : 'none');
-            labels.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
+    const relatedNodes = new Set();
+    const relatedLinks = links.filter(link => {
+        let isStatusServiceOK = !hideStoppedServices || (filteredLinks.includes(link));
+        let isExpectedResulFromSearch = searchTerm === "" ||
+            Object.values(link.source).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm)) ||
+            Object.values(link.target).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
+        if (isStatusServiceOK && isExpectedResulFromSearch) {
+            relatedNodes.add(link.source.id);
+            relatedNodes.add(link.target.id);
+            return true;
+        }
+        return false;
+    });
+
+    node.each(d => {
+        if (searchTerm !== "" && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm))) {
+            relatedNodes.add(d.id);
+        }
+    });
+
+    node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) ? 'block' : 'none');
+    link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
+    labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) ? 'block' : 'none');
 }
 
 function createMap() {
@@ -187,13 +218,17 @@ function createMap() {
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             searchTerm = event.target.value.toLowerCase();
+            event.stopImmediatePropagation();
             updateVisualization(node, link, labels);
         }
     });
-    document.getElementById('hideStoppedServices').addEventListener('click', function() {
+    document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
+        event.stopImmediatePropagation();
         hideStoppedServices = !hideStoppedServices;
+        document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
         updateVisualization(node, link, labels);
     });
+
 }
 
 function createLegend(colorScale) {
