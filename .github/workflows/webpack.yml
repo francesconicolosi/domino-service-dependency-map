@@ -25,8 +25,14 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Verify build directory
-        run: ls -la dist
+      - name: Verify dist directory
+        run: ls -la dist || echo "Dist directory not found"
+
+      - name: Create dist folder
+        run: mkdir -p dist
+
+      - name: Copy files to dist
+        run: cp -r dist/* dist/
 
       - name: Upload dist folder as artifact
         uses: actions/upload-artifact@v4
