@@ -48,7 +48,7 @@ button:hover {
     height: 600px;
     border: 1px solid #ccc;
 }
-h1, text, .legend, #serviceInfo, label {
+h1, text, .legend, #serviceInfo, label, button {
     font-family: "Gucci Sans Pro", Arial, sans-serif;
 }
 text {
