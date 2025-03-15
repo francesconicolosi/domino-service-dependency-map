@@ -11,9 +11,14 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
     reader.readAsText(file);
 });
 
+let nodes = [];
+let links = [];
+let hideStoppedServices = false;
+let searchTerm = "";
+
 function processData(data) {
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-    const nodes = data.map(d => {
+    nodes = data.map(d => {
         const node = { id: d['Service Name'], color: colorScale(d['Type']) };
         for (const key in d) {
             if (key !== 'Service Name' && key !== 'Depends on' && key !== 'Used by') {
@@ -23,17 +28,36 @@ function processData(data) {
         return node;
     });
     const nodeIds = new Set(nodes.map(d => d.id));
-    const links = data.flatMap(d => [
+    links = data.flatMap(d => [
         ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? { source: d['Service Name'], target: dep } : null),
         ...d['Used by'].split('\n').map(used => nodeIds.has(used) ? { source: used, target: d['Service Name'] } : null)
     ]).filter(link => link !== null);
-    createMap(nodes, links);
+    createMap();
     createLegend(colorScale);
 }
 
+function updateVisualization(node, link, labels) {
+    const filteredNodes = nodes.filter(d => !hideStoppedServices || (d.Status !== 'Stopped' && !d['Decommission Date']));
+    const filteredNodeIds = new Set(filteredNodes.map(d => d.id));
+    const filteredLinks = links.filter(link => filteredNodeIds.has(link.source.id) && filteredNodeIds.has(link.target.id));
 
+            const relatedNodes = new Set();
+            const relatedLinks = links.filter(link => {
+                let isStatusServiceOK = !hideStoppedServices || (filteredLinks.includes(link));
+                let isExpectedResulFromSearch = searchTerm === "" || (link.source.id.toLowerCase().includes(searchTerm) || link.target.id.toLowerCase().includes(searchTerm));
+                if (isStatusServiceOK && isExpectedResulFromSearch) {
+                    relatedNodes.add(link.source.id);
+                    relatedNodes.add(link.target.id);
+                    return true;
+                }
+                return false;
+            });
+            node.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
+            link.style('display', d => relatedLinks.includes(d) ? 'block' : 'none');
+            labels.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
+}
 
-function createMap(nodes, links) {
+function createMap() {
     const width = document.getElementById('map').clientWidth;
     const height = document.getElementById('map').clientHeight;
     const svg = d3.select('#map').append('svg')
@@ -72,7 +96,7 @@ function createMap(nodes, links) {
         .data(nodes)
         .enter().append('circle')
         .attr('r', 20)
-        .attr('fill', d => d.color) // Correzione qui
+        .attr('fill', d => d.color)
         .call(d3.drag()
             .on('start', dragstarted)
             .on('drag', dragged)
@@ -80,14 +104,9 @@ function createMap(nodes, links) {
         .on('mouseover', mouseover)
         .on('mouseout', mouseout)
         .on('click', function(event, d) {
-            // Mostra il riquadro delle informazioni
             document.getElementById('serviceInfo').style.display = 'block';
-
-            // Pulisci il contenuto precedente
             const serviceDetails = document.getElementById('serviceDetails');
             serviceDetails.innerHTML = '';
-
-            // Aggiungi tutte le proprietà del nodo, escludendo i campi specificati
             const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
             for (const [key, value] of Object.entries(d)) {
                 if (!excludedFields.includes(key)) {
@@ -118,14 +137,14 @@ function createMap(nodes, links) {
                 const dx = d.target.x - d.source.x;
                 const dy = d.target.y - d.source.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const offsetX = (dx / dist) * 5; // Riduci l'offset per avvicinare la punta della freccia
+                const offsetX = (dx / dist) * 5;
                 return d.target.x - offsetX;
             })
             .attr('y2', d => {
                 const dx = d.target.x - d.source.x;
                 const dy = d.target.y - d.source.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const offsetY = (dy / dist) * 5; // Riduci l'offset per avvicinare la punta della freccia
+                const offsetY = (dy / dist) * 5;
                 return d.target.y - offsetY;
             });
         node
@@ -165,24 +184,15 @@ function createMap(nodes, links) {
         const tooltip = d3.select('#tooltip');
         tooltip.transition().duration(500).style('opacity', 0);
     }
-
-    document.getElementById('searchInput').addEventListener('keydown', function(event) {
+    document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
-            const searchTerm = event.target.value.toLowerCase();
-            const relatedNodes = new Set();
-            const relatedLinks = links.filter(link => {
-                if (link.source.id.toLowerCase().includes(searchTerm) || link.target.id.toLowerCase().includes(searchTerm)) {
-                    relatedNodes.add(link.source.id);
-                    relatedNodes.add(link.target.id);
-                    return true;
-                }
-                return false;
-            });
-            node.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
-            link.style('display', d => relatedLinks.includes(d) ? 'block' : 'none');
-            labels.style('display', d => relatedNodes.has(d.id) ? 'block' : 'none');
+            searchTerm = event.target.value.toLowerCase();
+            updateVisualization(node, link, labels);
         }
-
+    });
+    document.getElementById('hideStoppedServices').addEventListener('click', function() {
+        hideStoppedServices = !hideStoppedServices;
+        updateVisualization(node, link, labels);
     });
 }
 
