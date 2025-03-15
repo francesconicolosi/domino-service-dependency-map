@@ -25,6 +25,9 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Verify build directory
+        run: ls -la build
+
       - name: Create dist folder
         run: mkdir -p dist
 
