@@ -26,13 +26,7 @@ jobs:
         run: npm run build
 
       - name: Verify build directory
-        run: ls -la build
-
-      - name: Create dist folder
-        run: mkdir -p dist
-
-      - name: Copy files to dist
-        run: cp -r build/* dist/
+        run: ls -la dist
 
       - name: Upload dist folder as artifact
         uses: actions/upload-artifact@v4
