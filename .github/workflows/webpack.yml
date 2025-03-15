@@ -28,8 +28,9 @@ jobs:
       - name: Verify dist directory
         run: ls -la dist || echo "Dist directory not found"
 
-      - name: Upload dist folder as artifact
-        uses: actions/upload-artifact@v4
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: dist
-          path: dist
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
