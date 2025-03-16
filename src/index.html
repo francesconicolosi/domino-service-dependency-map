@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino: A Tiny Service Dependency Mapping Tool</title>
+    <title>Domino: Dependency Mapping Visualization Tool</title>
     <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-<h1>Domino: A Tiny Service Dependency Mapping Tool</h1>
+<h1>Domino</h1>
+<h3>Dependency Mapping Visualization Tool</h3>
 
 <label id="label-file" class="custom-file-upload">
     <input type="file" id="csvFileInput" accept=".csv" class="file-input" />
     Select the CSV
 </label>
 <button id="hideStoppedServices">Hide Decommissioned Services</button>
+<a href="./100_sample_services.csv" download>Sample CSV</a>
 <input type="text" id="searchInput" placeholder="Search for a service..." />
 
 <div id="map"></div>

@@ -1,9 +1,9 @@
-# Domino Service Mapping
+# Domino Dependency Mapping Visualization Tool
 
 ## Description
 This application visualizes a service dependency map using the D3.js library. Users can upload a CSV file containing information about services and their dependencies, and view an interactive map that shows the relationships between services.
 
-I started developing this small application during a train journey, experimenting with the exceptional boost that artificial intelligence can provide in kickstarting something completely new. It was completed during spare moments while playing with my son, who is passionate about Domino. He greatly appreciated the colorful graphics and the animation of the visualized services, which is why the chosen name is Domino Service Dependency Map! :) 
+I started developing this small application during a train journey, experimenting with the exceptional boost that artificial intelligence can provide in kickstarting something completely new. It was completed during spare moments while playing with my son, who is passionate about Domino. He greatly appreciated the colorful graphics and the animation of the visualized services, which is why the chosen name is Domino Dependency Mapping Visualization Tool! :) 
 
 ## Features
 - Upload CSV files containing service information.
