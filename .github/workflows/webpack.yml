@@ -36,6 +36,9 @@ jobs:
           echo "Contents of dist directory:"
           ls -la dist
 
+      - name: Create .nojekyll file
+        run: echo "" > dist/.nojekyll
+
       - name: Upload dist folder as artifact
         uses: actions/upload-artifact@v4
         with:
