@@ -2,7 +2,7 @@
   "name": "domino-service-dependency-map",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./js/main.js",
   "scripts": {
     "build": "webpack --config webpack.config.js"
   },
