@@ -48,7 +48,12 @@ button:hover {
     height: 600px;
     border: 1px solid #ccc;
 }
-h1, text, .legend, #serviceInfo, label, button {
+
+a {
+    color: black;
+}
+
+h1, h3, text, .legend, #serviceInfo, label, button, a {
     font-family: Arial, sans-serif;
 }
 text {

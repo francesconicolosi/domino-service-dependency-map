@@ -1,0 +1,413 @@
+Service Name,Description,Type,Depends on,Used by,Status,Decommission Date,APM,Go Live Date,Business Risk
+AuthenticationService1,AuthenticationService1 description,Type1,ShippingService23,"NotificationService88
+PaymentGateway63
+RecommendationEngine7",Decommissioned,2020-05-12,https://apm.AuthenticationService1.com,2020-12-24,Medium
+ShippingService2,ShippingService2 description,Type1,,"UserProfileService25
+LoggingService22
+MonitoringService76
+RecommendationEngine36",Decommissioned,2020-10-12,https://apm.ShippingService2.com,2023-06-11,Medium
+DatabaseService3,DatabaseService3 description,Type1,"OrderProcessingService16
+MonitoringService14
+CacheService76","CustomerSupportService51
+CacheService48
+CacheService62",Active,,https://apm.DatabaseService3.com,2017-03-11,Low
+InventoryManagementService4,InventoryManagementService4 description,Type1,"CacheService16
+CacheService64
+UserProfileService47
+CacheService75","RecommendationEngine93
+AnalyticsService17
+ShippingService99
+InventoryManagementService25
+ShippingService35",Active,,https://apm.InventoryManagementService4.com,2021-12-20,Medium
+RecommendationEngine5,RecommendationEngine5 description,Type3,"OrderProcessingService53
+RecommendationEngine41
+NotificationService52",,Active,,https://apm.RecommendationEngine5.com,2013-08-05,Low
+ShippingService6,ShippingService6 description,Type2,"ShippingService98
+ShippingService26",PaymentGateway72,Decommissioned,2021-09-15,https://apm.ShippingService6.com,2012-04-01,Medium
+LoggingService7,LoggingService7 description,Type3,,"AuthenticationService92
+LoggingService82
+SearchService48
+LoggingService100
+ShippingService49",Active,,https://apm.LoggingService7.com,2016-11-10,Low
+RecommendationEngine8,RecommendationEngine8 description,Type1,,"CacheService16
+PaymentGateway46
+NotificationService60
+RecommendationEngine85
+AnalyticsService85",Active,,https://apm.RecommendationEngine8.com,2012-02-20,High
+InventoryManagementService9,InventoryManagementService9 description,Type1,CustomerSupportService51,PaymentGateway29,Active,,https://apm.InventoryManagementService9.com,2011-07-09,Medium
+CustomerSupportService10,CustomerSupportService10 description,Type3,AnalyticsService33,,Decommissioned,2023-08-08,https://apm.CustomerSupportService10.com,2019-01-09,High
+DatabaseService11,DatabaseService11 description,Type1,"PaymentGateway18
+DatabaseService93
+RecommendationEngine39
+UserProfileService28","OrderProcessingService19
+InventoryManagementService76",Active,,https://apm.DatabaseService11.com,2022-04-15,High
+InventoryManagementService12,InventoryManagementService12 description,Type3,"AnalyticsService62
+CustomerSupportService71
+OrderProcessingService45
+OrderProcessingService82
+ShippingService59",PaymentGateway78,Active,,https://apm.InventoryManagementService12.com,2011-12-02,High
+AnalyticsService13,AnalyticsService13 description,Type3,"CacheService69
+MonitoringService8
+SearchService43
+LoggingService21","ShippingService6
+AnalyticsService48
+SearchService64",Decommissioned,2022-11-27,https://apm.AnalyticsService13.com,2018-11-14,Medium
+UserProfileService14,UserProfileService14 description,Type2,"ShippingService93
+InventoryManagementService52
+LoggingService9
+AnalyticsService56","UserProfileService95
+AnalyticsService10
+LoggingService35
+MonitoringService57",Active,,https://apm.UserProfileService14.com,2015-09-04,Low
+InventoryManagementService15,InventoryManagementService15 description,Type3,"OrderProcessingService38
+DatabaseService94
+UserProfileService23
+InventoryManagementService77
+NotificationService1",InventoryManagementService81,Active,,https://apm.InventoryManagementService15.com,2010-01-06,Medium
+DatabaseService16,DatabaseService16 description,Type2,"DatabaseService99
+CacheService75","RecommendationEngine20
+NotificationService2
+MonitoringService66",Decommissioned,2020-07-11,https://apm.DatabaseService16.com,2022-08-15,High
+InventoryManagementService17,InventoryManagementService17 description,Type3,"AnalyticsService33
+OrderProcessingService37",,Active,,https://apm.InventoryManagementService17.com,2012-10-16,High
+InventoryManagementService18,InventoryManagementService18 description,Type3,"ShippingService40
+PaymentGateway4
+MonitoringService42","SearchService68
+OrderProcessingService22
+InventoryManagementService43
+MonitoringService45
+NotificationService62",Active,,https://apm.InventoryManagementService18.com,2015-06-15,Low
+AnalyticsService19,AnalyticsService19 description,Type3,"CacheService27
+SearchService99","MonitoringService58
+MonitoringService29",Active,,https://apm.AnalyticsService19.com,2022-04-11,Medium
+NotificationService20,NotificationService20 description,Type3,DatabaseService92,"InventoryManagementService69
+InventoryManagementService74
+CacheService77",Active,,https://apm.NotificationService20.com,2023-08-06,Medium
+DatabaseService21,DatabaseService21 description,Type1,NotificationService48,"CacheService31
+SearchService71
+ShippingService47
+OrderProcessingService11
+SearchService5",Decommissioned,2023-10-23,https://apm.DatabaseService21.com,2016-12-16,High
+AuthenticationService22,AuthenticationService22 description,Type1,"SearchService41
+MonitoringService12","MonitoringService2
+LoggingService23
+DatabaseService64
+AnalyticsService43",Active,,https://apm.AuthenticationService22.com,2017-07-13,High
+InventoryManagementService23,InventoryManagementService23 description,Type3,UserProfileService28,"UserProfileService68
+SearchService51
+LoggingService44
+InventoryManagementService46",Active,,https://apm.InventoryManagementService23.com,2018-08-09,Low
+OrderProcessingService24,OrderProcessingService24 description,Type2,"CacheService17
+AuthenticationService15
+NotificationService6
+AnalyticsService6
+CustomerSupportService50","LoggingService11
+AnalyticsService26
+RecommendationEngine64
+PaymentGateway61",Active,,https://apm.OrderProcessingService24.com,2014-09-18,High
+CacheService25,CacheService25 description,Type2,"DatabaseService51
+CustomerSupportService58
+RecommendationEngine42","MonitoringService10
+AnalyticsService98",Active,,https://apm.CacheService25.com,2010-09-06,High
+CacheService26,CacheService26 description,Type1,"OrderProcessingService61
+SearchService3
+LoggingService22
+SearchService39
+DatabaseService82",,Active,,https://apm.CacheService26.com,2014-10-16,Low
+NotificationService27,NotificationService27 description,Type1,"NotificationService100
+CustomerSupportService40
+LoggingService51
+OrderProcessingService87
+UserProfileService31","NotificationService73
+ShippingService12
+CacheService80
+OrderProcessingService1",Active,,https://apm.NotificationService27.com,2013-12-27,Low
+UserProfileService28,UserProfileService28 description,Type1,"AuthenticationService74
+NotificationService36
+MonitoringService19
+RecommendationEngine75",,Active,,https://apm.UserProfileService28.com,2014-06-24,Medium
+SearchService29,SearchService29 description,Type1,ShippingService50,,Decommissioned,2023-12-26,https://apm.SearchService29.com,2018-07-27,Medium
+MonitoringService30,MonitoringService30 description,Type1,"NotificationService96
+LoggingService73
+ShippingService98",MonitoringService90,Active,,https://apm.MonitoringService30.com,2017-10-27,High
+ShippingService31,ShippingService31 description,Type2,CacheService31,InventoryManagementService13,Active,,https://apm.ShippingService31.com,2015-11-01,Medium
+AnalyticsService32,AnalyticsService32 description,Type2,,LoggingService29,Decommissioned,2023-11-21,https://apm.AnalyticsService32.com,2020-07-13,Low
+UserProfileService33,UserProfileService33 description,Type3,LoggingService22,"LoggingService9
+AnalyticsService85",Decommissioned,2023-12-24,https://apm.UserProfileService33.com,2010-12-05,Medium
+InventoryManagementService34,InventoryManagementService34 description,Type2,"NotificationService77
+InventoryManagementService33
+CustomerSupportService85
+MonitoringService73
+PaymentGateway63",,Decommissioned,2023-03-28,https://apm.InventoryManagementService34.com,2014-05-04,Low
+NotificationService35,NotificationService35 description,Type1,"CustomerSupportService99
+PaymentGateway74
+LoggingService86
+UserProfileService66
+NotificationService30","NotificationService54
+RecommendationEngine78
+AnalyticsService91
+UserProfileService12",Active,,https://apm.NotificationService35.com,2016-03-05,High
+MonitoringService36,MonitoringService36 description,Type1,"CacheService47
+NotificationService26
+LoggingService90
+SearchService41","DatabaseService11
+AnalyticsService87
+SearchService57",Decommissioned,2023-01-12,https://apm.MonitoringService36.com,2021-07-19,High
+SearchService37,SearchService37 description,Type3,PaymentGateway46,"UserProfileService22
+UserProfileService43",Active,,https://apm.SearchService37.com,2012-01-21,Medium
+ShippingService38,ShippingService38 description,Type1,"RecommendationEngine72
+SearchService64
+InventoryManagementService55
+CacheService33
+SearchService46","ShippingService57
+CacheService17
+ShippingService51",Decommissioned,2023-07-07,https://apm.ShippingService38.com,2022-10-02,High
+LoggingService39,LoggingService39 description,Type2,SearchService66,,Active,,https://apm.LoggingService39.com,2020-08-01,Low
+CustomerSupportService40,CustomerSupportService40 description,Type1,"AuthenticationService39
+ShippingService11
+MonitoringService84
+CustomerSupportService8",,Decommissioned,2022-03-17,https://apm.CustomerSupportService40.com,2012-09-11,Medium
+OrderProcessingService41,OrderProcessingService41 description,Type2,"DatabaseService60
+NotificationService30",CustomerSupportService23,Decommissioned,2022-01-15,https://apm.OrderProcessingService41.com,2022-06-05,Medium
+ShippingService42,ShippingService42 description,Type3,ShippingService27,"MonitoringService40
+OrderProcessingService47",Decommissioned,2021-04-14,https://apm.ShippingService42.com,2023-12-09,Medium
+CacheService43,CacheService43 description,Type2,,"UserProfileService66
+AuthenticationService3
+CustomerSupportService63
+AuthenticationService29",Active,,https://apm.CacheService43.com,2021-05-13,High
+AnalyticsService44,AnalyticsService44 description,Type1,"SearchService23
+DatabaseService21
+PaymentGateway50
+LoggingService62",CacheService38,Active,,https://apm.AnalyticsService44.com,2016-09-22,Medium
+CacheService45,CacheService45 description,Type2,"RecommendationEngine47
+CacheService39
+CustomerSupportService81
+RecommendationEngine69
+CustomerSupportService6","CacheService15
+DatabaseService98
+SearchService17",Decommissioned,2021-03-27,https://apm.CacheService45.com,2011-03-09,Medium
+UserProfileService46,UserProfileService46 description,Type2,"ShippingService14
+OrderProcessingService52",,Decommissioned,2020-02-03,https://apm.UserProfileService46.com,2013-02-04,High
+RecommendationEngine47,RecommendationEngine47 description,Type1,"ShippingService59
+CacheService88
+SearchService91","OrderProcessingService2
+SearchService92",Decommissioned,2022-06-01,https://apm.RecommendationEngine47.com,2023-05-21,Low
+LoggingService48,LoggingService48 description,Type1,"RecommendationEngine69
+SearchService2","MonitoringService5
+CacheService39",Decommissioned,2023-08-25,https://apm.LoggingService48.com,2014-08-17,Low
+CacheService49,CacheService49 description,Type1,"PaymentGateway51
+AuthenticationService97
+PaymentGateway83
+AnalyticsService38",NotificationService67,Decommissioned,2022-12-01,https://apm.CacheService49.com,2021-12-05,High
+NotificationService50,NotificationService50 description,Type3,"InventoryManagementService54
+PaymentGateway6
+CacheService92","OrderProcessingService38
+RecommendationEngine8
+ShippingService32
+MonitoringService48
+ShippingService44",Active,,https://apm.NotificationService50.com,2019-12-12,Low
+SearchService51,SearchService51 description,Type2,InventoryManagementService57,"AnalyticsService77
+InventoryManagementService29
+ShippingService16
+LoggingService56
+OrderProcessingService11",Decommissioned,2021-11-03,https://apm.SearchService51.com,2016-07-23,Low
+CacheService52,CacheService52 description,Type3,"AnalyticsService65
+PaymentGateway46
+RecommendationEngine30
+AuthenticationService45",InventoryManagementService78,Active,,https://apm.CacheService52.com,2014-04-26,High
+AuthenticationService53,AuthenticationService53 description,Type3,"SearchService7
+CustomerSupportService61
+AnalyticsService90
+UserProfileService91","SearchService58
+CustomerSupportService84
+OrderProcessingService46",Decommissioned,2022-04-06,https://apm.AuthenticationService53.com,2015-01-02,Medium
+CacheService54,CacheService54 description,Type3,"SearchService57
+RecommendationEngine55
+LoggingService35
+UserProfileService90
+CacheService74","PaymentGateway39
+SearchService47",Decommissioned,2020-02-12,https://apm.CacheService54.com,2022-11-11,High
+DatabaseService55,DatabaseService55 description,Type2,"AnalyticsService7
+CacheService41
+LoggingService64","RecommendationEngine7
+InventoryManagementService11
+AnalyticsService29
+MonitoringService98
+RecommendationEngine59",Active,,https://apm.DatabaseService55.com,2019-11-27,Medium
+MonitoringService56,MonitoringService56 description,Type1,"PaymentGateway83
+PaymentGateway7","CustomerSupportService14
+CustomerSupportService59",Active,,https://apm.MonitoringService56.com,2017-03-13,Medium
+RecommendationEngine57,RecommendationEngine57 description,Type2,DatabaseService16,"UserProfileService55
+UserProfileService3
+AnalyticsService56
+InventoryManagementService62
+DatabaseService9",Decommissioned,2020-03-21,https://apm.RecommendationEngine57.com,2010-03-02,Medium
+LoggingService58,LoggingService58 description,Type1,CustomerSupportService98,,Active,,https://apm.LoggingService58.com,2016-10-27,High
+CustomerSupportService59,CustomerSupportService59 description,Type1,DatabaseService33,"LoggingService75
+RecommendationEngine46",Active,,https://apm.CustomerSupportService59.com,2021-07-22,High
+RecommendationEngine60,RecommendationEngine60 description,Type3,"UserProfileService52
+AnalyticsService10
+MonitoringService48","CacheService99
+PaymentGateway10
+MonitoringService56",Decommissioned,2022-03-12,https://apm.RecommendationEngine60.com,2017-10-24,Low
+MonitoringService61,MonitoringService61 description,Type2,,"UserProfileService19
+LoggingService16
+DatabaseService61
+MonitoringService91
+RecommendationEngine55",Active,,https://apm.MonitoringService61.com,2020-01-16,Low
+PaymentGateway62,PaymentGateway62 description,Type3,,CustomerSupportService24,Decommissioned,2023-05-18,https://apm.PaymentGateway62.com,2014-03-05,High
+LoggingService63,LoggingService63 description,Type1,CustomerSupportService94,SearchService93,Active,,https://apm.LoggingService63.com,2022-05-15,Medium
+InventoryManagementService64,InventoryManagementService64 description,Type1,SearchService84,"UserProfileService87
+NotificationService62",Active,,https://apm.InventoryManagementService64.com,2023-12-04,Low
+CacheService65,CacheService65 description,Type1,InventoryManagementService56,"AnalyticsService55
+CustomerSupportService85
+DatabaseService70
+CacheService31
+LoggingService8",Decommissioned,2022-07-13,https://apm.CacheService65.com,2010-02-06,Medium
+NotificationService66,NotificationService66 description,Type3,OrderProcessingService60,PaymentGateway16,Active,,https://apm.NotificationService66.com,2019-06-09,High
+OrderProcessingService67,OrderProcessingService67 description,Type3,"ShippingService97
+ShippingService42
+LoggingService1
+LoggingService55","InventoryManagementService51
+DatabaseService100
+NotificationService39
+LoggingService59
+InventoryManagementService96",Active,,https://apm.OrderProcessingService67.com,2021-10-22,High
+UserProfileService68,UserProfileService68 description,Type1,"CustomerSupportService63
+UserProfileService97","SearchService20
+AuthenticationService91",Decommissioned,2021-08-05,https://apm.UserProfileService68.com,2013-06-01,Low
+CustomerSupportService69,CustomerSupportService69 description,Type1,"AnalyticsService29
+AnalyticsService47
+CustomerSupportService59
+UserProfileService57
+LoggingService95","UserProfileService29
+MonitoringService9",Decommissioned,2022-02-24,https://apm.CustomerSupportService69.com,2021-12-16,Low
+ShippingService70,ShippingService70 description,Type2,,ShippingService52,Decommissioned,2020-10-25,https://apm.ShippingService70.com,2013-09-24,Low
+OrderProcessingService71,OrderProcessingService71 description,Type3,,UserProfileService75,Decommissioned,2023-01-20,https://apm.OrderProcessingService71.com,2023-01-14,Medium
+UserProfileService72,UserProfileService72 description,Type1,"PaymentGateway80
+OrderProcessingService50",,Decommissioned,2022-11-09,https://apm.UserProfileService72.com,2015-10-27,Medium
+ShippingService73,ShippingService73 description,Type3,"RecommendationEngine59
+AnalyticsService6
+CustomerSupportService68
+CacheService27
+DatabaseService68","ShippingService6
+DatabaseService33
+SearchService15
+PaymentGateway83",Decommissioned,2021-02-15,https://apm.ShippingService73.com,2023-03-19,High
+LoggingService74,LoggingService74 description,Type3,"CacheService27
+LoggingService42
+MonitoringService23
+RecommendationEngine21
+MonitoringService3","LoggingService38
+LoggingService20
+AnalyticsService6
+CacheService52
+NotificationService50",Decommissioned,2022-09-14,https://apm.LoggingService74.com,2019-01-16,Low
+PaymentGateway75,PaymentGateway75 description,Type3,"DatabaseService3
+UserProfileService55
+MonitoringService96
+OrderProcessingService98","AnalyticsService82
+ShippingService74
+AnalyticsService29",Decommissioned,2022-05-18,https://apm.PaymentGateway75.com,2011-05-06,Low
+CustomerSupportService76,CustomerSupportService76 description,Type2,"SearchService64
+PaymentGateway13
+AuthenticationService62
+PaymentGateway11
+MonitoringService19","AnalyticsService28
+CustomerSupportService48",Decommissioned,2020-06-02,https://apm.CustomerSupportService76.com,2010-10-28,Medium
+PaymentGateway77,PaymentGateway77 description,Type1,,,Active,,https://apm.PaymentGateway77.com,2023-11-23,Low
+MonitoringService78,MonitoringService78 description,Type2,"LoggingService73
+UserProfileService93
+SearchService70
+RecommendationEngine42","MonitoringService45
+InventoryManagementService47
+MonitoringService73
+UserProfileService28",Active,,https://apm.MonitoringService78.com,2023-11-08,High
+PaymentGateway79,PaymentGateway79 description,Type3,,AuthenticationService94,Decommissioned,2023-10-26,https://apm.PaymentGateway79.com,2022-07-14,Medium
+RecommendationEngine80,RecommendationEngine80 description,Type2,"OrderProcessingService97
+NotificationService11
+CustomerSupportService67
+DatabaseService5
+CacheService55","UserProfileService87
+PaymentGateway5
+InventoryManagementService77
+OrderProcessingService57
+CacheService94",Active,,https://apm.RecommendationEngine80.com,2020-02-07,Medium
+AuthenticationService81,AuthenticationService81 description,Type1,DatabaseService62,"DatabaseService16
+DatabaseService37
+InventoryManagementService74",Active,,https://apm.AuthenticationService81.com,2016-05-19,High
+NotificationService82,NotificationService82 description,Type1,"DatabaseService41
+AuthenticationService78","ShippingService57
+AnalyticsService24",Active,,https://apm.NotificationService82.com,2014-05-17,Medium
+UserProfileService83,UserProfileService83 description,Type1,,,Decommissioned,2020-08-24,https://apm.UserProfileService83.com,2014-08-06,High
+ShippingService84,ShippingService84 description,Type1,"MonitoringService11
+SearchService7","PaymentGateway93
+SearchService35
+OrderProcessingService54",Decommissioned,2021-12-17,https://apm.ShippingService84.com,2022-06-09,Low
+DatabaseService85,DatabaseService85 description,Type2,"SearchService59
+SearchService32
+MonitoringService78","PaymentGateway43
+DatabaseService17",Decommissioned,2022-03-17,https://apm.DatabaseService85.com,2018-06-19,Medium
+SearchService86,SearchService86 description,Type2,,"CacheService77
+InventoryManagementService29",Decommissioned,2020-09-17,https://apm.SearchService86.com,2016-09-15,Medium
+ShippingService87,ShippingService87 description,Type1,SearchService21,"LoggingService88
+CustomerSupportService63
+InventoryManagementService47
+InventoryManagementService14",Active,,https://apm.ShippingService87.com,2023-06-18,High
+AnalyticsService88,AnalyticsService88 description,Type2,,"UserProfileService55
+UserProfileService34
+CustomerSupportService1
+AnalyticsService86",Decommissioned,2023-11-11,https://apm.AnalyticsService88.com,2018-04-08,Low
+SearchService89,SearchService89 description,Type3,"MonitoringService89
+NotificationService55","NotificationService12
+CustomerSupportService87
+AuthenticationService31
+DatabaseService30",Active,,https://apm.SearchService89.com,2015-07-18,Low
+AuthenticationService90,AuthenticationService90 description,Type2,MonitoringService30,"AnalyticsService54
+LoggingService15",Active,,https://apm.AuthenticationService90.com,2019-10-12,Low
+CacheService91,CacheService91 description,Type3,"AuthenticationService47
+CacheService52
+UserProfileService94
+OrderProcessingService45","CacheService18
+OrderProcessingService37
+CustomerSupportService62
+CustomerSupportService96
+CacheService63",Decommissioned,2022-02-17,https://apm.CacheService91.com,2015-10-07,High
+PaymentGateway92,PaymentGateway92 description,Type3,CacheService45,CacheService19,Decommissioned,2020-10-10,https://apm.PaymentGateway92.com,2020-10-04,Medium
+RecommendationEngine93,RecommendationEngine93 description,Type2,"DatabaseService88
+OrderProcessingService84
+CustomerSupportService38
+DatabaseService88
+SearchService51",,Decommissioned,2022-08-22,https://apm.RecommendationEngine93.com,2013-02-01,Low
+MonitoringService94,MonitoringService94 description,Type3,"UserProfileService92
+InventoryManagementService98","RecommendationEngine58
+OrderProcessingService41
+UserProfileService43
+LoggingService27",Active,,https://apm.MonitoringService94.com,2016-12-16,Low
+InventoryManagementService95,InventoryManagementService95 description,Type2,CustomerSupportService82,"RecommendationEngine47
+CacheService35
+OrderProcessingService85
+AuthenticationService55",Active,,https://apm.InventoryManagementService95.com,2010-02-18,Low
+UserProfileService96,UserProfileService96 description,Type3,"SearchService59
+CustomerSupportService39","RecommendationEngine61
+CustomerSupportService11",Decommissioned,2022-11-03,https://apm.UserProfileService96.com,2017-03-07,Medium
+CacheService97,CacheService97 description,Type3,"PaymentGateway85
+CacheService16
+OrderProcessingService42
+RecommendationEngine34","ShippingService37
+SearchService51
+NotificationService31",Decommissioned,2020-01-05,https://apm.CacheService97.com,2015-07-25,Medium
+InventoryManagementService98,InventoryManagementService98 description,Type3,,"DatabaseService78
+DatabaseService97",Decommissioned,2023-12-01,https://apm.InventoryManagementService98.com,2013-10-07,Low
+InventoryManagementService99,InventoryManagementService99 description,Type1,"AnalyticsService67
+PaymentGateway18","MonitoringService57
+AuthenticationService53
+DatabaseService60
+NotificationService36
+SearchService37",Decommissioned,2020-08-16,https://apm.InventoryManagementService99.com,2022-06-05,Medium
+UserProfileService100,UserProfileService100 description,Type1,"DatabaseService61
+ShippingService26
+AuthenticationService57","OrderProcessingService76
+NotificationService20
+RecommendationEngine45
+LoggingService28",Decommissioned,2022-01-24,https://apm.UserProfileService100.com,2023-02-21,Medium
