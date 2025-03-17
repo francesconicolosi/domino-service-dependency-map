@@ -28,6 +28,7 @@ module.exports = {
             patterns: [
                 { from: 'css', to: 'css' },
                 { from: 'src/100_sample_services.csv', to: '100_sample_services.csv' },
+                { from: 'assets/icon.svg', to: 'icon.svg' },
             ],
         }),
     ],
