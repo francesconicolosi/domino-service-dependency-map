@@ -55,7 +55,7 @@ function processData(data) {
         ...d['Used by'].split('\n').map(used => nodeIds.has(used) ? { source: used, target: d['Service Name'] } : null)
     ]).filter(link => link !== null);
 
-    activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && !d['Decommission Date']));
+    activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date']));
     activeServiceNodeIds = new Set(activeServiceNodes.map(d => d.id));
 
     createMap();

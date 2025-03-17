@@ -53,8 +53,13 @@ a {
     color: black;
 }
 
-h1, h3, text, .legend, #serviceInfo, label, button, a {
+h1, h3, text, .legend, #serviceInfo, label, button, a, footer {
     font-family: Arial, sans-serif;
+}
+
+footer {
+    font-size: 8px;
+    text-align: center;
 }
 text {
     font-size: 12px;
