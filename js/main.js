@@ -6,6 +6,8 @@ let hideStoppedServices = false;
 let searchTerm = "";
 let activeServiceNodes;
 let activeServiceNodeIds;
+let link;
+let node;
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
@@ -18,6 +20,8 @@ function resetVisualization() {
     d3.select('#serviceDetails').innerHTML = '';
     nodes = [];
     links = [];
+    link = null;
+    node = null;
     hideStoppedServices = false;
     searchTerm = "";
     activeServiceNodes = [];
@@ -39,6 +43,14 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
 });
 
 function processData(data) {
+    const requiredColumns = ['Service Name', 'Description', 'Type', 'Depends on', 'Status', 'Decommission Date'];
+    const missingColumns = requiredColumns.filter(col => !data.columns.includes(col));
+
+    if (missingColumns.length > 0) {
+        alert(`Missing mandatory columns: ${missingColumns.join(', ')}`);
+        return;
+    }
+
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = data.map(d => {
         const node = { id: d['Service Name'], color: colorScale(d['Type']) };
@@ -118,13 +130,13 @@ function createMap() {
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
 
-    const link = svg.append('g')
+    link = svg.append('g')
         .selectAll('line')
         .data(links)
         .enter().append('line')
         .attr('marker-end', 'url(#arrow)');
 
-    const node = svg.append('g')
+    node = svg.append('g')
         .selectAll('circle')
         .data(nodes)
         .enter().append('circle')
