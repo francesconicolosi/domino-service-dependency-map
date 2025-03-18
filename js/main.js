@@ -8,6 +8,7 @@ let activeServiceNodes;
 let activeServiceNodeIds;
 let link;
 let node;
+let labels;
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
@@ -22,6 +23,7 @@ function resetVisualization() {
     links = [];
     link = null;
     node = null;
+    labels = [];
     hideStoppedServices = false;
     searchTerm = "";
     activeServiceNodes = [];
@@ -172,7 +174,7 @@ function createMap() {
                 }
             }
         });
-    const labels = svg.append('g')
+    labels = svg.append('g')
         .selectAll('text')
         .data(nodes)
         .enter().append('text')
