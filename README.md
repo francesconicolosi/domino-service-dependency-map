@@ -39,9 +39,9 @@ cd domino-service-dependency-map
 ## CSV Format
 The CSV file should have the following format that are necessary for the dependency mapping visualization:
    ```bash
-   Service Name,Description,Type,Depends on,Used by,Status,Decommission Date
-   Service1,Service 1 description,Type1,Service2\nService3,Service4\nService5,Running,,
-   Service2,Service 2 description,Type2,Service1,Service3,Stopped,03-16-2025,
+   Service Name,Description,Type,Depends on,Status,Decommission Date
+   Service1,Service 1 description,Type1,Service2\nService3,Running,,
+   Service2,Service 2 description,Type2,Service1,Stopped,03-16-2025,
    ```
 
 Additionally, you can include other fields (columns) as desired. These fields will be displayed in the Service detail table section at the bottom, after clicking the single node service. 

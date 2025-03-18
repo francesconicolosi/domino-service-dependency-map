@@ -65,8 +65,7 @@ function processData(data) {
     });
     const nodeIds = new Set(nodes.map(d => d.id));
     links = data.flatMap(d => [
-        ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? { source: d['Service Name'], target: dep } : null),
-        ...d['Used by'].split('\n').map(used => nodeIds.has(used) ? { source: used, target: d['Service Name'] } : null)
+        ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? { source: d['Service Name'], target: dep } : null)
     ]).filter(link => link !== null);
 
     activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date']));
