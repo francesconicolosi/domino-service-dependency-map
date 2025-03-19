@@ -12,6 +12,10 @@ input[type="text"] {
     font-size: 16px;
 }
 
+.hidden {
+    display: none!important;
+}
+
 input[type="text"]::placeholder {
     color: #aaa;
     font-style: italic;

@@ -31,6 +31,16 @@ function resetVisualization() {
     document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
+function hideActions() {
+    document.getElementById('label-file').classList.add('hidden');
+    document.getElementById('hideStoppedServices').classList.add('hidden');
+    document.getElementById('csvFileInput').classList.add('hidden');
+    document.querySelector('a[href="./100_sample_services.csv"]').classList.add('hidden');
+    document.querySelector('h1').classList.add('hidden');
+    document.querySelector('h3').classList.add('hidden');
+    document.querySelector('footer').classList.add('hidden');
+}
+
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
     resetVisualization();
     const file = event.target.files[0];
@@ -39,9 +49,21 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
         const csvData = e.target.result;
         const data = d3.csvParse(csvData);
         processData(data);
+        hideActions();
     };
     reader.readAsText(file);
 
+});
+
+document.getElementById('toggle-cta').addEventListener('click', function() {
+    const elements = [
+        document.getElementById('label-file'),
+        document.getElementById('hideStoppedServices'),
+        document.querySelector('a[href="./100_sample_services.csv"]'),
+        document.querySelector('h1'),
+        document.querySelector('h3')
+    ];
+    elements.forEach(element => element.classList.toggle('hidden'));
 });
 
 function processData(data) {
