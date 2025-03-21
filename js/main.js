@@ -79,9 +79,9 @@ function processData(data) {
     nodes = data.map(d => {
         const node = { id: d['Service Name'], color: colorScale(d['Type']) };
         for (const key in d) {
-            if (key !== 'Service Name' && key !== 'Depends on' && key !== 'Used by') {
+            //if (key !== 'Service Name' && key !== 'Depends on' && key !== 'Used by') {
                 node[key] = d[key];
-            }
+            //}
         }
         return node;
     });
