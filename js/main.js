@@ -98,6 +98,7 @@ function processData(data) {
 }
 
 function isSearchResultWithKeyValue(d) {
+
     let searchTermWholeWord = searchTerm.includes('"');
     let searchTermToConsider = searchTermWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
 
@@ -111,7 +112,7 @@ function isSearchResultWithKeyValue(d) {
 
 function isSearchResultValueOnly(d) {
     return searchTerm !== ""
-        && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
+        && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
 function updateVisualization(node, link, labels) {
@@ -271,7 +272,7 @@ function createMap() {
     }
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
-            searchTerm = event.target.value.toLowerCase();
+            searchTerm = event.target.value;
             event.stopImmediatePropagation();
             updateVisualization(nodeEntity, linkEntity, labels);
         }
