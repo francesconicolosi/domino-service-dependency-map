@@ -102,11 +102,11 @@ function updateVisualization(node, link, labels) {
 
     const relatedNodes = new Set();
     const relatedLinks = links.filter(link => {
-        let isStatusServiceOK = !hideStoppedServices || (filteredLinks.includes(link));
+        let isLinkStatusOk = !hideStoppedServices || (filteredLinks.includes(link));
         let isExpectedResulFromSearch = searchTerm === "" ||
             Object.values(link.source).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm)) ||
             Object.values(link.target).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
-        if (isStatusServiceOK && isExpectedResulFromSearch) {
+        if (isLinkStatusOk && isExpectedResulFromSearch) {
             relatedNodes.add(link.source.id);
             relatedNodes.add(link.target.id);
             return true;
@@ -120,9 +120,9 @@ function updateVisualization(node, link, labels) {
         }
     });
 
-    node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) ? 'block' : 'none');
+    node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
-    labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) ? 'block' : 'none');
+    labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
 }
 
 function createMap() {
