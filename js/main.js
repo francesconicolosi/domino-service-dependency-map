@@ -6,8 +6,8 @@ let hideStoppedServices = false;
 let searchTerm = "";
 let activeServiceNodes;
 let activeServiceNodeIds;
-let link;
-let node;
+let linkEntity;
+let nodeEntity;
 let labels;
 
 function getDecommButtonLabel() {
@@ -21,8 +21,8 @@ function resetVisualization() {
     d3.select('#serviceDetails').innerHTML = '';
     nodes = [];
     links = [];
-    link = null;
-    node = null;
+    linkEntity = null;
+    nodeEntity = null;
     labels = [];
     hideStoppedServices = false;
     searchTerm = "";
@@ -97,16 +97,32 @@ function processData(data) {
     createLegend(colorScale);
 }
 
+function isSearchResultWithKeyValue(d) {
+    let searchTermWholeWord = searchTerm.includes('"');
+    let searchTermToConsider = searchTermWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
+
+    return searchTermToConsider.includes(':')
+        && searchTermToConsider.split(':').length === 2
+        && Object.keys(d).includes(searchTermToConsider.split(':')[0])
+        && (searchTermWholeWord ?
+            d[searchTermToConsider.split(':')[0]].toLowerCase() === searchTermToConsider.split(':')[1].toLowerCase()
+            : d[searchTermToConsider.split(':')[0]].toLowerCase().includes(searchTermToConsider.split(':')[1].toLowerCase()));
+}
+
+function isSearchResultValueOnly(d) {
+    return searchTerm !== ""
+        && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
+}
+
 function updateVisualization(node, link, labels) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
 
     const relatedNodes = new Set();
     const relatedLinks = links.filter(link => {
         let isLinkStatusOk = !hideStoppedServices || (filteredLinks.includes(link));
-        let isExpectedResulFromSearch = searchTerm === "" ||
-            Object.values(link.source).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm)) ||
-            Object.values(link.target).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm));
-        if (isLinkStatusOk && isExpectedResulFromSearch) {
+        let isSearchedLink = searchTerm === "" ||
+            isSearchResultValueOnly(link.source) || isSearchResultValueOnly(link.target) || isSearchResultWithKeyValue(link.source) || isSearchResultWithKeyValue(link.target);
+        if (isLinkStatusOk && isSearchedLink) {
             relatedNodes.add(link.source.id);
             relatedNodes.add(link.target.id);
             return true;
@@ -115,7 +131,10 @@ function updateVisualization(node, link, labels) {
     });
 
     node.each(d => {
-        if (searchTerm !== "" && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm))) {
+
+        if (isSearchResultWithKeyValue(d)
+            ||
+            isSearchResultValueOnly(d)) {
             relatedNodes.add(d.id);
         }
     });
@@ -153,13 +172,13 @@ function createMap() {
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
 
-    link = svg.append('g')
+    linkEntity = svg.append('g')
         .selectAll('line')
         .data(links)
         .enter().append('line')
         .attr('marker-end', 'url(#arrow)');
 
-    node = svg.append('g')
+    nodeEntity = svg.append('g')
         .selectAll('circle')
         .data(nodes)
         .enter().append('circle')
@@ -204,7 +223,7 @@ function createMap() {
         .text(d => d.id);
 
     simulation.on('tick', () => {
-        link
+        linkEntity
             .attr('x1', d => d.source.x)
             .attr('y1', d => d.source.y)
             .attr('x2', d => {
@@ -221,7 +240,7 @@ function createMap() {
                 const offsetY = (dy / dist) * 5;
                 return d.target.y - offsetY;
             });
-        node
+        nodeEntity
             .attr('cx', d => d.x)
             .attr('cy', d => d.y);
         labels
@@ -254,14 +273,14 @@ function createMap() {
         if (event.key === 'Enter') {
             searchTerm = event.target.value.toLowerCase();
             event.stopImmediatePropagation();
-            updateVisualization(node, link, labels);
+            updateVisualization(nodeEntity, linkEntity, labels);
         }
     });
     document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
         event.stopImmediatePropagation();
         hideStoppedServices = !hideStoppedServices;
         document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
-        updateVisualization(node, link, labels);
+        updateVisualization(nodeEntity, linkEntity, labels);
     });
 
 }
