@@ -99,15 +99,15 @@ function processData(data) {
 
 function isSearchResultWithKeyValue(d) {
 
-    let searchTermWholeWord = searchTerm.includes('"');
-    let searchTermToConsider = searchTermWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
+    let toSearchTermWholeWord = searchTerm.includes('"');
+    let searchTermToConsider = toSearchTermWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
 
     return searchTermToConsider.includes(':')
         && searchTermToConsider.split(':').length === 2
         && Object.keys(d).includes(searchTermToConsider.split(':')[0])
-        && (searchTermWholeWord ?
-            d[searchTermToConsider.split(':')[0]].toLowerCase() === searchTermToConsider.split(':')[1].toLowerCase()
-            : d[searchTermToConsider.split(':')[0]].toLowerCase().includes(searchTermToConsider.split(':')[1].toLowerCase()));
+        && (toSearchTermWholeWord ?
+            d[searchTermToConsider.split(':')[0]].replaceAll('\n','').toLowerCase() === searchTermToConsider.split(':')[1].toLowerCase()
+            : d[searchTermToConsider.split(':')[0]].replaceAll('\n','').toLowerCase().includes(searchTermToConsider.split(':')[1].toLowerCase()));
 }
 
 function isSearchResultValueOnly(d) {
