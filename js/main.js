@@ -9,12 +9,34 @@ let activeServiceNodeIds;
 let linkEntity;
 let nodeEntity;
 let labels;
+let simulation;
+let zoomed = false;
+const width = document.getElementById('map').clientWidth;
+const height = document.getElementById('map').clientHeight;
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
 }
 
+function centerAndZoomOnNode(node) {
+    if (!zoomed) {
+        zoomed = true;
+        console.log(node);
+        const transform = d3.zoomTransform(d3.select('svg').node());
+        const scale = transform.k;
+        const x = -node.x * scale + width / 2;
+        const y = -node.y * scale + height / 2;
+        d3.select('svg').transition().duration(750).call(
+            d3.zoom().transform,
+            d3.zoomIdentity.translate(x, y).scale(scale),
+            () => console.log('transition')
+        );
+        d3.select('svg').dispatch('zoom');
+    }
+}
+
 function resetVisualization() {
+    zoomed = false;
     d3.select('#map').selectAll('*').remove();
     d3.select('#tooltip').style('opacity', 0);
     d3.select('#legend').selectAll('*').remove();
@@ -102,12 +124,14 @@ function isSearchResultWithKeyValue(d) {
     let isToSearchByWholeWord = searchTerm.includes('"');
     let searchTermToConsider = isToSearchByWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
 
-    return searchTermToConsider.includes(':')
+    let requestContainsParameters = searchTermToConsider.includes(':')
         && searchTermToConsider.split(':').length === 2
-        && Object.keys(d).includes(searchTermToConsider.split(':')[0])
+        && Object.keys(d).includes(searchTermToConsider.split(':')[0]);
+
+    return requestContainsParameters
         && (isToSearchByWholeWord ?
-            d[searchTermToConsider.split(':')[0]].replaceAll('\n','').replaceAll(' ','').toLowerCase() === searchTermToConsider.split(':')[1].replaceAll(' ','').toLowerCase()
-            : d[searchTermToConsider.split(':')[0]].replaceAll('\n','').replaceAll(' ','').toLowerCase().includes(searchTermToConsider.split(':')[1].replaceAll(' ', '').toLowerCase()));
+            d[searchTermToConsider.split(':')[0]].replaceAll('\n', '').replaceAll(' ', '').toLowerCase() === searchTermToConsider.split(':')[1].replaceAll(' ', '').toLowerCase()
+            : d[searchTermToConsider.split(':')[0]].replaceAll('\n', '').replaceAll(' ', '').toLowerCase().includes(searchTermToConsider.split(':')[1].replaceAll(' ', '').toLowerCase()));
 }
 
 function isSearchResultValueOnly(d) {
@@ -132,22 +156,26 @@ function updateVisualization(node, link, labels) {
     });
 
     node.each(d => {
-
         if (isSearchResultWithKeyValue(d)
             ||
             isSearchResultValueOnly(d)) {
             relatedNodes.add(d.id);
+            centerAndZoomOnNode(d);
         }
     });
 
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
+    zoomed = false;
 }
 
 function createMap() {
-    const width = document.getElementById('map').clientWidth;
-    const height = document.getElementById('map').clientHeight;
+
+   // const zoom = d3.zoom()
+   //     .scaleExtent([0.5, 32])
+   //     .on("zoom", zoomed);
+
     const svg = d3.select('#map').append('svg')
         .attr('width', width)
         .attr('height', height)
@@ -168,7 +196,7 @@ function createMap() {
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#999');
 
-    const simulation = d3.forceSimulation(nodes)
+    simulation = d3.forceSimulation(nodes)
         .force('link', d3.forceLink(links).id(d => d.id).distance(200))
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
