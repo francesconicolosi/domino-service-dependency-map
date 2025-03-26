@@ -6,11 +6,12 @@ let hideStoppedServices = false;
 let searchTerm = "";
 let activeServiceNodes;
 let activeServiceNodeIds;
-let linkEntity;
-let nodeEntity;
+let linkGraph;
+let nodeGraph;
 let labels;
 let simulation;
-let zoomed = false;
+let svg;
+let zoom;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
@@ -19,32 +20,27 @@ function getDecommButtonLabel() {
 }
 
 function centerAndZoomOnNode(node) {
-    if (!zoomed) {
-        zoomed = true;
-        console.log(node);
+    if (node) {
         const transform = d3.zoomTransform(d3.select('svg').node());
         const scale = transform.k;
         const x = -node.x * scale + width / 2;
         const y = -node.y * scale + height / 2;
-        d3.select('svg').transition().duration(750).call(
-            d3.zoom().transform,
-            d3.zoomIdentity.translate(x, y).scale(scale),
-            () => console.log('transition')
+        svg.transition().duration(750).call(
+            zoom.transform,
+            d3.zoomIdentity.translate(x, y).scale(scale)
         );
-        d3.select('svg').dispatch('zoom');
     }
 }
 
 function resetVisualization() {
-    zoomed = false;
     d3.select('#map').selectAll('*').remove();
     d3.select('#tooltip').style('opacity', 0);
     d3.select('#legend').selectAll('*').remove();
     d3.select('#serviceDetails').innerHTML = '';
     nodes = [];
     links = [];
-    linkEntity = null;
-    nodeEntity = null;
+    linkGraph = null;
+    nodeGraph = null;
     labels = [];
     hideStoppedServices = false;
     searchTerm = "";
@@ -119,19 +115,25 @@ function processData(data) {
     createLegend(colorScale);
 }
 
-function isSearchResultWithKeyValue(d) {
+function getTermToCompare(term) {
+    return term.replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+}
 
-    let isToSearchByWholeWord = searchTerm.includes('"');
-    let searchTermToConsider = isToSearchByWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
+function isSearchResultWithKeyValue(node) {
+
+    let hasToSearchByWholeWord = searchTerm.includes('"');
+    let searchTermToConsider = hasToSearchByWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
 
     let requestContainsParameters = searchTermToConsider.includes(':')
         && searchTermToConsider.split(':').length === 2
-        && Object.keys(d).includes(searchTermToConsider.split(':')[0]);
+        && Object.keys(node).includes(searchTermToConsider.split(':')[0]);
+
+    let nodeData = node[searchTermToConsider.split(':')[0]];
 
     return requestContainsParameters
-        && (isToSearchByWholeWord ?
-            d[searchTermToConsider.split(':')[0]].replaceAll('\n', '').replaceAll(' ', '').toLowerCase() === searchTermToConsider.split(':')[1].replaceAll(' ', '').toLowerCase()
-            : d[searchTermToConsider.split(':')[0]].replaceAll('\n', '').replaceAll(' ', '').toLowerCase().includes(searchTermToConsider.split(':')[1].replaceAll(' ', '').toLowerCase()));
+        && (hasToSearchByWholeWord ?
+            getTermToCompare(nodeData) === getTermToCompare(searchTermToConsider.split(':')[1])
+            : getTermToCompare(nodeData).includes(getTermToCompare(searchTermToConsider.split(':')[1])));
 }
 
 function isSearchResultValueOnly(d) {
@@ -155,28 +157,38 @@ function updateVisualization(node, link, labels) {
         return false;
     });
 
+    let nodeToZoom;
+
     node.each(d => {
-        if (isSearchResultWithKeyValue(d)
-            ||
-            isSearchResultValueOnly(d)) {
+        if (isSearchResultWithKeyValue(d)) {
+            nodeToZoom = d;
             relatedNodes.add(d.id);
-            centerAndZoomOnNode(d);
+        }
+
+        if (isSearchResultValueOnly(d)) {
+            relatedNodes.add(d.id);
         }
     });
+
+    centerAndZoomOnNode(nodeToZoom);
 
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
-    zoomed = false;
 }
+
+function zoomTransformed({transform}) {
+    svg.attr("transform", transform);
+}
+
 
 function createMap() {
 
-   // const zoom = d3.zoom()
-   //     .scaleExtent([0.5, 32])
-   //     .on("zoom", zoomed);
+    zoom = d3.zoom()
+        .scaleExtent([1, 40])
+        .on("zoom", zoomTransformed);
 
-    const svg = d3.select('#map').append('svg')
+    svg = d3.select('#map').append('svg')
         .attr('width', width)
         .attr('height', height)
         .call(d3.zoom().on('zoom', function (event) {
@@ -201,13 +213,13 @@ function createMap() {
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
 
-    linkEntity = svg.append('g')
+    linkGraph = svg.append('g')
         .selectAll('line')
         .data(links)
         .enter().append('line')
         .attr('marker-end', 'url(#arrow)');
 
-    nodeEntity = svg.append('g')
+    nodeGraph = svg.append('g')
         .selectAll('circle')
         .data(nodes)
         .enter().append('circle')
@@ -252,7 +264,7 @@ function createMap() {
         .text(d => d.id);
 
     simulation.on('tick', () => {
-        linkEntity
+        linkGraph
             .attr('x1', d => d.source.x)
             .attr('y1', d => d.source.y)
             .attr('x2', d => {
@@ -269,7 +281,7 @@ function createMap() {
                 const offsetY = (dy / dist) * 5;
                 return d.target.y - offsetY;
             });
-        nodeEntity
+        nodeGraph
             .attr('cx', d => d.x)
             .attr('cy', d => d.y);
         labels
@@ -302,14 +314,14 @@ function createMap() {
         if (event.key === 'Enter') {
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
-            updateVisualization(nodeEntity, linkEntity, labels);
+            updateVisualization(nodeGraph, linkGraph, labels);
         }
     });
     document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
         event.stopImmediatePropagation();
         hideStoppedServices = !hideStoppedServices;
         document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
-        updateVisualization(nodeEntity, linkEntity, labels);
+        updateVisualization(nodeGraph, linkGraph, labels);
     });
 
 }
