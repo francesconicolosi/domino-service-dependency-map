@@ -79,7 +79,6 @@ function hideActions() {
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
     resetVisualization();
     const file = event.target.files[0];
-    console.log(file);
     const reader = new FileReader();
     reader.onload = function(e) {
         const csvData = e.target.result;
@@ -100,7 +99,6 @@ window.addEventListener('load', function() {
                 searchTerm = searchParam;
                 searchInput.value = searchParam;
             }
-            console.log(response);
             return response.text();
         })
         .then(csvData => {
@@ -109,7 +107,7 @@ window.addEventListener('load', function() {
             hideActions();
             if (searchParam) {
                 simulation.on('end', () => {
-                    updateVisualization(nodeGraph, linkGraph, labels);
+                    updateVisualization(nodeGraph, linkGraph, labels, false);
                 });
             }
         })
@@ -134,7 +132,6 @@ function processData(data) {
 
     if (missingColumns.length > 0) {
         alert(`Missing mandatory columns: ${missingColumns.join(', ')}`);
-        console.log(data);
         return;
     }
 
@@ -184,9 +181,8 @@ function isSearchResultValueOnly(d) {
         && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
-function updateVisualization(node, link, labels) {
+function updateVisualization(node, link, labels, focus) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
-
     const relatedNodes = new Set();
     const relatedLinks = links.filter(link => {
         let isLinkStatusOk = !hideStoppedServices || (filteredLinks.includes(link));
@@ -216,7 +212,7 @@ function updateVisualization(node, link, labels) {
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
-    if (nodeToZoom) {
+    if (focus && nodeToZoom) {
         centerAndZoomOnNode(nodeToZoom);
         showNodeDetails(nodeToZoom);
     }
@@ -227,12 +223,12 @@ function zoomed({transform}) {
 }
 
 
-function showNodeDetails(d) {
+function showNodeDetails(node) {
     document.getElementById('serviceInfo').style.display = 'block';
     const serviceDetails = document.getElementById('serviceDetails');
     serviceDetails.innerHTML = '';
     const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
-    for (const [key, value] of Object.entries(d)) {
+    for (const [key, value] of Object.entries(node)) {
         if (!excludedFields.includes(key)) {
             const p = document.createElement('p');
             if (typeof value === 'string' && value.includes('http')) {
@@ -367,14 +363,14 @@ function createMap() {
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
             updateQueryString('search', searchTerm);
-            updateVisualization(nodeGraph, linkGraph, labels);
+            updateVisualization(nodeGraph, linkGraph, labels, true);
         }
     });
     document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
         event.stopImmediatePropagation();
         hideStoppedServices = !hideStoppedServices;
         document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
-        updateVisualization(nodeGraph, linkGraph, labels);
+        updateVisualization(nodeGraph, linkGraph, labels, true);
     });
 
 }
