@@ -10,24 +10,38 @@ let linkGraph;
 let nodeGraph;
 let labels;
 let simulation;
-let svg;
+let g;
 let zoom;
+let zoomIdentity;
+let svg;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
+let transformOverride;
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
 }
 
 function centerAndZoomOnNode(node) {
+    console.log("centerzoom");
     if (node) {
-        const transform = d3.zoomTransform(d3.select('svg').node());
-        const scale = transform.k;
+        // const transform = d3.zoomTransform(d3.select('svg').node());
+        // const scale = transform.k;
+        const scale = 1;
         const x = -node.x * scale + width / 2;
         const y = -node.y * scale + height / 2;
+
+
+        transformOverride = zoomIdentity
+            .translate(x,y)
+            .scale(scale)
+            .translate(-0,-0);
+
+        console.log("1",transformOverride);
+
         svg.transition().duration(750).call(
             zoom.transform,
-            d3.zoomIdentity.translate(x, y).scale(scale)
+            transformOverride
         );
     }
 }
@@ -170,33 +184,31 @@ function updateVisualization(node, link, labels) {
         }
     });
 
-    centerAndZoomOnNode(nodeToZoom);
-
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
+    centerAndZoomOnNode(nodeToZoom);
 }
 
-function zoomTransformed({transform}) {
-    svg.attr("transform", transform);
+function zoomed({transform}) {
+    g.attr("transform", transform);
 }
 
 
 function createMap() {
 
+    console.log('create');
     zoom = d3.zoom()
-        .scaleExtent([1, 40])
-        .on("zoom", zoomTransformed);
+        .on("zoom", zoomed);
 
     svg = d3.select('#map').append('svg')
         .attr('width', width)
         .attr('height', height)
-        .call(d3.zoom().on('zoom', function (event) {
-            svg.attr('transform', event.transform);
-        }))
+        .call(zoom);
+    g = svg
         .append('g');
 
-    const arrowMarker = svg.append('defs').append('marker')
+    g.append('defs').append('marker')
         .attr('id', 'arrow')
         .attr('viewBox', '0 -5 10 10')
         .attr('refX', 15)
@@ -213,13 +225,13 @@ function createMap() {
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
 
-    linkGraph = svg.append('g')
+    linkGraph = g.append('g')
         .selectAll('line')
         .data(links)
         .enter().append('line')
         .attr('marker-end', 'url(#arrow)');
 
-    nodeGraph = svg.append('g')
+    nodeGraph = g.append('g')
         .selectAll('circle')
         .data(nodes)
         .enter().append('circle')
@@ -255,7 +267,7 @@ function createMap() {
                 }
             }
         });
-    labels = svg.append('g')
+    labels = g.append('g')
         .selectAll('text')
         .data(nodes)
         .enter().append('text')
@@ -289,18 +301,23 @@ function createMap() {
             .attr('y', d => d.y - 30);
     });
 
+    zoomIdentity = d3.zoomIdentity;
+
     function dragstarted(event, d) {
+        console.log('dragstarted');
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
     }
 
     function dragged(event, d) {
+        console.log('dragged');
         d.fx = event.x;
         d.fy = event.y;
     }
 
     function dragended(event, d) {
+        console.log('dragended');
         if (!event.active) simulation.alphaTarget(0);
         d.fx = d.x;
         d.fy = d.y;
@@ -309,6 +326,7 @@ function createMap() {
     function mouseout() {
         const tooltip = d3.select('#tooltip');
         tooltip.transition().duration(500).style('opacity', 0);
+        console.log('mouseout');
     }
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
