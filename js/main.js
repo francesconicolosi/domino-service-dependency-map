@@ -16,32 +16,26 @@ let zoomIdentity;
 let svg;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
-let transformOverride;
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
 }
 
 function centerAndZoomOnNode(node) {
-    console.log("centerzoom");
     if (node) {
-        // const transform = d3.zoomTransform(d3.select('svg').node());
-        // const scale = transform.k;
         const scale = 1;
         const x = -node.x * scale + width / 2;
         const y = -node.y * scale + height / 2;
 
 
-        transformOverride = zoomIdentity
+        const transform = zoomIdentity
             .translate(x,y)
             .scale(scale)
             .translate(-0,-0);
 
-        console.log("1",transformOverride);
-
         svg.transition().duration(750).call(
             zoom.transform,
-            transformOverride
+            transform
         );
     }
 }
@@ -111,9 +105,7 @@ function processData(data) {
     nodes = data.map(d => {
         const node = { id: d['Service Name'], color: colorScale(d['Type']) };
         for (const key in d) {
-            //if (key !== 'Service Name' && key !== 'Depends on' && key !== 'Used by') {
-                node[key] = d[key];
-            //}
+            node[key] = d[key];
         }
         return node;
     });
@@ -197,7 +189,6 @@ function zoomed({transform}) {
 
 function createMap() {
 
-    console.log('create');
     zoom = d3.zoom()
         .on("zoom", zoomed);
 
@@ -304,20 +295,17 @@ function createMap() {
     zoomIdentity = d3.zoomIdentity;
 
     function dragstarted(event, d) {
-        console.log('dragstarted');
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
     }
 
     function dragged(event, d) {
-        console.log('dragged');
         d.fx = event.x;
         d.fy = event.y;
     }
 
     function dragended(event, d) {
-        console.log('dragended');
         if (!event.active) simulation.alphaTarget(0);
         d.fx = d.x;
         d.fy = d.y;
@@ -326,7 +314,6 @@ function createMap() {
     function mouseout() {
         const tooltip = d3.select('#tooltip');
         tooltip.transition().duration(500).style('opacity', 0);
-        console.log('mouseout');
     }
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
