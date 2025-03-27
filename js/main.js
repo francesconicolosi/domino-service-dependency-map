@@ -70,6 +70,7 @@ function hideActions() {
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
     resetVisualization();
     const file = event.target.files[0];
+    console.log(file);
     const reader = new FileReader();
     reader.onload = function(e) {
         const csvData = e.target.result;
@@ -78,7 +79,20 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
         hideActions();
     };
     reader.readAsText(file);
+});
 
+window.addEventListener('load', function() {
+    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
+        .then(response => {
+            console.log(response);
+            return response.text();
+        })
+        .then(csvData => {
+            const data = d3.csvParse(csvData);
+            processData(data);
+            hideActions();
+        })
+        .catch(error => console.error('Error loading the CSV file:', error));
 });
 
 document.getElementById('toggle-cta').addEventListener('click', function() {
@@ -98,6 +112,7 @@ function processData(data) {
 
     if (missingColumns.length > 0) {
         alert(`Missing mandatory columns: ${missingColumns.join(', ')}`);
+        console.log(data);
         return;
     }
 
