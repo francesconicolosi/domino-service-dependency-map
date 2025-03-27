@@ -22,22 +22,20 @@ function getDecommButtonLabel() {
 }
 
 function centerAndZoomOnNode(node) {
-    if (node) {
-        const scale = 1;
-        const x = -node.x * scale + width / 2;
-        const y = -node.y * scale + height / 2;
+    const scale = 1;
+    const x = -node.x * scale + width / 2;
+    const y = -node.y * scale + height / 2;
 
 
-        const transform = zoomIdentity
-            .translate(x,y)
-            .scale(scale)
-            .translate(-0,-0);
+    const transform = zoomIdentity
+        .translate(x,y)
+        .scale(scale)
+        .translate(-0,-0);
 
-        svg.transition().duration(750).call(
-            zoom.transform,
-            transform
-        );
-    }
+    svg.transition().duration(750).call(
+        zoom.transform,
+        transform
+    );
 }
 
 function resetVisualization() {
@@ -60,6 +58,12 @@ function resetVisualization() {
 function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
+}
+
+function updateQueryString(param, value) {
+    const url = new URL(window.location);
+    url.searchParams.set(param, value);
+    window.history.pushState({}, '', url);
 }
 
 function hideActions() {
@@ -88,11 +92,13 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
 
 window.addEventListener('load', function() {
     let searchParam = null;
+    const searchInput = document.getElementById('searchInput');
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
         .then(response => {
              searchParam = getQueryParam('search')
             if (searchParam) {
                 searchTerm = searchParam;
+                searchInput.value = searchParam;
             }
             console.log(response);
             return response.text();
@@ -116,7 +122,8 @@ document.getElementById('toggle-cta').addEventListener('click', function() {
         document.getElementById('hideStoppedServices'),
         document.querySelector('a[href="./100_sample_services.csv"]'),
         document.querySelector('h1'),
-        document.querySelector('h3')
+        document.querySelector('h3'),
+        document.querySelector('footer')
     ];
     elements.forEach(element => element.classList.toggle('hidden'));
 });
@@ -209,13 +216,35 @@ function updateVisualization(node, link, labels) {
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
-    centerAndZoomOnNode(nodeToZoom);
+    if (nodeToZoom) {
+        centerAndZoomOnNode(nodeToZoom);
+        showNodeDetails(nodeToZoom);
+    }
 }
 
 function zoomed({transform}) {
     g.attr("transform", transform);
 }
 
+
+function showNodeDetails(d) {
+    document.getElementById('serviceInfo').style.display = 'block';
+    const serviceDetails = document.getElementById('serviceDetails');
+    serviceDetails.innerHTML = '';
+    const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
+    for (const [key, value] of Object.entries(d)) {
+        if (!excludedFields.includes(key)) {
+            const p = document.createElement('p');
+            if (typeof value === 'string' && value.includes('http')) {
+                const displayValue = value.length > 20 ? value.substring(0, 20) + '...' : value;
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
+            } else {
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${value}</i>`;
+            }
+            serviceDetails.appendChild(p);
+        }
+    }
+}
 
 function createMap() {
 
@@ -247,7 +276,7 @@ function createMap() {
         .force('center', d3.forceCenter(width / 2, height / 2));
 
     if (getQueryParam('search'))
-        simulation.alphaDecay(0.05);
+        simulation.alphaDecay(0.07);
 
     linkGraph = g.append('g')
         .selectAll('line')
@@ -274,22 +303,7 @@ function createMap() {
         })
         .on('mouseout', mouseout)
         .on('click', function(event, d) {
-            document.getElementById('serviceInfo').style.display = 'block';
-            const serviceDetails = document.getElementById('serviceDetails');
-            serviceDetails.innerHTML = '';
-            const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
-            for (const [key, value] of Object.entries(d)) {
-                if (!excludedFields.includes(key)) {
-                    const p = document.createElement('p');
-                    if (typeof value === 'string' && value.includes('http')) {
-                        const displayValue = value.length > 20 ? value.substring(0, 20) + '...' : value;
-                        p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
-                    } else {
-                        p.innerHTML = `<strong><b>${key}:</b></strong> <i>${value}</i>`;
-                    }
-                    serviceDetails.appendChild(p);
-                }
-            }
+            showNodeDetails(d);
         });
     labels = g.append('g')
         .selectAll('text')
@@ -352,6 +366,7 @@ function createMap() {
         if (event.key === 'Enter') {
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
+            updateQueryString('search', searchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
         }
     });
