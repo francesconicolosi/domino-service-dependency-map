@@ -57,6 +57,11 @@ function resetVisualization() {
     document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
 function hideActions() {
     document.getElementById('label-file').classList.add('hidden');
     document.getElementById('hideStoppedServices').classList.add('hidden');
@@ -82,8 +87,13 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
 });
 
 window.addEventListener('load', function() {
+    let searchParam = null;
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
         .then(response => {
+             searchParam = getQueryParam('search')
+            if (searchParam) {
+                searchTerm = searchParam;
+            }
             console.log(response);
             return response.text();
         })
@@ -91,6 +101,11 @@ window.addEventListener('load', function() {
             const data = d3.csvParse(csvData);
             processData(data);
             hideActions();
+            if (searchParam) {
+                simulation.on('end', () => {
+                    updateVisualization(nodeGraph, linkGraph, labels);
+                });
+            }
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 });
@@ -230,6 +245,9 @@ function createMap() {
         .force('link', d3.forceLink(links).id(d => d.id).distance(200))
         .force('charge', d3.forceManyBody().strength(-300))
         .force('center', d3.forceCenter(width / 2, height / 2));
+
+    if (getQueryParam('search'))
+        simulation.alphaDecay(0.05);
 
     linkGraph = g.append('g')
         .selectAll('line')
