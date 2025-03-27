@@ -14,6 +14,7 @@ let g;
 let zoom;
 let zoomIdentity;
 let svg;
+let clickedNode;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
@@ -107,7 +108,7 @@ window.addEventListener('load', function() {
             hideActions();
             if (searchParam) {
                 simulation.on('end', () => {
-                    updateVisualization(nodeGraph, linkGraph, labels, false);
+                    updateVisualization(nodeGraph, linkGraph, labels);
                 });
             }
         })
@@ -181,7 +182,7 @@ function isSearchResultValueOnly(d) {
         && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
-function updateVisualization(node, link, labels, focus) {
+function updateVisualization(node, link, labels) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
     const relatedNodes = new Set();
     const relatedLinks = links.filter(link => {
@@ -212,7 +213,7 @@ function updateVisualization(node, link, labels, focus) {
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
-    if (focus && nodeToZoom) {
+    if (!clickedNode && nodeToZoom) {
         centerAndZoomOnNode(nodeToZoom);
         showNodeDetails(nodeToZoom);
     }
@@ -299,6 +300,7 @@ function createMap() {
         })
         .on('mouseout', mouseout)
         .on('click', function(event, d) {
+            clickedNode = d;
             showNodeDetails(d);
         });
     labels = g.append('g')
@@ -360,17 +362,19 @@ function createMap() {
     }
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
+            clickedNode = null;
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
             updateQueryString('search', searchTerm);
-            updateVisualization(nodeGraph, linkGraph, labels, true);
+            updateVisualization(nodeGraph, linkGraph, labels);
         }
     });
     document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
         event.stopImmediatePropagation();
+        clickedNode = null;
         hideStoppedServices = !hideStoppedServices;
         document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
-        updateVisualization(nodeGraph, linkGraph, labels, true);
+        updateVisualization(nodeGraph, linkGraph, labels);
     });
 
 }
