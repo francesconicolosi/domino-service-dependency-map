@@ -15,6 +15,7 @@ let zoom;
 let zoomIdentity;
 let svg;
 let clickedNode;
+let hasLoaded = false;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
@@ -86,6 +87,7 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
         const data = d3.csvParse(csvData);
         processData(data);
         hideActions();
+        updateVisualization(nodeGraph, linkGraph, labels);
     };
     reader.readAsText(file);
 });
@@ -95,7 +97,8 @@ window.addEventListener('load', function() {
     const searchInput = document.getElementById('searchInput');
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
         .then(response => {
-             searchParam = getQueryParam('search')
+            searchParam = getQueryParam('search')
+            toggleSearchButton(searchParam);
             if (searchParam) {
                 searchTerm = searchParam;
                 searchInput.value = searchParam;
@@ -108,8 +111,13 @@ window.addEventListener('load', function() {
             hideActions();
             if (searchParam) {
                 simulation.on('end', () => {
-                    updateVisualization(nodeGraph, linkGraph, labels);
+                    if (!hasLoaded) {
+                        hasLoaded = true;
+                        updateVisualization(nodeGraph, linkGraph, labels);
+                    }
                 });
+            } else {
+                updateVisualization(nodeGraph, linkGraph, labels);
             }
         })
         .catch(error => console.error('Error loading the CSV file:', error));
@@ -162,8 +170,8 @@ function getTermToCompare(term) {
 
 function isSearchResultWithKeyValue(node) {
 
-    let hasToSearchByWholeWord = searchTerm.includes('"');
-    let searchTermToConsider = hasToSearchByWholeWord ? searchTerm.replaceAll('"', '') : searchTerm;
+    let isAccurateSearch = searchTerm.includes('"');
+    let searchTermToConsider = isAccurateSearch ? searchTerm.replaceAll('"', '') : searchTerm;
 
     let requestContainsParameters = searchTermToConsider.includes(':')
         && searchTermToConsider.split(':').length === 2
@@ -172,7 +180,7 @@ function isSearchResultWithKeyValue(node) {
     let nodeData = node[searchTermToConsider.split(':')[0]];
 
     return requestContainsParameters
-        && (hasToSearchByWholeWord ?
+        && (isAccurateSearch ?
             getTermToCompare(nodeData) === getTermToCompare(searchTermToConsider.split(':')[1])
             : getTermToCompare(nodeData).includes(getTermToCompare(searchTermToConsider.split(':')[1])));
 }
@@ -185,10 +193,20 @@ function isSearchResultValueOnly(d) {
 function updateVisualization(node, link, labels) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
     const relatedNodes = new Set();
+    const searchedNodes = new Set();
     const relatedLinks = links.filter(link => {
         let isLinkStatusOk = !hideStoppedServices || (filteredLinks.includes(link));
-        let isSearchedLink = searchTerm === "" ||
-            isSearchResultValueOnly(link.source) || isSearchResultValueOnly(link.target) || isSearchResultWithKeyValue(link.source) || isSearchResultWithKeyValue(link.target);
+        let isSearchedLink = searchTerm === "";
+        if (isSearchResultValueOnly(link.source) || isSearchResultWithKeyValue(link.source)) {
+            isSearchedLink = isSearchedLink || true;
+            searchedNodes.add(link.source.id);
+        }
+
+        if (isSearchResultValueOnly(link.target) || isSearchResultWithKeyValue(link.target)) {
+            isSearchedLink = isSearchedLink || true;
+            searchedNodes.add(link.target.id);
+        }
+
         if (isLinkStatusOk && isSearchedLink) {
             relatedNodes.add(link.source.id);
             relatedNodes.add(link.target.id);
@@ -213,6 +231,7 @@ function updateVisualization(node, link, labels) {
     node.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
+    labels.style('text-decoration', d => searchedNodes.has(d.id) ? 'underline' : 'none');
     if (!clickedNode && nodeToZoom) {
         centerAndZoomOnNode(nodeToZoom);
         showNodeDetails(nodeToZoom);
@@ -229,17 +248,28 @@ function showNodeDetails(node) {
     const serviceDetails = document.getElementById('serviceDetails');
     serviceDetails.innerHTML = '';
     const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
+
     for (const [key, value] of Object.entries(node)) {
-        if (!excludedFields.includes(key)) {
+        if (!excludedFields.includes(key) && value !== "") {
             const p = document.createElement('p');
             if (typeof value === 'string' && value.includes('http')) {
-                const displayValue = value.length > 20 ? value.substring(0, 20) + '...' : value;
+                const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
             } else {
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${value}</i>`;
+                const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
+                    `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value}</i>`;
             }
             serviceDetails.appendChild(p);
         }
+    }
+}
+
+function toggleSearchButton(searchInput) {
+    if (searchInput) {
+        document.getElementById("clearSearch").classList.remove('hidden');
+    } else {
+        document.getElementById("clearSearch").classList.add('hidden');
     }
 }
 
@@ -360,15 +390,51 @@ function createMap() {
         const tooltip = d3.select('#tooltip');
         tooltip.transition().duration(500).style('opacity', 0);
     }
+
+
+
     document.getElementById('searchInput').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             clickedNode = null;
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
+            toggleSearchButton(combinedSearchTerm);
             updateQueryString('search', searchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
         }
     });
+
+
+    document.getElementById('clearSearch').addEventListener('click', function () {
+        searchTerm = '';
+        const searchInput = document.getElementById('searchInput');
+        searchInput.value = searchTerm;
+        toggleSearchButton(searchTerm);
+        updateQueryString('search', searchTerm);
+        updateVisualization(nodeGraph, linkGraph, labels);
+    });
+
+
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('search-trigger')) {
+            clickedNode = null;
+            e.preventDefault();
+            const key = decodeURIComponent(e.target.getAttribute('data-key'));
+            const isAccurateSearch = key === "Depends on" || key === "Used by" || key === "id";
+            const mappedKey = isAccurateSearch ? "id": key;
+            const value = isAccurateSearch ? `"${decodeURIComponent(e.target.getAttribute('data-value'))}"` : `${decodeURIComponent(e.target.getAttribute('data-value'))}`;
+            const combinedSearchTerm = `${mappedKey}:${value}`;
+            searchTerm = combinedSearchTerm;
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = combinedSearchTerm;
+            toggleSearchButton(combinedSearchTerm);
+            updateQueryString('search', combinedSearchTerm);
+            updateVisualization(nodeGraph, linkGraph, labels);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
     document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
         event.stopImmediatePropagation();
         clickedNode = null;

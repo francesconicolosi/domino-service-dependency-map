@@ -1,3 +1,36 @@
+button, .custom-file-upload {
+    transition: background-color 0.4s ease, color 0.4s ease;
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover, .custom-file-upload:hover {
+    background-color: black;
+    color: white;
+}
+
+.fade-link {
+    color: black;
+    text-decoration: none;
+    border-radius: 4px;
+    background-color: white;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.fade-link:hover {
+    background-color: black;
+    color: white;
+}
+
 input[type="file"] {
     display: none;
 }
@@ -10,6 +43,7 @@ input[type="text"] {
     border: none;
     border-bottom: 2px solid black;
     font-size: 16px;
+    font-family: Arial, sans-serif;
 }
 
 .hidden {
@@ -29,23 +63,7 @@ input[type="text"]::placeholder {
     margin-bottom: 10px;
 }
 
-button, .custom-file-upload {
-    background-color: black;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    border-radius: 4px;
-}
 
-button:hover {
-    background-color: #333;
-}
 
 #map {
     width: 100%;
