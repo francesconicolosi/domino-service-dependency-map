@@ -398,7 +398,7 @@ function createMap() {
             clickedNode = null;
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
-            toggleSearchButton(combinedSearchTerm);
+            toggleSearchButton(searchTerm);
             updateQueryString('search', searchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
         }
