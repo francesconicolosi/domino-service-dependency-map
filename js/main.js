@@ -169,25 +169,33 @@ function getTermToCompare(term) {
 }
 
 function isSearchResultWithKeyValue(node) {
-
+    if (!searchTerm.includes(":")) return false;
     let isAccurateSearch = searchTerm.includes('"');
     let searchTermToConsider = isAccurateSearch ? searchTerm.replaceAll('"', '') : searchTerm;
 
-    let requestContainsParameters = searchTermToConsider.includes(':')
-        && searchTermToConsider.split(':').length === 2
-        && Object.keys(node).includes(searchTermToConsider.split(':')[0]);
+    let parts = searchTermToConsider.split(':');
+    let hasValidFormat = parts.length === 2 && Object.keys(node).includes(parts[0]);
 
-    let nodeData = node[searchTermToConsider.split(':')[0]];
+    if (!hasValidFormat) return false;
 
-    return requestContainsParameters
-        && (isAccurateSearch ?
-            getTermToCompare(nodeData) === getTermToCompare(searchTermToConsider.split(':')[1])
-            : getTermToCompare(nodeData).includes(getTermToCompare(searchTermToConsider.split(':')[1])));
+    let key = parts[0];
+    let values = parts[1].split(',').map(v => getTermToCompare(v.trim()));
+    let nodeData = getTermToCompare(node[key]);
+
+    return values.some(value =>
+        isAccurateSearch ? nodeData === value : nodeData.includes(value)
+    );
 }
 
 function isSearchResultValueOnly(d) {
-    return searchTerm !== ""
-        && Object.values(d).some(value => typeof value === 'string' && value.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (searchTerm === "" || searchTerm.includes(":")) return false;
+
+    const terms = searchTerm.toLowerCase().split(',').map(term => term.trim());
+
+    return Object.values(d).some(value =>
+        typeof value === 'string' &&
+        terms.some(term => value.toLowerCase().includes(term))
+    );
 }
 
 function updateVisualization(node, link, labels) {

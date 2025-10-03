@@ -10,7 +10,7 @@ I started developing this small application during a train journey and it was co
 - Display an interactive map of service dependencies.
 - Search for specific services.
 - View detailed information about services by clicking on nodes.
-- Zoom and drag the map.
+- Zoom and drag the map. 
 
 ## Repository Structure
 domino-service-dependency-map/ ├── README.md ├── index.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
@@ -35,6 +35,13 @@ cd domino-service-dependency-map
 3. Use the search bar to find specific services.
 4. Click on nodes to view detailed information about services.
 5. Hide decommissioned services based on their Status field and Decommission Date values by clicking the dedicated CTA.
+6. How to Search Using the Search Bar: You can refine your search using specific syntax. Below are examples and their meanings:
+- key:"ServiceName1" → Searches for services with exactly the key-value pair key:"ServiceName1".
+- "Value" → Searches for services that contain this value in any parameter.
+- key:ServiceName1 → Searches for services that include a partial match for the key-value pair key:ServiceName1.
+- key:ServiceName1,ServiceName2 → Performs a non-exact search for multiple services using comma-separated values.
+- key:"ServiceName1","ServiceName2" → Performs an exact search for multiple services using comma-separated values.
+
 
 ## CSV Format
 The CSV file should have the following format that are necessary for the dependency mapping visualization:
