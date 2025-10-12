@@ -1,0 +1,151 @@
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 2px solid black;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+}
+
+input[type="text"]::placeholder {
+    color: #aaa;
+    font-style: italic;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+button, .custom-file-upload {
+    transition: background-color 0.4s ease, color 0.4s ease;
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+h1, h3, text, .legend, #serviceInfo, label, button, a, footer {
+    font-family: Arial, sans-serif;
+}
+
+button:hover, .custom-file-upload:hover {
+    background-color: black;
+    color: white;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    font-family: "Gucci Sans Pro Custom", Arial, sans-serif
+}
+
+svg {
+    width: 100vw;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+.stream-box {
+    fill: #f8f8f8;
+    stroke: #bbb;
+    stroke-width: 3;
+    rx: 40;
+    ry: 40;
+    filter: drop-shadow(0px 8px 24px rgba(0, 0, 0, 0.10));
+}
+
+.theme-box {
+    fill: #f5f5ff;
+    stroke: #7a7ad1;
+    stroke-width: 2;
+    rx: 30;
+    ry: 30;
+    filter: drop-shadow(0px 6px 16px rgba(0, 0, 0, 0.10));
+}
+
+.team-box {
+    fill: #fff;
+    stroke: #999;
+    stroke-width: 2;
+    rx: 20;
+    ry: 20;
+    filter: drop-shadow(0px 4px 12px rgba(0, 0, 0, 0.10));
+}
+
+.stream-title {
+    font-size: 30px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    fill: #222;
+}
+
+.theme-title {
+    font-size: 22px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    fill: #4a4a9a;
+}
+
+.team-title {
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    fill: #333;
+}
+
+.profile-box {
+    stroke: #ccc;
+    stroke-width: 1;
+    rx: 14;
+    ry: 14;
+    filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.10));
+}
+
+.profile-photo {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 30px;
+    display: block;
+    margin: 0 auto;
+    background: #e0e0e0;
+}
+
+.info {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #333;
+    text-align: center;
+    margin-top: 6px;
+}
+
+.info div {
+    margin-bottom: 2px;
+}
+
+.profile-name {
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 6px;
+    margin-bottom: 4px;
+    text-align: center;
+}
