@@ -1,10 +1,23 @@
 import * as d3 from 'd3';
 
 let fileContent = '';
-
 let lastSearch = '';
 let searchResults = [];
 let currentIndex = 0;
+
+const firstOrgLevel = 'Team Stream';
+const secondOrgLevel = 'Team Theme';
+const thirdOrgLevel = 'Team member of';
+const firstLevelNA = `No ${firstOrgLevel}`;
+const secondLevelNA = `No ${secondOrgLevel}`;
+const thirdLevelNA = `No ${thirdOrgLevel}`;
+const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
+const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
+
+const roleColors = Object.fromEntries(
+    guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
+);
+
 
 document.getElementById('searchBar').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
@@ -12,7 +25,7 @@ document.getElementById('searchBar').addEventListener('keydown', function (e) {
         const cards = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title'));
 
         if (query !== lastSearch) {
-            console.log(cards);
+            //console.log(cards);
             searchResults = cards.filter(card => card.textContent?.toLowerCase().includes(query));
             currentIndex = 0;
             lastSearch = query;
@@ -23,7 +36,7 @@ document.getElementById('searchBar').addEventListener('keydown', function (e) {
         });
 
         if (searchResults.length === 0) {
-            document.getElementById('output').textContent = 'Nessuna card trovata.';
+            document.getElementById('output').textContent = 'No result found.';
             return;
         }
 
@@ -81,22 +94,19 @@ function parseCSV(text) {
     return rows;
 }
 
-function findPersonByName(targetName, result) {
-    for (const stream in result) {
-        for (const theme in result[stream]) {
-            for (const team in result[stream][theme]) {
-                const members = result[stream][theme][team];
-                for (const person of members) {
-                    if (person.Name === targetName) {
-                        return person;
+const findPersonByName = (targetName, result) =>
+    Object.values(result).flatMap(stream =>
+        Object.values(stream).flatMap(theme =>
+            Object.values(theme).flatMap(team =>
+                team
+            )
+        )
+    ).find(person =>
+        person.Name &&
+        person.Name.trim().toLowerCase() === targetName.trim().toLowerCase()
+    ) || null;
 
-                    }
-                }
-            }
-        }
-    }
-    return null;
-}
+
 
 function extractData() {
     if (!fileContent) {
@@ -115,76 +125,105 @@ function extractData() {
         return obj;
     }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
 
+    //console.log("people", people);
+
     const peopleByName = {};
     for (const p of people) {
         if (p.Name) peopleByName[p.Name.trim()] = p;
     }
 
-    const streams = {};
+    const organization = {};
     for (const person of people) {
-        let personStreams = (person['Team Stream'] || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
-        if (personStreams.length === 0) personStreams = ['No Stream'];
-        let personThemes = (person['Team Theme'] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
-        if (personThemes.length === 0) personThemes = ['No Theme'];
-        let personTeams = (person['Team member of'] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
-        if (personTeams.length === 0) personTeams = ['No Team'];
+        let firstLevelItems = (person[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
+        if (firstLevelItems.length === 0) {
+            firstLevelItems = [firstLevelNA];
+        }
+        let secondLevelItems = (person[secondOrgLevel] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
+        if (secondLevelItems.length === 0) secondLevelItems = [secondLevelNA];
+        let thirdLevelItems = (person[thirdOrgLevel] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
+        if (thirdLevelItems.length === 0) thirdLevelItems = [thirdLevelNA];
 
-        for (const stream of personStreams) {
-            if (!streams[stream]) streams[stream] = {};
-            for (const theme of personThemes) {
-                if (!streams[stream][theme]) streams[stream][theme] = {};
-                for (const team of personTeams) {
-                    if (!streams[stream][theme][team]) streams[stream][theme][team] = [];
-                    streams[stream][theme][team].push(person);
+        for (const firstLevelItem of firstLevelItems) {
+            if (!organization[firstLevelItem]) organization[firstLevelItem] = {};
+            for (const theme of secondLevelItems) {
+                if (!organization[firstLevelItem][theme]) organization[firstLevelItem][theme] = {};
+                for (const team of thirdLevelItems) {
+                    if (!organization[firstLevelItem][theme][team]) organization[firstLevelItem][theme][team] = [];
+                    person.Name = person.Name ? person.Name.replace(/[\s\t\r\n]+/g, " ").trim() : person.User;
+                    if (!(Object.values(organization[firstLevelItem][theme][team]).map(p => p.Name).includes(person.Name) || Object.values(organization[firstLevelItem][theme][team]).map(p => p.User).includes(person.User))) {
+                        organization[firstLevelItem][theme][team].push(person);
+                    }
                 }
             }
         }
     }
-    console.log(streams);
+    //console.log(JSON.stringify(organization));
     const result = {};
-    for (const [stream, themes] of Object.entries(streams)) {
-        for (const [theme, teams] of Object.entries(themes)) {
-            const guestMembers = [];
-            const addedMembers = new Set();
 
-            for (const [team, members] of Object.entries(teams)) {
-                let productManagers = new Set(), deliveryManagers = new Set(), scrumMasters = new Set(),
-                    architects = new Set(), developmentManagers = new Set();
+    const addGuestManagersToTheTeamBasedOn = (p, guestRole, thirdLevel) => {
+        if (p[guestRole]) {
+            //console.log(guestRole);
+            //console.log(p[guestRole]);
+            [...new Set(p[guestRole].split(/\n|,/).map(m => m.trim()).filter(Boolean))].forEach(m => {
+                //if (m === "Federico Terraneo" && !Object.values(thirdLevel).flat().map(entry => entry.Name).includes(m)) {
+                //    console.log("team ", JSON.stringify(thirdLevel));
+                //    console.log("team names", Object.values(thirdLevel).flat().map(entry => entry.Name));
+                //    console.log("includes " + m + "? " + Object.values(thirdLevel).map(entry => entry.Name).includes(m));
+                //    console.log("so I ll add " + findPersonByName(m, organization));
+                //}
+//
+                const manager = findPersonByName(m, organization);
+                if (manager.Name === "Federico Terraneo") console.log("manager", manager);
+                // if (m === "Eleonora Ciceri") console.log(organization);
+                // if (m === "Eleonora Ciceri") console.log(JSON.stringify(organization));
+                if (!manager) console.log("manager " + m + " is null");
 
-                if (!result[stream]) result[stream] = {};
-                if (!result[stream][theme]) result[stream][theme] = {};
-                if (!result[stream][theme][team]) result[stream][theme][team] = [];
-
-                for (const p of members) {
-                    if (!addedMembers.has(p.Name)) {
-                        addedMembers.add(p.Name);
-                        result[stream][theme][team].push(p);
+                if (manager) {
+                    let contained = false;//} && !Object.values(thirdLevel).flat().map(entry => entry.Name).includes(m)) {
+                    for (const member of thirdLevel) {
+                        //if (m === "Federico Terraneo") console.log(JSON.stringify(thirdLevel));
+                        //if (m === "Federico Terraneo") console.log("member " + member.Name + " " + member.User);
+                        if (member.Name === m) {
+                            contained = true
+                        }
+                    }
+                    if (m === "Federico Terraneo") console.log(contained);
+                    if (!contained) {
+                        if (m === "Federico Terraneo") console.log("adding now ...", JSON.stringify(thirdLevel));
+                        manager.guestRole = guestRole;
+                        thirdLevel.push(manager);
+                        if (m === "Federico Terraneo") console.log("added", JSON.stringify(thirdLevel));
                     }
 
-                    const processManagers = (field, guestRole, managers) => {
-                        if (p[field]) {
-                            [...new Set(p[field].split(/\n|,/).map(m => m.trim()).filter(Boolean))].forEach(m => {
-                                if (!managers.has(m)) {
-                                    managers.add(m);
-                                    const manager = findPersonByName(m, result);
-                                    if (manager && !addedMembers.has(manager.Name)) {
-                                        addedMembers.add(manager.Name);
-                                        manager.guestRole = guestRole;
-                                        guestMembers.push(manager);
-                                    }
-                                }
-                            });
-                        }
-                    };
 
-                    processManagers("Team Product Manager", "PM", productManagers);
-                    processManagers("Team Delivery Manager", "DM", deliveryManagers);
-                    processManagers("Team Scrum Master", "SM", scrumMasters);
-                    processManagers("Team Architect", "Architect", architects);
-                    processManagers("Team Development Manager", "DevM", developmentManagers);
+                    //if (m === "Eleonora Ciceri") console.log("added");
+                    //if (m === "Eleonora Ciceri") console.log(thirdLevel);
                 }
+            });
+        }
+    };
 
-                result[stream][theme][team].push(...guestMembers);
+    for (const [firstLevel, secondLevelItems] of Object.entries(organization)) {
+        for (const [secondLevel, thirdLevelItems] of Object.entries(secondLevelItems)) {
+
+            for (const [thirdLevel, members] of Object.entries(thirdLevelItems)) {
+                if (!result[firstLevel]) result[firstLevel] = {};
+                if (!result[firstLevel][secondLevel]) result[firstLevel][secondLevel] = {};
+                if (!result[firstLevel][secondLevel][thirdLevel]) result[firstLevel][secondLevel][thirdLevel] = [];
+
+                for (const p of members) {
+                    if (!Object.values(result[firstLevel][secondLevel][thirdLevel]).map(entry => entry.Name).includes(p.Name)) {
+                        if (p.Name === "Federico Terraneo") {
+                            console.log("adding becfore");
+                            console.log("prima", JSON.stringify(result[firstLevel][secondLevel][thirdLevel]));
+                        }
+                        result[firstLevel][secondLevel][thirdLevel].push(p);
+                        if (p.Name === "Federico Terraneo") {
+                            console.log("poi", JSON.stringify(result[firstLevel][secondLevel][thirdLevel]));
+                        }
+                    }
+                    guestRoles.forEach(role => addGuestManagersToTheTeamBasedOn(p, role, result[firstLevel][secondLevel][thirdLevel]));
+                }
             }
         }
     }
@@ -212,14 +251,7 @@ function extractData() {
         });
 
     const inARow = 6;
-    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "Gucci email"];
-    const roleColors = {
-        PM: "#ffe066",
-        DM: "#b2f7ef",
-        SM: "#a0c4ff",
-        Architect: "#ffd6e0",
-        DevM: "#f1faee"
-    };
+    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", "Gucci email"];
 
     const nFields = fieldsToShow.length;
     const rowHeight = 11;
@@ -228,17 +260,23 @@ function extractData() {
     const themeBoxPadX = 60;
     const streamBoxPadY = 100;
 
-    const largestStreamSize = Math.max(...Object.values(result).map(stream =>
-        new Set(Object.values(stream).flatMap(theme =>
-            Object.values(theme).flat().map(m => m.Name?.trim()).filter(Boolean)
-        )).size));
+
+    const largestStreamSize = Math.max(...Object.entries(result)
+        .filter(([streamKey]) => streamKey !== firstLevelNA)
+        .map(([, stream]) => Object.entries(stream)
+            .filter(([themeKey]) => themeKey !== secondLevelNA)
+            .reduce((acc, [, theme]) => acc + Object.keys(theme).length, 0)
+        )
+    ) * inARow;
+
+    console.log("largestStreamSize", largestStreamSize);
 
     const largestTeamSize = Math.max(
         ...Object.entries(result)
-            .filter(([streamName]) => streamName !== "No Stream")
+            .filter(([streamName]) => streamName !== firstLevelNA)
             .flatMap(([, stream]) =>
                 Object.entries(stream)
-                    .filter(([themeName]) => themeName !== "No Theme")
+                    .filter(([themeName]) => themeName !== secondLevelNA)
                     .flatMap(([, theme]) =>
                         Object.values(theme).map(team =>
                             new Set(team.map(m => m.Name?.trim()).filter(Boolean)).size
@@ -252,12 +290,12 @@ function extractData() {
     const teamBoxHeight = rowCount * cardBaseHeight * 1.2;
     const themeBoxHeight = teamBoxHeight * 1.2;
     const streamBoxHeight = themeBoxHeight * 1.2;
-    const streamBoxWidth = largestStreamSize / rowCount * cardWidth * rowCount / 1.4;
+    const streamBoxWidth = largestStreamSize * cardWidth * rowCount / 1.4;
 
     let streamY = 40;
 
     Object.entries(result).forEach(([stream, themes], sIdx) => {
-        if (stream.toLowerCase().includes("no stream")) return;
+        if (stream.includes(firstLevelNA)) return;
         let themeX = 60;
 
         const streamGroup = backgroundLayer.append("g").attr("transform", `translate(40,${streamY})`);
@@ -276,7 +314,7 @@ function extractData() {
             .text(stream);
 
         Object.entries(themes).forEach(([theme, teams], tIdx) => {
-            if (theme.toLowerCase().includes("no theme")) return;
+            if (theme.includes(secondLevelNA)) return;
             //let teamY = 80;
 
             const themeGroup = streamGroup.append("g").attr("transform", `translate(${themeX},100)`);
