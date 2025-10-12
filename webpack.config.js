@@ -3,9 +3,12 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    entry: './js/main.js',
+    entry: {
+        main: './js/main.js',
+        second: './js/solitaire.js'
+    },
     output: {
-        filename: 'bundle.js',
+        filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist'),
     },
     plugins: [
@@ -14,6 +17,23 @@ module.exports = {
             filename: 'index.html',
             inject: 'body',
             scriptLoading: 'blocking',
+            chunks: ['main'],
+            minify: {
+                collapseWhitespace: true,
+                keepClosingSlash: true,
+                removeComments: true,
+                removeRedundantAttributes: false, // do not remove type="text"
+                removeScriptTypeAttributes: true,
+                removeStyleLinkTypeAttributes: true,
+                useShortDoctype: true
+            }
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/solitaire-beta.html',
+            filename: 'solitaire-beta.html',
+            inject: 'body',
+            scriptLoading: 'blocking',
+            chunks: ['second'],
             minify: {
                 collapseWhitespace: true,
                 keepClosingSlash: true,
@@ -26,9 +46,9 @@ module.exports = {
         }),
         new CopyWebpackPlugin({
             patterns: [
-                { from: 'css', to: 'css' },
-                { from: 'src/100_sample_services.csv', to: '100_sample_services.csv' },
-                { from: 'assets/icon.svg', to: 'icon.svg' },
+                {from: 'css', to: 'css'},
+                {from: 'src/100_sample_services.csv', to: '100_sample_services.csv'},
+                {from: 'assets/icon.svg', to: 'icon.svg'},
             ],
         }),
     ],

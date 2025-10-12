@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Solitaire: Visual People Database</title>
+  <link rel="stylesheet" href="./css/solitaire-styles.css">
+</head>
+<body>
+<h1>♤ Solitaire: Visual People Database (BETA)</h1>
+
+<span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
+<button id="clearSearch" class="toggle-icon hidden" title="Clear search">✖</button>
+<label for="fileInput" id="label-file" class="custom-file-upload">
+  <input type="file" id="fileInput" accept=".csv" class="file-input" />
+  Upload a CSV People DB
+</label>
+<input type="text" id="searchBar" placeholder='Find...' />
+
+<div id="output"></div>
+<svg id="canvas"></svg>
+</body>
+</html>
