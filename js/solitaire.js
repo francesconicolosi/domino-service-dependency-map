@@ -25,7 +25,6 @@ document.getElementById('searchBar').addEventListener('keydown', function (e) {
         const cards = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title'));
 
         if (query !== lastSearch) {
-            //console.log(cards);
             searchResults = cards.filter(card => card.textContent?.toLowerCase().includes(query));
             currentIndex = 0;
             lastSearch = query;
@@ -94,6 +93,8 @@ function parseCSV(text) {
     return rows;
 }
 
+const cleanName = name => name.replace(/[\s\t\r\n]+/g, " ").trim();
+
 const findPersonByName = (targetName, result) =>
     Object.values(result).flatMap(stream =>
         Object.values(stream).flatMap(theme =>
@@ -107,31 +108,7 @@ const findPersonByName = (targetName, result) =>
     ) || null;
 
 
-
-function extractData() {
-    if (!fileContent) {
-        alert("Carica prima il file CSV!");
-        return;
-    }
-    const rows = parseCSV(fileContent);
-    if (rows.length < 2) {
-        console.log("no data found");
-        return;
-    }
-    const headers = rows[0].map(h => h.trim());
-    const people = rows.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
-        return obj;
-    }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
-
-    //console.log("people", people);
-
-    const peopleByName = {};
-    for (const p of people) {
-        if (p.Name) peopleByName[p.Name.trim()] = p;
-    }
-
+function buildOrganization(people) {
     const organization = {};
     for (const person of people) {
         let firstLevelItems = (person[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
@@ -149,7 +126,7 @@ function extractData() {
                 if (!organization[firstLevelItem][theme]) organization[firstLevelItem][theme] = {};
                 for (const team of thirdLevelItems) {
                     if (!organization[firstLevelItem][theme][team]) organization[firstLevelItem][theme][team] = [];
-                    person.Name = person.Name ? person.Name.replace(/[\s\t\r\n]+/g, " ").trim() : person.User;
+                    person.Name = person.Name ? cleanName(person.Name) : person.User;
                     if (!(Object.values(organization[firstLevelItem][theme][team]).map(p => p.Name).includes(person.Name) || Object.values(organization[firstLevelItem][theme][team]).map(p => p.User).includes(person.User))) {
                         organization[firstLevelItem][theme][team].push(person);
                     }
@@ -157,51 +134,38 @@ function extractData() {
             }
         }
     }
-    //console.log(JSON.stringify(organization));
-    const result = {};
+    return organization;
+}
 
-    const addGuestManagersToTheTeamBasedOn = (p, guestRole, thirdLevel) => {
-        if (p[guestRole]) {
-            //console.log(guestRole);
-            //console.log(p[guestRole]);
-            [...new Set(p[guestRole].split(/\n|,/).map(m => m.trim()).filter(Boolean))].forEach(m => {
-                //if (m === "Federico Terraneo" && !Object.values(thirdLevel).flat().map(entry => entry.Name).includes(m)) {
-                //    console.log("team ", JSON.stringify(thirdLevel));
-                //    console.log("team names", Object.values(thirdLevel).flat().map(entry => entry.Name));
-                //    console.log("includes " + m + "? " + Object.values(thirdLevel).map(entry => entry.Name).includes(m));
-                //    console.log("so I ll add " + findPersonByName(m, organization));
-                //}
-//
-                const manager = findPersonByName(m, organization);
-                if (manager.Name === "Federico Terraneo") console.log("manager", manager);
-                // if (m === "Eleonora Ciceri") console.log(organization);
-                // if (m === "Eleonora Ciceri") console.log(JSON.stringify(organization));
-                if (!manager) console.log("manager " + m + " is null");
+const addGuestManagersByRole = (person, guestRole, thirdLevel, organization) => {
+    if (!person[guestRole]) return;
+    const guestNames = [...new Set(
+        person[guestRole]
+            .split(/\n|,/)
+            .map(m => m.trim())
+            .filter(Boolean)
+    )];
 
-                if (manager) {
-                    let contained = false;//} && !Object.values(thirdLevel).flat().map(entry => entry.Name).includes(m)) {
-                    for (const member of thirdLevel) {
-                        //if (m === "Federico Terraneo") console.log(JSON.stringify(thirdLevel));
-                        //if (m === "Federico Terraneo") console.log("member " + member.Name + " " + member.User);
-                        if (member.Name === m) {
-                            contained = true
-                        }
-                    }
-                    if (m === "Federico Terraneo") console.log(contained);
-                    if (!contained) {
-                        if (m === "Federico Terraneo") console.log("adding now ...", JSON.stringify(thirdLevel));
-                        manager.guestRole = guestRole;
-                        thirdLevel.push(manager);
-                        if (m === "Federico Terraneo") console.log("added", JSON.stringify(thirdLevel));
-                    }
-
-
-                    //if (m === "Eleonora Ciceri") console.log("added");
-                    //if (m === "Eleonora Ciceri") console.log(thirdLevel);
-                }
-            });
+    guestNames.forEach(name => {
+        const manager = findPersonByName(name, organization);
+        if (!manager) {
+            console.log(`Manager "${name}" is null`);
+            return;
         }
-    };
+
+        const alreadyPresent = thirdLevel.some(member =>
+            cleanName(member.Name) === cleanName(name)
+        );
+
+        if (!alreadyPresent) {
+            manager.guestRole = guestRole;
+            thirdLevel.push(manager);
+        }
+    });
+};
+
+function addGuestManagersTo(organization) {
+    const result = {};
 
     for (const [firstLevel, secondLevelItems] of Object.entries(organization)) {
         for (const [secondLevel, thirdLevelItems] of Object.entries(secondLevelItems)) {
@@ -213,20 +177,40 @@ function extractData() {
 
                 for (const p of members) {
                     if (!Object.values(result[firstLevel][secondLevel][thirdLevel]).map(entry => entry.Name).includes(p.Name)) {
-                        if (p.Name === "Federico Terraneo") {
-                            console.log("adding becfore");
-                            console.log("prima", JSON.stringify(result[firstLevel][secondLevel][thirdLevel]));
-                        }
                         result[firstLevel][secondLevel][thirdLevel].push(p);
-                        if (p.Name === "Federico Terraneo") {
-                            console.log("poi", JSON.stringify(result[firstLevel][secondLevel][thirdLevel]));
-                        }
                     }
-                    guestRoles.forEach(role => addGuestManagersToTheTeamBasedOn(p, role, result[firstLevel][secondLevel][thirdLevel]));
+                    guestRoles.forEach(role => addGuestManagersByRole(p, role, result[firstLevel][secondLevel][thirdLevel], organization));
                 }
             }
         }
     }
+    return result;
+}
+
+function extractData() {
+    if (!fileContent) {
+        alert("Missing CSV File!");
+        return;
+    }
+    const rows = parseCSV(fileContent);
+    if (rows.length < 2) {
+        return;
+    }
+    const headers = rows[0].map(h => h.trim());
+    const people = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
+        return obj;
+    }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
+
+    const peopleByName = {};
+    for (const p of people) {
+        if (p.Name) peopleByName[p.Name.trim()] = p;
+    }
+
+    const organization = buildOrganization(people);
+    const result = addGuestManagersTo(organization);
+
     const svg = d3.select("#canvas");
 
     const viewport = svg.append("g").attr("id", "viewport");
@@ -255,13 +239,13 @@ function extractData() {
 
     const nFields = fieldsToShow.length;
     const rowHeight = 11;
-    const cardWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
-    const teamBoxWidth = inARow * cardWidth + 100, teamBoxPadX = 24;
-    const themeBoxPadX = 60;
-    const streamBoxPadY = 100;
+    const memberWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
+    const thirdLevelBoxWidth = inARow * memberWidth + 100, thirdLevelBoxPadX = 24;
+    const secondLevelBoxPadX = 60;
+    const firstLevelBoxPadY = 100;
 
 
-    const largestStreamSize = Math.max(...Object.entries(result)
+    const largestFirstLevelSize = Math.max(...Object.entries(result)
         .filter(([streamKey]) => streamKey !== firstLevelNA)
         .map(([, stream]) => Object.entries(stream)
             .filter(([themeKey]) => themeKey !== secondLevelNA)
@@ -269,9 +253,7 @@ function extractData() {
         )
     ) * inARow;
 
-    console.log("largestStreamSize", largestStreamSize);
-
-    const largestTeamSize = Math.max(
+    const largestThirdLevelSize = Math.max(
         ...Object.entries(result)
             .filter(([streamName]) => streamName !== firstLevelNA)
             .flatMap(([, stream]) =>
@@ -285,74 +267,74 @@ function extractData() {
             )
     );
 
-    const rowCount = Math.ceil(largestTeamSize / inARow);
-    console.log(largestTeamSize);
-    const teamBoxHeight = rowCount * cardBaseHeight * 1.2;
-    const themeBoxHeight = teamBoxHeight * 1.2;
-    const streamBoxHeight = themeBoxHeight * 1.2;
-    const streamBoxWidth = largestStreamSize * cardWidth * rowCount / 1.4;
+    const rowCount = Math.ceil(largestThirdLevelSize / inARow);
+    const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2;
+    const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2;
+    const firstLevelBoxHeight = secondLevelBoxHeight * 1.2;
+
+    const firstLevelBoxWidth = largestFirstLevelSize * memberWidth * inARow / 4;
 
     let streamY = 40;
 
-    Object.entries(result).forEach(([stream, themes], sIdx) => {
-        if (stream.includes(firstLevelNA)) return;
-        let themeX = 60;
+    Object.entries(result).forEach(([firstLevel, secondLevelItems], sIdx) => {
+        if (firstLevel.includes(firstLevelNA)) return;
+        let secondLevelX = 60;
 
-        const streamGroup = backgroundLayer.append("g").attr("transform", `translate(40,${streamY})`);
-        streamGroup.append("rect")
+        const firstLevelGroup = backgroundLayer.append("g").attr("transform", `translate(40,${streamY})`);
+        firstLevelGroup.append("rect")
             .attr("class", "stream-box")
-            .attr("width", streamBoxWidth)
-            .attr("height", streamBoxHeight)
+            .attr("width", firstLevelBoxWidth)
+            .attr("height", firstLevelBoxHeight)
             .attr("rx", 40)
             .attr("ry", 40);
 
-        streamGroup.append("text")
+        firstLevelGroup.append("text")
             .attr("x", 200)
             .attr("y", 50)
             .attr("text-anchor", "middle")
             .attr("class", "stream-title")
-            .text(stream);
+            .text(firstLevel);
 
-        Object.entries(themes).forEach(([theme, teams], tIdx) => {
-            if (theme.includes(secondLevelNA)) return;
+        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems], tIdx) => {
+            if (secondLevel.includes(secondLevelNA)) return;
             //let teamY = 80;
 
-            const themeGroup = streamGroup.append("g").attr("transform", `translate(${themeX},100)`);
-            const themeWidth = Object.keys(teams).length * teamBoxWidth + 120;
-            themeGroup.append("rect")
+            const secondLevelGroup = firstLevelGroup.append("g").attr("transform", `translate(${secondLevelX},100)`);
+            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + 120;
+            secondLevelGroup.append("rect")
                 .attr("class", "theme-box")
                 .attr("width", themeWidth)
-                .attr("height", themeBoxHeight)
+                .attr("height", secondLevelBoxHeight)
                 .attr("rx", 30)
                 .attr("ry", 30);
 
-            themeGroup.append("text")
+            secondLevelGroup.append("text")
                 .attr("x", themeWidth / 2)
                 .attr("y", 35)
                 .attr("text-anchor", "middle")
                 .attr("class", "theme-title")
-                .text(theme);
+                .text(secondLevel);
 
-            Object.entries(teams).forEach(([team, members], teamIdx) => {
-                const teamGroup = themeGroup.append("g").attr("transform", `translate(${teamIdx * (teamBoxWidth + teamBoxPadX) + 50},70)`);
-                teamGroup.append("rect")
+            Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
+                const thirdLevelGroup = secondLevelGroup.append("g").attr("transform", `translate(${teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50},70)`);
+                thirdLevelGroup.append("rect")
                     .attr("class", "team-box")
-                    .attr("width", teamBoxWidth)
-                    .attr("height", teamBoxHeight)
+                    .attr("width", thirdLevelBoxWidth)
+                    .attr("height", thirdLevelBoxHeight)
                     .attr("rx", 20)
                     .attr("ry", 20);
 
-                teamGroup.append("text")
-                    .attr("x", teamBoxWidth / 2)
+                thirdLevelGroup.append("text")
+                    .attr("x", thirdLevelBoxWidth / 2)
                     .attr("y", 28)
                     .attr("text-anchor", "middle")
                     .attr("class", "team-title")
-                    .text(team);
+                    .text(thirdLevel);
 
                 members.forEach((member, mIdx) => {
                     const col = mIdx % inARow;
                     const row = Math.floor(mIdx / inARow);
-                    const cardX = 40 + themeX + teamIdx * (teamBoxWidth + teamBoxPadX) + 50 + 20 + col * (cardWidth + cardPad);
+                    const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
                     const cardY = streamY + 100 + 70 + 45 + row * (cardBaseHeight + 10);
 
                     const group = cardLayer.append("g")
@@ -361,14 +343,14 @@ function extractData() {
 
                     group.append("rect")
                         .attr("class", "profile-box")
-                        .attr("width", cardWidth)
+                        .attr("width", memberWidth)
                         .attr("height", cardBaseHeight)
                         .attr("rx", 14)
                         .attr("ry", 14)
                         .attr("fill", member.guestRole ? roleColors[member.guestRole] : "white");
 
                     group.append("foreignObject")
-                        .attr("x", (cardWidth - 60) / 2)
+                        .attr("x", (memberWidth - 60) / 2)
                         .attr("y", 8)
                         .attr("width", 60)
                         .attr("height", 60)
@@ -380,7 +362,7 @@ function extractData() {
                     group.append("foreignObject")
                         .attr("x", 0)
                         .attr("y", 72)
-                        .attr("width", cardWidth)
+                        .attr("width", memberWidth)
                         .attr("height", 24)
                         .append("xhtml:div")
                         .attr("class", "profile-name")
@@ -389,7 +371,7 @@ function extractData() {
                     const infoDiv = group.append("foreignObject")
                         .attr("x", 8)
                         .attr("y", 98)
-                        .attr("width", cardWidth - 16)
+                        .attr("width", memberWidth - 16)
                         .attr("height", cardBaseHeight - 102)
                         .append("xhtml:div")
                         .attr("class", "info");
@@ -404,9 +386,9 @@ function extractData() {
                 });
             });
 
-            themeX += themeWidth + themeBoxPadX;
+            secondLevelX += themeWidth + secondLevelBoxPadX;
         });
 
-        streamY += streamBoxHeight + streamBoxPadY;
+        streamY += firstLevelBoxHeight + firstLevelBoxPadY;
     });
 }
