@@ -18,6 +18,26 @@ const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
 );
 
+let svg;
+let viewport;
+let backgroundLayer;
+let cardLayer;
+
+function hideActions() {
+    document.getElementById('label-file').classList.add('hidden');
+    document.getElementById('fileInput').classList.add('hidden');
+    document.querySelector('h1').classList.add('hidden');
+}
+
+document.getElementById('toggle-cta').addEventListener('click', function() {
+    const elements = [
+        document.getElementById('label-file'),
+        document.getElementById('fileInput'),
+        document.querySelector('h1')
+    ];
+    elements.forEach(element => element.classList.toggle('hidden'));
+});
+
 
 document.getElementById('searchBar').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
@@ -46,13 +66,42 @@ document.getElementById('searchBar').addEventListener('keydown', function (e) {
     }
 });
 
+window.addEventListener('load', function() {
+    let searchParam = null;
+    const searchInput = document.getElementById('searchInput');
+    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample-people-database.csv')
+        .then(response => {
+            return response.text();
+        })
+        .then(csvData => {
+            resetVisualization();
+            extractData(csvData);
+            hideActions();
+        })
+        .catch(error => console.error('Error loading the CSV file:', error));
+});
+
+
+function resetVisualization() {
+    d3.select("#canvas").selectAll("*").remove();
+    svg = d3.select("#canvas");
+    viewport = svg.append("g").attr("id", "viewport");
+    backgroundLayer = viewport.append("g").attr("id", "backgroundLayer");
+    cardLayer = viewport.append("g").attr("id", "cardLayer");
+    svg.call(d3.zoom().on("zoom", (event) => {
+        viewport.attr("transform", event.transform);
+    }));
+}
+
+
 document.getElementById('fileInput').addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function (evt) {
-        fileContent = evt.target.result;
-        extractData();
+        resetVisualization();
+        extractData(evt.target.result);
+        hideActions();
     };
     reader.readAsText(file, 'UTF-8');
 });
@@ -187,7 +236,7 @@ function addGuestManagersTo(organization) {
     return result;
 }
 
-function extractData() {
+function extractData(fileContent) {
     if (!fileContent) {
         alert("Missing CSV File!");
         return;
@@ -210,17 +259,6 @@ function extractData() {
 
     const organization = buildOrganization(people);
     const result = addGuestManagersTo(organization);
-
-    const svg = d3.select("#canvas");
-
-    const viewport = svg.append("g").attr("id", "viewport");
-
-    const backgroundLayer = viewport.append("g").attr("id", "backgroundLayer");
-    const cardLayer = viewport.append("g").attr("id", "cardLayer");
-
-    svg.call(d3.zoom().on("zoom", (event) => {
-        viewport.attr("transform", event.transform);
-    }));
 
     const drag = d3.drag()
         .on("start", function () {
@@ -266,6 +304,7 @@ function extractData() {
                     )
             )
     );
+
 
     const rowCount = Math.ceil(largestThirdLevelSize / inARow);
     const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2;
