@@ -14,6 +14,10 @@ input[type="text"]::placeholder {
     font-style: italic;
 }
 
+.hidden {
+    display: none!important;
+}
+
 .container {
     display: flex;
     align-items: center;
