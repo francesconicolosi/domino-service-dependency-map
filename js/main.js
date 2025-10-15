@@ -16,6 +16,7 @@ let zoomIdentity;
 let svg;
 let clickedNode;
 let hasLoaded = false;
+let latestUpdate = null;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
@@ -135,6 +136,16 @@ document.getElementById('toggle-cta').addEventListener('click', function() {
     elements.forEach(element => element.classList.toggle('hidden'));
 });
 
+function getFormattedDate(isoDate) {
+    const date = new Date(isoDate);
+    return date.toLocaleString('it-IT', {
+        timeZone: 'Europe/Rome',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+}
+
 function processData(data) {
     const requiredColumns = ['Service Name', 'Description', 'Type', 'Depends on', 'Status', 'Decommission Date'];
     const missingColumns = requiredColumns.filter(col => !data.columns.includes(col));
@@ -142,6 +153,25 @@ function processData(data) {
     if (missingColumns.length > 0) {
         alert(`Missing mandatory columns: ${missingColumns.join(', ')}`);
         return;
+    }
+
+
+    if (data.columns.includes('Last Update')) {
+        const validDates = data
+            .map(d => new Date(d['Last Update']))
+            .filter(date => !isNaN(date.getTime()));
+
+        if (validDates.length > 0) {
+            latestUpdate = new Date(Math.max(...validDates));
+            requestAnimationFrame(() => {
+                const el = document.getElementById("latestUpdateDate");
+                if (latestUpdate) {
+                    const formatted = getFormattedDate(latestUpdate);
+                    el.textContent = `Last Update: ${formatted}`;
+                }
+            });
+
+        }
     }
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);

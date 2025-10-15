@@ -371,9 +371,7 @@ function getFormattedDate(isoDate) {
         timeZone: 'Europe/Rome',
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric'
     });
 }
 
@@ -622,8 +620,26 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     reader.readAsText(file, 'UTF-8');
 });
 
+document.getElementById('clearSearch').addEventListener('click', function () {
+    searchParam = '';
+    const searchInput = document.getElementById('searchBar');
+    searchInput.value = searchParam;
+    toggleSearchButton(searchParam);
+    updateQueryString(searchParam);
+});
+
+function toggleSearchButton(searchInput) {
+    if (searchInput) {
+        document.getElementById("clearSearch").classList.remove('hidden');
+    } else {
+        document.getElementById("clearSearch").classList.add('hidden');
+    }
+}
+
 function searchByQuery(query) {
     if (!query) return;
+
+    toggleSearchButton(query);
     const searchInput = document.getElementById('searchBar');
     if (!searchInput.value) {
         searchInput.value = query;

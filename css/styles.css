@@ -75,7 +75,7 @@ a {
     color: black;
 }
 
-h1, h3, text, .legend, #serviceInfo, label, button, a, footer {
+h1, h3, text, .legend, #serviceInfo, label, button, a, footer, span {
     font-family: Arial, sans-serif;
 }
 
