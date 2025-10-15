@@ -50,6 +50,7 @@ module.exports = {
                 {from: 'src/100_sample_services.csv', to: '100_sample_services.csv'},
                 {from: 'src/sample-people-database.csv', to: 'sample-people-database.csv'},
                 {from: 'assets/icon.svg', to: 'icon.svg'},
+                {from: 'assets/user-icon.png', to: 'user-icon.png'},
             ],
         }),
     ],

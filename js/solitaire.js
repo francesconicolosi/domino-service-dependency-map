@@ -19,12 +19,12 @@ const roleColors = Object.fromEntries(
 
 let searchParam;
 
-let svg;                // <svg id="canvas">
-let viewport;           // <g id="viewport"> — layer su cui applicare lo zoom
-let backgroundLayer;    // layer per riquadri stream/theme/team
-let cardLayer;          // layer per le card profilo
+let svg;
+let viewport;
+let backgroundLayer;
+let cardLayer;
 
-let zoom;               // istanza d3.zoom
+let zoom;
 let width = 1200;
 let height = 800;
 
@@ -218,7 +218,7 @@ function zoomToElement(element, desiredScale = 1.5, duration = 500) {
     if (!element || !svg) return;
 
     const svgNode = svg.node();
-    const t = d3.zoomTransform(svgNode); // transform corrente (k, x, y) associato a svg
+    const t = d3.zoomTransform(svgNode);
 
     const elRect = element.getBoundingClientRect();
     const svgRect = svgNode.getBoundingClientRect();
@@ -423,7 +423,7 @@ function extractData(csvText) {
 
     const drag = d3.drag()
         .on("start", function () {
-            d3.select(this).raise(); // Bring card to front
+            d3.select(this).raise();
         })
         .on("drag", function (event) {
             const transform = d3.select(this).attr("transform");
@@ -529,7 +529,6 @@ function extractData(csvText) {
                     .attr('class', 'team-title')
                     .text(thirdLevel);
 
-                // Recupera i membri originali (senza guest)
                 const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
 
                 const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
@@ -568,8 +567,8 @@ function extractData(csvText) {
                         .attr('height', 60)
                         .append('xhtml:img')
                         .attr('class', 'profile-photo')
-                        .attr('src', member.Photo ? 'https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png'
-                            : 'https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png')
+                        .attr('src', member.Photo ? 'user-icon.png'
+                            : 'user-icon.png')
                         .attr('alt', 'Foto profilo');
 
                     group.append('foreignObject')

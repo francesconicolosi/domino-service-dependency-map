@@ -19,12 +19,14 @@ let hasLoaded = false;
 let latestUpdate = null;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
+const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
 
 function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
 }
 
 function centerAndZoomOnNode(node) {
+    console.log("zoomming");
     const scale = 1;
     const x = -node.x * scale + width / 2;
     const y = -node.y * scale + height / 2;
@@ -254,14 +256,14 @@ function updateVisualization(node, link, labels) {
     });
 
     let nodeToZoom;
-
     node.each(d => {
+
         if (isSearchResultWithKeyValue(d)) {
             nodeToZoom = d;
             relatedNodes.add(d.id);
         }
-
         if (isSearchResultValueOnly(d)) {
+            //nodeToZoom = d; (this is disabled because we dont want to zoom in case theres a more vague search
             relatedNodes.add(d.id);
         }
     });
@@ -293,6 +295,8 @@ function showNodeDetails(node) {
             if (typeof value === 'string' && value.includes('http')) {
                 const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
+            } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href=solitaire-beta.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')} target="_blank">${value}</a></i>`;
             } else {
                 const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
