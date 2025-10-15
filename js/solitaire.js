@@ -17,6 +17,8 @@ const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
 );
 
+let searchParam;
+
 let svg;                // <svg id="canvas">
 let viewport;           // <g id="viewport"> — layer su cui applicare lo zoom
 let backgroundLayer;    // layer per riquadri stream/theme/team
@@ -26,12 +28,115 @@ let zoom;               // istanza d3.zoom
 let width = 1200;
 let height = 800;
 
+let latestUpdateDate = null;
+
 function hideActions() {
     const label = document.getElementById('label-file');
     const file = document.getElementById('fileInput');
     const h1 = document.querySelector('h1');
     [label, file, h1].forEach(el => el && el.classList.add('hidden'));
 }
+
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+function updateQueryString(value) {
+    const url = new URL(window.location);
+    url.searchParams.set('search', value);
+    window.history.pushState({}, '', url);
+}
+
+function findHeaderIndex(headers, name) {
+    const target = (name || '').trim().toLowerCase();
+    return headers.findIndex(h => (h || '').trim().toLowerCase() === target);
+}
+
+function aggregateTeamManagedServices(members, headers, headerName = 'Team Managed Services') {
+    const idx = findHeaderIndex(headers, headerName);
+    if (idx === -1) {
+        return { exists: false, items: [] };
+    }
+    const headerRealName = headers[idx];
+    const set = new Set();
+
+    members.forEach(m => {
+        const raw = m[headerRealName];
+        if (!raw) return;
+        raw
+            .split(/\n|,/)
+            .map(s => s.trim())
+            .filter(Boolean)
+            .forEach(v => set.add(v));
+    });
+
+    return {
+        exists: true,
+        items: [...set].sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
+    };
+}
+
+function openDrawer({ teamName, services }) {
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const titleEl = document.getElementById('drawer-title');
+    const listEl = document.getElementById('drawer-list');
+
+    if (!drawer || !titleEl || !listEl) return;
+
+    titleEl.textContent = `Managed Services — ${teamName}`;
+    listEl.innerHTML = '';
+
+    if (!services.exists) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'Team Managed Service column is not present.';
+        listEl.appendChild(li);
+    } else if (services.items.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'No Service is managed by this team.';
+        listEl.appendChild(li);
+    } else {
+        services.items.forEach(s => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `index.html?search=id%3A"${encodeURIComponent(s)}"`;
+            a.textContent = s;
+            a.target = '_blank';
+            li.appendChild(a);
+            listEl.appendChild(li);
+        });
+        ``
+    }
+
+    drawer.classList.add('open');
+    overlay?.classList.add('visible');
+    document.body.classList.add('drawer-open');
+    drawer.setAttribute('aria-hidden', 'false');
+}
+
+function closeDrawer() {
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    overlay?.classList.remove('visible');
+    document.body.classList.remove('drawer-open');
+    drawer.setAttribute('aria-hidden', 'true');
+}
+
+function initDrawerEvents() {
+    const overlay = document.getElementById('drawer-overlay');
+    const closeBtn = document.getElementById('drawer-close');
+    overlay?.addEventListener('click', closeDrawer);
+    closeBtn?.addEventListener('click', closeDrawer);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+}
+
+window.addEventListener('DOMContentLoaded', initDrawerEvents);
+``
 
 document.getElementById('toggle-cta')?.addEventListener('click', function () {
     const label = document.getElementById('label-file');
@@ -47,9 +152,18 @@ window.addEventListener('load', function () {
             resetVisualization();
             extractData(csvData);
             hideActions();
+            searchParam = getQueryParam('search');
+            if (searchParam) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        searchByQuery(searchParam);
+                    });
+                });
+            }
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 });
+``
 
 function resetVisualization() {
     const svgEl = document.getElementById('canvas');
@@ -251,6 +365,47 @@ function addGuestManagersTo(organization) {
     return result;
 }
 
+function getFormattedDate(isoDate) {
+    const date = new Date(isoDate);
+    return date.toLocaleString('it-IT', {
+        timeZone: 'Europe/Rome',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function getLatestUpdateFromCsv(headers, rows) {
+    if (headers.includes("Last Update")) {
+        const dateIndex = headers.indexOf("Last Update");
+        const dates = rows.slice(1)
+            .map(row => row[dateIndex]?.trim())
+            .filter(Boolean)
+            .map(d => new Date(d))
+            .filter(d => !isNaN(d.getTime()));
+
+        if (dates.length > 0) {
+            const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+            latestUpdateDate = maxDate.toISOString();
+        } else {
+            latestUpdateDate = null;
+        }
+    } else {
+        latestUpdateDate = null;
+    }
+
+    requestAnimationFrame(() => {
+        const el = document.getElementById("latestUpdateDate");
+        if (latestUpdateDate) {
+            const formatted = getFormattedDate(latestUpdateDate);
+            el.textContent = `Last Update: ${formatted}`;
+        }
+    });
+
+}
+
 function extractData(csvText) {
     if (!csvText) { alert('Missing CSV File!'); return; }
     const rows = parseCSV(csvText);
@@ -263,8 +418,10 @@ function extractData(csvText) {
         return obj;
     }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
 
+    getLatestUpdateFromCsv(headers, rows);
+
     const organization = buildOrganization(people);
-    const result = addGuestManagersTo(organization);
+    const organizationWithManagers = addGuestManagersTo(organization);
 
     const drag = d3.drag()
         .on("start", function () {
@@ -288,7 +445,7 @@ function extractData(csvText) {
     const secondLevelBoxPadX = 60;
     const firstLevelBoxPadY = 100;
 
-    const largestFirstLevelSize = Math.max(...Object.entries(result)
+    const largestFirstLevelSize = Math.max(...Object.entries(organizationWithManagers)
         .filter(([streamKey]) => streamKey !== firstLevelNA)
         .map(([, stream]) => Object.entries(stream)
             .filter(([themeKey]) => themeKey !== secondLevelNA)
@@ -297,7 +454,7 @@ function extractData(csvText) {
     ) * inARow;
 
     const largestThirdLevelSize = Math.max(
-        ...Object.entries(result)
+        ...Object.entries(organizationWithManagers)
             .filter(([streamName]) => streamName !== firstLevelNA)
             .flatMap(([, stream]) =>
                 Object.entries(stream)
@@ -319,7 +476,7 @@ function extractData(csvText) {
 
     let streamY = 40;
 
-    Object.entries(result).forEach(([firstLevel, secondLevelItems]) => {
+    Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
         let secondLevelX = 60;
 
@@ -373,6 +530,20 @@ function extractData(csvText) {
                     .attr('text-anchor', 'middle')
                     .attr('class', 'team-title')
                     .text(thirdLevel);
+
+                // Recupera i membri originali (senza guest)
+                const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
+
+                const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
+
+                thirdLevelGroup.select('rect.team-box')
+                    .style('cursor', 'pointer')
+                    .on('click', () => openDrawer({ teamName: thirdLevel, services }));
+
+                thirdLevelGroup.select('text.team-title')
+                    .style('cursor', 'pointer')
+                    .on('click', () => openDrawer({ teamName: thirdLevel, services }));
+
 
                 members.forEach((member, mIdx) => {
                     const col = mIdx % inARow;
@@ -451,11 +622,12 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     reader.readAsText(file, 'UTF-8');
 });
 
-document.getElementById('searchBar')?.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
-
-    const query = e.target.value.trim().toLowerCase();
+function searchByQuery(query) {
     if (!query) return;
+    const searchInput = document.getElementById('searchBar');
+    if (!searchInput.value) {
+        searchInput.value = query;
+    }
 
     const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title'));
     const matches = nodes.filter(n => n.textContent?.toLowerCase().includes(query));
@@ -481,4 +653,12 @@ document.getElementById('searchBar')?.addEventListener('keydown', function (e) {
     if (output) {
         output.textContent = `Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`;
     }
+    updateQueryString(query);
+}
+
+document.getElementById('searchBar')?.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+
+    const query = e.target.value.trim().toLowerCase();
+    searchByQuery(query);
 });

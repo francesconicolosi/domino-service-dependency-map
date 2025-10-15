@@ -14,9 +14,22 @@
   <input type="file" id="fileInput" accept=".csv" class="file-input" />
   Upload a CSV People DB
 </label>
+<span id="latestUpdateDate"></span>
 <input type="text" id="searchBar" placeholder='Find...' />
-
 <div id="output"></div>
 <svg id="canvas"></svg>
+
+<div id="drawer-overlay"></div>
+
+<aside id="drawer" aria-hidden="true" aria-labelledby="drawer-title" role="dialog">
+  <header>
+    <h3 id="drawer-title">Managed Services</h3>
+    <button id="drawer-close" aria-label="Chiudi">×</button>
+  </header>
+  <div class="content">
+    <ul id="drawer-list"></ul>
+  </div>
+</aside>
+
 </body>
 </html>

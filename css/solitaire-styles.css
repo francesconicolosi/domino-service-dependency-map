@@ -153,3 +153,78 @@ svg {
     margin-bottom: 4px;
     text-align: center;
 }
+
+#drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    max-width: 90vw;
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 12px rgba(0,0,0,.15);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+}
+
+#drawer.open {
+    transform: translateX(0);
+}
+
+#drawer header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#drawer #drawer-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#drawer .content {
+    padding: 16px 20px;
+    overflow: auto;
+}
+
+#drawer .content ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+#drawer .content li {
+    margin: 6px 0;
+}
+
+#drawer .content li.empty {
+    list-style: none;
+    color: #666;
+    padding-left: 0;
+}
+
+#drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .28s ease;
+    z-index: 9998;
+}
+
+#drawer-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.drawer-open {
+    overflow: hidden; /* evita scroll sotto al drawer */
+}
