@@ -289,16 +289,21 @@ function showNodeDetails(node) {
     serviceDetails.innerHTML = '';
     const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
 
+
+    function getPeopleDbLink(value) {
+        return `<a href="solitaire-beta.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
+    }
+
     for (const [key, value] of Object.entries(node)) {
-        if (!excludedFields.includes(key) && value !== "") {
+        if (!excludedFields.includes(key) && typeof value === 'string' && value) {
+            const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
             const p = document.createElement('p');
-            if (typeof value === 'string' && value.includes('http')) {
+            if (value.includes('http')) {
                 const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
             } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href=solitaire-beta.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')} target="_blank">${value}</a></i>`;
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getPeopleDbLink(v)).join(", ") : getPeopleDbLink(value)}</i>`;
             } else {
-                const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
                     `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value}</i>`;
             }
