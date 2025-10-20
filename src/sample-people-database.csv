@@ -1,4 +1,4 @@
-User,Role,Team member of,Leading team(s),Status,Company,Location,Room Link,In team since,Name,Gucci email,Photo,Stream,Team Stream,Team Theme,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager
+User,Role,Team member of,Leading team(s),Status,Company,Location,Room Link,In team since,Name,Company email,Photo,Stream,Team Stream,Team Theme,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager
 utente1,UX Designer,Team UX Alpha,,Attivo,Interno,Milano,Sala 1,2023-01-01,Luca Rossi,luca.rossi@azienda.com,,Stream A,Team UX Alpha,Tema UX,Mario Bianchi,Giulia Verdi,Anna Neri,Paolo Blu,Chiara Rosa
 utente2,UX Designer,Team UX Beta,,Attivo,Interno,Milano,Sala 2,2023-01-01,Maria Neri,maria.neri@azienda.com,,Stream A,Team UX Beta,Tema UX,Mario Bianchi,Giulia Verdi,Anna Neri,Paolo Blu,Chiara Rosa
 utente3,Backend Developer,Team Backend,,Attivo,Interno,Roma,Sala 3,2023-01-01,Marco Gialli,marco.gialli@azienda.com,,Stream A,Team Backend,Tema Backend,Luigi Viola,Francesca Marrone,Davide Nero,Elena Verde,Giorgio Arancio

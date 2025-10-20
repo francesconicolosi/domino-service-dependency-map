@@ -25,6 +25,27 @@ function getDecommButtonLabel() {
     return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
 }
 
+
+const serviceInfoEnhancers = [
+
+    function generateJiraLink(node) {
+        if (!node.id) return null;
+
+        const normalizedId = encodeURIComponent(
+            node.id
+                .toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^\w/]/g, '')
+        );
+
+        const jiraUrl = `https://instance.ticketmanager.net/issues/?jql=%28project+%3D+%22Company+Managed+Services+Support%22+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+OR+project+%3D+GDT+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+AND+labels+in+%28bug-from-incident%2C+from_l1_portal%29+AND+issuetype+%3D+Bug%29+AND+%22Theme%5BCheckboxes%5D%22+in+%28App%2C+%22Brand+%26+Content%22%2C+Krypto%2C+Content%2C+Cross%2C+Omni%2C+%22Product+Discovery%22%2C+Purchase%2C+Loyalty%2C+%22IT+4+IT%22%29+AND+cf%5B14139%5D+%3D+%22${normalizedId}%22+ORDER+BY+created+ASC`;
+
+        return {
+            key: "Jira Issues",
+            value: jiraUrl,
+        }}
+];
+
 function centerAndZoomOnNode(node) {
     console.log("zoomming");
     const scale = 1;
@@ -310,6 +331,20 @@ function showNodeDetails(node) {
             serviceDetails.appendChild(p);
         }
     }
+    serviceInfoEnhancers.forEach(fn => {
+        const result = fn(node);
+        if (result && result.key && result.value) {
+            const p = document.createElement('p');
+            const {value, key} = result;
+            if (value.includes('http')) {
+                const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
+            } else {
+                p.innerHTML = `<strong><b>${result.key}:</b></strong> <i>${result.value}</i>`;
+            }
+            serviceDetails.appendChild(p);
+        }
+    });
 }
 
 function toggleSearchButton(searchInput) {

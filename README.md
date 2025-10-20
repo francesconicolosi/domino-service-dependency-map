@@ -10,7 +10,8 @@ I started developing this small application during a train journey and it was co
 - Display an interactive map of service dependencies.
 - Search for specific services.
 - View detailed information about services by clicking on nodes.
-- Zoom and drag the map. 
+- Zoom and drag the map.
+- Enriched fields derived from existing attributes (e.g., automatic Jira filter URLs).
 
 ## Repository Structure
 domino-service-dependency-map/ ├── README.md ├── index.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
@@ -52,6 +53,65 @@ The CSV file should have the following format that are necessary for the depende
    ```
 
 Additionally, you can include other fields (columns) as desired. These fields will be displayed in the Service detail table section at the bottom, after clicking the single node service. 
+
+# Solitaire: Org‑Chart & Team Explorer
+## What it is
+Solitaire is a companion application that renders the organizational chart and team/stream structure. It loads a CSV exported from the People Database on the dedicated Confluence page and provides a fast, filterable view of teams, streams, themes, and the services associated with each team. The People Database export typically includes individual‑level fields such as User, Role, Team link, Assigned team, Status, Company, Location, Room Link, In team since, Name, Company email, Photo, Stream.
+For team‑level metadata like Theme, Team email, and role owners (e.g., Development Manager, Architect, Scrum Master, Product Manager, Delivery Manager), the Confluence Team Database includes those columns. [People Dat...ci Digital] [Team Datab...ci Digital]
+
+Key Capabilities
+
+Load a CSV exported from the People Database (Confluence).
+Search and filter by:
+
+- Team name
+- Stream name
+- Theme
+- Services associated with teams
+
+
+Click a team tile to see associated services and team metadata.
+Navigate between team and stream views quickly.
+
+## Usage (Solitaire)
+
+Open solitaire-beta.html (same bundle hosts both apps).
+Click Upload CSV and select the People Database export (or a pre‑joined Team + People export).
+Use the search bar to filter by team, stream, theme, or service.
+Click a team tile to see services associated to that team (clickable list).
+
+
+## CSV Format (Solitaire)
+
+Each row is a person exported from the People Database (Confluence). Solitaire will group people by Assigned team to build team tiles; you can still filter by Stream, and you may add a Services column to the exported rows (or provide a separate mapping file) to enable service‑level filters. Typical People Database columns include: User, Role, Team link, Assigned team, Status, Company, Location, Room Link, In team since, Name, Company email, Photo, Stream. [People Dat...ci Digital]
+Minimum required columns
+
+Assigned team — Team name used for grouping.
+Stream — Stream label (used for filtering).
+Name — Person’s full name.
+
+Recommended columns
+
+Role, Company email, Team link, Status, Location, In team since — Improve richness of the team tiles and detail popovers. [People Dat...ci Digital]
+Services — Optional; multi‑value list of services this person (or their team) is associated with. If present, Solitaire bubbles these up to the team.
+
+
+``` bash
+User,Role,Team member of,Leading team(s),Status,Company,Location,Room Link,In team since,Name,Company email,Photo,Stream,Team Stream,Team Theme,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager,Last Update,Team Managed Services
+CSVName,Role,Assigned team,Stream,Company email,Team link,Status,Services
+"Designer Name","UX Strategy","Foundation Digital Design","Replatforming Foundations","designer.name@Company.com","https://confluence/.../cb96a6d7-...","ACTIVE","Design System\nDesign Ops""Pinco Pallo","Delivery Manager","Delivery Management","Replatforming Foundations","pincopallo@company.com","https://confluence/.../02c2c794-...","ACTIVE","Platform Engineering\nAtlas""Mario Rossi","Product Manager","Teamcool","Replatforming themes","mario.rossi@company.com","https://confluence/.../d742fbd8-...","ACTIVE","PIM\nCatalog Enrichment"
+```
+
+## How Solitaire’s search works
+
+Team name / Stream / Theme: exact or partial matches across the corresponding columns (Option A) or the aggregated values (Option B).
+Services: matches any service string listed in the Services field. If aligned with Domino’s Service Name, results will be consistent across the two apps.
+
+## Interoperability with Domino
+To enable cross‑navigation between Solitaire and Domino:
+
+Keep Solitaire → Services values identical to Domino → Service Name.
+Use the same delimiter convention (\n inside quoted cells) for multi‑value fields to simplify parsing in both apps.
 
 
 ## Contributions

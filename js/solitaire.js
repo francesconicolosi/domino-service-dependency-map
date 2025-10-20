@@ -434,7 +434,7 @@ function extractData(csvText) {
         });
 
     const inARow = 6;
-    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", "Gucci email"];
+    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", "Company email"];
 
     const nFields = fieldsToShow.length;
     const rowHeight = 11;
@@ -514,6 +514,12 @@ function extractData(csvText) {
                 .text(secondLevel);
 
             Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
+
+                const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
+
+                const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
+
+
                 const thirdLevelGroup = secondLevelGroup.append('g').attr('transform', `translate(${teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50},70)`);
                 thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
@@ -526,12 +532,9 @@ function extractData(csvText) {
                     .attr('x', thirdLevelBoxWidth / 2)
                     .attr('y', 28)
                     .attr('text-anchor', 'middle')
+                    .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
                     .attr('class', 'team-title')
                     .text(thirdLevel);
-
-                const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
-
-                const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
@@ -569,7 +572,7 @@ function extractData(csvText) {
                         .attr('class', 'profile-photo')
                         .attr('src', member.Photo ? 'user-icon.png'
                             : 'user-icon.png')
-                        .attr('alt', 'Foto profilo');
+                        .attr('alt', 'Profile photo');
 
                     group.append('foreignObject')
                         .attr('x', 0)
@@ -644,8 +647,13 @@ function searchByQuery(query) {
         searchInput.value = query;
     }
 
-    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title'));
-    const matches = nodes.filter(n => n.textContent?.toLowerCase().includes(query));
+    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, [data-services]'));
+
+    const matches = nodes.filter(n => {
+        const textMatch = n.textContent?.toLowerCase().includes(query);
+        const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
+        return textMatch || attrMatch;
+    });
 
     const output = document.getElementById('output');
     if (matches.length === 0) {
