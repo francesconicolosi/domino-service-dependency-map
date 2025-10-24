@@ -12,6 +12,7 @@ const thirdLevelNA = `No ${thirdOrgLevel}`;
 
 const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
 const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
+const emailField = "Email"; // this will be used to resolve the photo filename
 
 const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
@@ -563,16 +564,40 @@ function extractData(csvText) {
                         .attr('ry', 14)
                         .attr('fill', member.guestRole ? roleColors[member.guestRole] : 'white');
 
-                    group.append('foreignObject')
-                        .attr('x', (memberWidth - 60) / 2)
-                        .attr('y', 8)
-                        .attr('width', 60)
-                        .attr('height', 60)
-                        .append('xhtml:img')
-                        .attr('class', 'profile-photo')
-                        .attr('src', member.Photo ? 'user-icon.png'
-                            : 'user-icon.png')
-                        .attr('alt', 'Profile photo');
+                    function resolvePhoto(email, fallback = './assets/user-icon.png') {
+                        const paths = getPhotoPath(email);
+                        return new Promise((resolve) => {
+                            const img = new Image();
+                            img.src = paths[0];
+                            img.onload = () => resolve(paths[0]);
+                            img.onerror = () => {
+                                const img2 = new Image();
+                                img2.src = paths[1];
+                                img2.onload = () => resolve(paths[1]);
+                                img2.onerror = () => resolve(fallback);
+                            };
+                        });
+                    }
+
+                    function getPhotoPath(email) {
+                        let baseName = email.split('@')[0];
+                        baseName = baseName.replace('-ext', '');
+                        baseName = baseName.replace('.', '-');
+                        return ['./assets/photos/' + baseName + '.jpg', './assets/photos/' + baseName + '.png'];
+                    }
+
+                    resolvePhoto(member[emailField]).then(photoPath => {
+                        console.log(photoPath);
+                        group.append('foreignObject')
+                            .attr('x', (memberWidth - 60) / 2)
+                            .attr('y', 8)
+                            .attr('width', 60)
+                            .attr('height', 60)
+                            .append('xhtml:img')
+                            .attr('class', 'profile-photo')
+                            .attr('src', photoPath)
+                            .attr('alt', 'Foto profilo');
+                    });
 
                     group.append('foreignObject')
                         .attr('x', 0)
