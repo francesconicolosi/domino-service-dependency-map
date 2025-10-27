@@ -1,7 +1,15 @@
 import * as d3 from 'd3';
 
+import {
+    getQueryParam, setSearchQuery, toggleClearButton,
+    getFormattedDate, parseCSV,
+    clearHighlights as clearHighlightsUtils,
+    highlightGroup as highlightGroupUtils
+} from './utils.js';
+
 let lastSearch = '';
 let currentIndex = 0;
+let logoLayer;
 
 const firstOrgLevel = 'Team Stream';
 const secondOrgLevel = 'Team Theme';
@@ -12,7 +20,7 @@ const thirdLevelNA = `No ${thirdOrgLevel}`;
 
 const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
 const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
-const emailField = "Email"; // this will be used to resolve the photo filename
+const emailField = "Company email"; // this will be used to resolve the photo filename
 
 const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
@@ -36,17 +44,6 @@ function hideActions() {
     const file = document.getElementById('fileInput');
     const h1 = document.querySelector('h1');
     [label, file, h1].forEach(el => el && el.classList.add('hidden'));
-}
-
-function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-}
-
-function updateQueryString(value) {
-    const url = new URL(window.location);
-    url.searchParams.set('search', value);
-    window.history.pushState({}, '', url);
 }
 
 function findHeaderIndex(headers, name) {
@@ -169,7 +166,7 @@ window.addEventListener('load', function () {
 function resetVisualization() {
     const svgEl = document.getElementById('canvas');
     if (!svgEl) {
-        console.error('Elemento #canvas non trovato.');
+        console.error('canvas not found');
         return;
     }
 
@@ -186,6 +183,7 @@ function resetVisualization() {
     viewport = svg.append('g').attr('id', 'viewport');
     backgroundLayer = viewport.append('g').attr('id', 'backgroundLayer');
     cardLayer = viewport.append('g').attr('id', 'cardLayer');
+    logoLayer = viewport.append('g').attr('id', 'logoLayer');
 
     zoom = d3.zoom()
         .scaleExtent([0.1, 8])
@@ -237,51 +235,7 @@ function zoomToElement(element, desiredScale = 1.5, duration = 500) {
     svg.transition().duration(duration).call(zoom.transform, targetTransform);
 
     const group = element.closest('g');
-    if (group) highlightGroup(d3.select(group));
-}
-
-function clearHighlights() {
-    viewport.selectAll('rect')
-        .attr('stroke', null)
-        .attr('stroke-width', null);
-}
-
-function highlightGroup(groupSel) {
-    clearHighlights();
-    const rect = groupSel.select('rect.profile-box').node()
-        ? groupSel.select('rect.profile-box')
-        : groupSel.select('rect');
-    if (rect.node()) {
-        rect.attr('stroke', '#ff9900').attr('stroke-width', 3);
-    }
-}
-
-function parseCSV(text) {
-    const rows = [];
-    let current = [];
-    let inQuotes = false;
-    let value = '';
-    for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        if (char === '"') {
-            if (inQuotes && text[i + 1] === '"') {
-                value += '"'; i++;
-            } else {
-                inQuotes = !inQuotes;
-            }
-        } else if (char === ',' && !inQuotes) {
-            current.push(value); value = '';
-        } else if ((char === '\n' || char === '\r') && !inQuotes) {
-            if (value || current.length > 0) {
-                current.push(value); rows.push(current); current = []; value = '';
-            }
-            if (char === '\r' && text[i + 1] === '\n') i++;
-        } else {
-            value += char;
-        }
-    }
-    if (value || current.length > 0) { current.push(value); rows.push(current); }
-    return rows;
+    if (group) highlightGroupUtils(d3.select(group));
 }
 
 const cleanName = name => name.replace(/[\s\t\r\n]+/g, ' ').trim();
@@ -360,20 +314,17 @@ function addGuestManagersTo(organization) {
                     if (!names.includes(p.Name)) result[firstLevel][secondLevel][thirdLevel].push(p);
                     guestRoles.forEach(role => addGuestManagersByRole(p, role, result[firstLevel][secondLevel][thirdLevel], organization));
                 }
+                result[firstLevel][secondLevel][thirdLevel].sort((a, b) => {
+                    const aIsGuest = guestRoles.includes(a.guestRole);
+                    const bIsGuest = guestRoles.includes(b.guestRole);
+                    if (aIsGuest && !bIsGuest) return 1;
+                    if (!aIsGuest && bIsGuest) return -1;
+                    return 0;
+                });
             }
         }
     }
     return result;
-}
-
-function getFormattedDate(isoDate) {
-    const date = new Date(isoDate);
-    return date.toLocaleString('it-IT', {
-        timeZone: 'Europe/Rome',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
 }
 
 function getLatestUpdateFromCsv(headers, rows) {
@@ -403,6 +354,115 @@ function getLatestUpdateFromCsv(headers, rows) {
         }
     });
 
+}
+
+function getContentBBox() {
+
+    const bg = backgroundLayer?.node()?.getBBox();
+
+    const cards = cardLayer?.node()?.getBBox();
+
+
+
+    if (!bg && !cards) return null;
+
+    const boxes = [bg, cards].filter(Boolean);
+
+
+
+    const x1 = Math.min(...boxes.map(b => b.x));
+
+    const y1 = Math.min(...boxes.map(b => b.y));
+
+    const x2 = Math.max(...boxes.map(b => b.x + b.width));
+
+    const y2 = Math.max(...boxes.map(b => b.y + b.height));
+
+
+
+    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+
+}
+
+
+
+function placeCompanyLogoUnderDiagram(url = './assets/company-logo.svg', maxWidth = 240, textMargin = 40) {
+    if (!viewport || !logoLayer) return;
+
+    const bbox = getContentBBox();
+    if (!bbox) {
+        console.warn('Visual outcome not found');
+        return;
+    }
+
+    logoLayer.selectAll('*').remove();
+
+    const img = new Image();
+    img.onload = () => {
+        const aspect = img.height / img.width || 0.35;
+        const width = maxWidth;
+        const height = Math.round(width * aspect);
+
+        const x = bbox.x + (bbox.width - width) / 2;
+        const y = bbox.y + bbox.height + 80;
+        logoLayer.append('image')
+            .attr('href', url)
+            .attr('x', x)
+            .attr('y', y)
+            .attr('width', width)
+            .attr('height', height)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('pointer-events', 'none');
+
+        logoLayer.append('text')
+            .attr('x', x + width / 2)
+            .attr('y', y + height + textMargin)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '24px')
+            .attr('font-family', 'Arial, sans-serif')
+            .attr('fill', '#333')
+            .text('Digital Service Management');
+
+        const legendX = bbox.x;
+        const legendY = y;
+        const boxSize = 18;
+        const spacing = 10;
+
+        logoLayer.append('text')
+            .attr('x', legendX)
+            .attr('y', legendY - 10)
+            .attr('font-size', '18px')
+            .attr('font-family', 'Arial, sans-serif')
+            .attr('fill', '#333')
+            .text('Legenda:');
+
+        guestRoles.forEach((role, i) => {
+            const rowY = legendY + i * (boxSize + spacing);
+            logoLayer.append('rect')
+                .attr('x', legendX)
+                .attr('y', rowY)
+                .attr('width', boxSize)
+                .attr('height', boxSize)
+                .attr('fill', roleColors[role])
+                .attr('stroke', '#333')
+                .attr('rx', 4)
+                .attr('ry', 4);
+
+            logoLayer.append('text')
+                .attr('x', legendX + boxSize + 10)
+                .attr('y', rowY + boxSize - 4)
+                .attr('font-size', '16px')
+                .attr('font-family', 'Arial, sans-serif')
+                .attr('fill', '#333')
+                .text(role);
+        });
+
+        fitToContent(0.9);
+    };
+    img.onerror = () => {
+        console.warn('Logo not found:', url);
+    };
+    img.src = url;
 }
 
 function extractData(csvText) {
@@ -435,7 +495,7 @@ function extractData(csvText) {
         });
 
     const inARow = 6;
-    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", "Company email"];
+    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", emailField];
 
     const nFields = fieldsToShow.length;
     const rowHeight = 11;
@@ -471,7 +531,7 @@ function extractData(csvText) {
     const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2;
     const firstLevelBoxHeight = secondLevelBoxHeight * 1.2;
 
-    const firstLevelBoxWidth = largestFirstLevelSize * memberWidth * inARow / 4;
+    const firstLevelBoxWidth = largestFirstLevelSize * memberWidth * 1.25;
 
     let streamY = 40;
 
@@ -488,9 +548,9 @@ function extractData(csvText) {
             .attr('ry', 40);
 
         firstLevelGroup.append('text')
-            .attr('x', 200)
-            .attr('y', 50)
-            .attr('text-anchor', 'middle')
+            .attr('x', 50)
+            .attr('y', 60)
+            .attr('text-anchor', 'start')
             .attr('class', 'stream-title')
             .text(firstLevel);
 
@@ -529,13 +589,16 @@ function extractData(csvText) {
                     .attr('rx', 20)
                     .attr('ry', 20);
 
+                const serviceCount = services?.items?.length || 0;
+                const titleText = `${thirdLevel} - ⚙️ (${serviceCount})`;
+
                 thirdLevelGroup.append('text')
                     .attr('x', thirdLevelBoxWidth / 2)
                     .attr('y', 28)
                     .attr('text-anchor', 'middle')
                     .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
                     .attr('class', 'team-title')
-                    .text(thirdLevel);
+                    .text(titleText);
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
@@ -616,12 +679,16 @@ function extractData(csvText) {
                         .append('xhtml:div')
                         .attr('class', 'info');
 
+                    if (member[emailField]) {
+                        const email = member[emailField];
+                        infoDiv.append('div').html(`<a href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}" target="_blank" style="text-decoration:none; color:inherit;">💬</a> <a href="mailto:${encodeURIComponent(email)}" target="_blank" style="text-decoration:none; color:inherit;">✉️</a>`);
+                    }
+
                     Object.entries(member).forEach(([key, value]) => {
                         if (key !== 'Name' && fieldsToShow.includes(key) && value !== undefined) {
                             infoDiv.append('div').html(`<strong>${key}:</strong> ${value}`);
                         }
                     });
-
                     group.call(drag);
                 });
             });
@@ -630,6 +697,10 @@ function extractData(csvText) {
         });
 
         streamY += firstLevelBoxHeight + firstLevelBoxPadY;
+    });
+
+    requestAnimationFrame(() => {
+        placeCompanyLogoUnderDiagram('./assets/company-logo.png', 800, 50);
     });
 
     fitToContent(0.9);
@@ -651,22 +722,14 @@ document.getElementById('clearSearch').addEventListener('click', function () {
     searchParam = '';
     const searchInput = document.getElementById('searchBar');
     searchInput.value = searchParam;
-    toggleSearchButton(searchParam);
-    updateQueryString(searchParam);
+    toggleClearButton('clearSearch', searchParam);
+    setSearchQuery(searchParam);
 });
-
-function toggleSearchButton(searchInput) {
-    if (searchInput) {
-        document.getElementById("clearSearch").classList.remove('hidden');
-    } else {
-        document.getElementById("clearSearch").classList.add('hidden');
-    }
-}
 
 function searchByQuery(query) {
     if (!query) return;
 
-    toggleSearchButton(query);
+    toggleClearButton('clearSearch', query);
     const searchInput = document.getElementById('searchBar');
     if (!searchInput.value) {
         searchInput.value = query;
@@ -683,7 +746,7 @@ function searchByQuery(query) {
     const output = document.getElementById('output');
     if (matches.length === 0) {
         if (output) output.textContent = 'No result found.';
-        clearHighlights();
+        clearHighlightsUtils();
         return;
     }
 
@@ -701,7 +764,7 @@ function searchByQuery(query) {
     if (output) {
         output.textContent = `Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`;
     }
-    updateQueryString(query);
+    setSearchQuery(query);
 }
 
 document.getElementById('searchBar')?.addEventListener('keydown', function (e) {

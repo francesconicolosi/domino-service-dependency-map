@@ -1,5 +1,9 @@
 import * as d3 from 'd3';
 
+import {
+    getQueryParam, setSearchQuery, toggleClearButton, getFormattedDate
+} from './utils.js';
+
 let nodes = [];
 let links = [];
 let hideStoppedServices = false;
@@ -47,7 +51,6 @@ const serviceInfoEnhancers = [
 ];
 
 function centerAndZoomOnNode(node) {
-    console.log("zoomming");
     const scale = 1;
     const x = -node.x * scale + width / 2;
     const y = -node.y * scale + height / 2;
@@ -81,16 +84,6 @@ function resetVisualization() {
     document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
-function getQueryParam(param) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
-}
-
-function updateQueryString(param, value) {
-    const url = new URL(window.location);
-    url.searchParams.set(param, value);
-    window.history.pushState({}, '', url);
-}
 
 function hideActions() {
     document.getElementById('label-file').classList.add('hidden');
@@ -105,6 +98,7 @@ function hideActions() {
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
     resetVisualization();
     const file = event.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = function(e) {
         const csvData = e.target.result;
@@ -158,16 +152,6 @@ document.getElementById('toggle-cta').addEventListener('click', function() {
     ];
     elements.forEach(element => element.classList.toggle('hidden'));
 });
-
-function getFormattedDate(isoDate) {
-    const date = new Date(isoDate);
-    return date.toLocaleString('it-IT', {
-        timeZone: 'Europe/Rome',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-}
 
 function processData(data) {
     const requiredColumns = ['Service Name', 'Description', 'Type', 'Depends on', 'Status', 'Decommission Date'];
@@ -347,14 +331,6 @@ function showNodeDetails(node) {
     });
 }
 
-function toggleSearchButton(searchInput) {
-    if (searchInput) {
-        document.getElementById("clearSearch").classList.remove('hidden');
-    } else {
-        document.getElementById("clearSearch").classList.add('hidden');
-    }
-}
-
 function createMap() {
 
     zoom = d3.zoom()
@@ -480,8 +456,8 @@ function createMap() {
             clickedNode = null;
             searchTerm = event.target.value;
             event.stopImmediatePropagation();
-            toggleSearchButton(searchTerm);
-            updateQueryString('search', searchTerm);
+            toggleClearButton('clearSearch', searchTerm);
+            setSearchQuery(searchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
         }
     });
@@ -491,8 +467,8 @@ function createMap() {
         searchTerm = '';
         const searchInput = document.getElementById('searchInput');
         searchInput.value = searchTerm;
-        toggleSearchButton(searchTerm);
-        updateQueryString('search', searchTerm);
+        toggleClearButton('clearSearch', searchTerm);
+        setSearchQuery(searchTerm);
         updateVisualization(nodeGraph, linkGraph, labels);
     });
 
@@ -510,8 +486,8 @@ function createMap() {
             searchTerm = combinedSearchTerm;
             const searchInput = document.getElementById('searchInput');
             searchInput.value = combinedSearchTerm;
-            toggleSearchButton(combinedSearchTerm);
-            updateQueryString('search', combinedSearchTerm);
+            toggleClearButton('clearSearch', combinedSearchTerm);
+            setSearchQuery(combinedSearchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
