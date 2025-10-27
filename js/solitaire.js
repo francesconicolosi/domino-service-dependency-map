@@ -11,6 +11,10 @@ let lastSearch = '';
 let currentIndex = 0;
 let logoLayer;
 
+const SECOND_LEVEL_LABEL_EXTRA = 120;
+const FIRST_LEVEL_LEFT_PAD   = 80;
+const FIRST_LEVEL_BOTTOM_PAD   = 110;
+
 const firstOrgLevel = 'Team Stream';
 const secondOrgLevel = 'Team Theme';
 const thirdOrgLevel = 'Team member of';
@@ -357,36 +361,22 @@ function getLatestUpdateFromCsv(headers, rows) {
 }
 
 function getContentBBox() {
-
     const bg = backgroundLayer?.node()?.getBBox();
-
     const cards = cardLayer?.node()?.getBBox();
 
-
-
     if (!bg && !cards) return null;
-
     const boxes = [bg, cards].filter(Boolean);
-
-
-
     const x1 = Math.min(...boxes.map(b => b.x));
-
     const y1 = Math.min(...boxes.map(b => b.y));
-
     const x2 = Math.max(...boxes.map(b => b.x + b.width));
-
     const y2 = Math.max(...boxes.map(b => b.y + b.height));
-
-
-
     return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
 
 }
 
 
 
-function placeCompanyLogoUnderDiagram(url = './assets/company-logo.svg', maxWidth = 240, textMargin = 40) {
+function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidth = 240, textMargin = 40) {
     if (!viewport || !logoLayer) return;
 
     const bbox = getContentBBox();
@@ -465,6 +455,73 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.svg', maxWidt
     img.src = url;
 }
 
+
+function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
+    const n = Number(numTeams) || 0;
+    if (n <= 0) {
+        return SECOND_LEVEL_LABEL_EXTRA;
+    }
+    return n * thirdLevelBoxWidth + (n - 1) * thirdLevelBoxPadX + SECOND_LEVEL_LABEL_EXTRA;
+}
+
+function computeStreamBoxWidth(
+    numThemes,
+    teamsPerTheme,
+    thirdLevelBoxWidth,
+    thirdLevelBoxPadX,
+    secondLevelBoxPadX,
+    minWidth = 600
+) {
+    const tCount = Number(numThemes) || 0;
+    if (tCount === 0) return minWidth;
+
+    const themeWidths = teamsPerTheme.map(n =>
+        computeThemeWidth(n, thirdLevelBoxWidth, thirdLevelBoxPadX)
+    );
+
+    const sumThemes = themeWidths.reduce((sum, w) => sum + (Number(w) || 0), 0);
+    const interThemePad = (tCount - 1) * secondLevelBoxPadX;
+
+    const total = sumThemes + interThemePad + FIRST_LEVEL_LEFT_PAD;
+    return Math.max(total, minWidth);
+}
+
+function getMaxFirstLevelWidth(
+    organizationWithManagers,
+    thirdLevelBoxWidth,
+    thirdLevelBoxPadX,
+    secondLevelBoxPadX,
+    minWidth = 600
+) {
+    const widths = Object
+        .entries(organizationWithManagers)
+        .filter(([streamKey]) => streamKey !== firstLevelNA)
+        .map(([, secondLevelItems]) => {
+            const themeEntries = Object.entries(secondLevelItems)
+                .filter(([themeKey]) => themeKey !== secondLevelNA);
+
+            const numThemes = themeEntries.length;
+            const teamsPerTheme = themeEntries.map(([, thirdLevelItems]) =>
+                Object.keys(thirdLevelItems).length
+            );
+
+            return computeStreamBoxWidth(
+                numThemes,
+                teamsPerTheme,
+                thirdLevelBoxWidth,
+                thirdLevelBoxPadX,
+                secondLevelBoxPadX,
+                minWidth
+            );
+        });
+
+    if (!widths.length) return minWidth;
+
+    const maxW = Math.max(...widths);
+
+    return Number.isFinite(maxW) ? maxW : minWidth;
+}
+
 function extractData(csvText) {
     if (!csvText) { alert('Missing CSV File!'); return; }
     const rows = parseCSV(csvText);
@@ -504,14 +561,6 @@ function extractData(csvText) {
     const secondLevelBoxPadX = 60;
     const firstLevelBoxPadY = 100;
 
-    const largestFirstLevelSize = Math.max(...Object.entries(organizationWithManagers)
-        .filter(([streamKey]) => streamKey !== firstLevelNA)
-        .map(([, stream]) => Object.entries(stream)
-            .filter(([themeKey]) => themeKey !== secondLevelNA)
-            .reduce((acc, [, theme]) => acc + Object.keys(theme).length, 0)
-        )
-    ) * inARow;
-
     const largestThirdLevelSize = Math.max(
         ...Object.entries(organizationWithManagers)
             .filter(([streamName]) => streamName !== firstLevelNA)
@@ -529,9 +578,15 @@ function extractData(csvText) {
     const rowCount = Math.ceil(largestThirdLevelSize / inARow);
     const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2;
     const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2;
-    const firstLevelBoxHeight = secondLevelBoxHeight * 1.2;
+    const firstLevelBoxHeight = secondLevelBoxHeight * 1.25;
 
-    const firstLevelBoxWidth = largestFirstLevelSize * memberWidth * 1.25;
+    const firstLevelBoxWidth = getMaxFirstLevelWidth(
+        organizationWithManagers,
+        thirdLevelBoxWidth,
+        thirdLevelBoxPadX,
+        secondLevelBoxPadX,
+        600
+    );
 
     let streamY = 40;
 
@@ -628,7 +683,7 @@ function extractData(csvText) {
                         .attr('fill', member.guestRole ? roleColors[member.guestRole] : 'white');
 
                     function resolvePhoto(email, fallback = './assets/user-icon.png') {
-                        const paths = getPhotoPath(email);
+                        const paths = email ? getPhotoPath(email) : fallback;
                         return new Promise((resolve) => {
                             const img = new Image();
                             img.src = paths[0];
@@ -659,7 +714,7 @@ function extractData(csvText) {
                             .append('xhtml:img')
                             .attr('class', 'profile-photo')
                             .attr('src', photoPath)
-                            .attr('alt', 'Foto profilo');
+                            .attr('alt', 'Profile photi');
                     });
 
                     group.append('foreignObject')
