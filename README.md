@@ -75,7 +75,7 @@ Navigate between team and stream views quickly.
 
 ## Usage (Solitaire)
 
-Open solitaire-beta.html (same bundle hosts both apps).
+Open solitaire.html (same bundle hosts both apps).
 Click Upload CSV and select the People Database export (or a pre‑joined Team + People export).
 Use the search bar to filter by team, stream, theme, or service.
 Click a team tile to see services associated to that team (clickable list).

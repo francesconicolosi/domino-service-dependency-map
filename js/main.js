@@ -296,7 +296,7 @@ function showNodeDetails(node) {
 
 
     function getPeopleDbLink(value) {
-        return `<a href="solitaire-beta.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
+        return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
     }
 
     for (const [key, value] of Object.entries(node)) {

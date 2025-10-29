@@ -29,8 +29,8 @@ module.exports = {
             }
         }),
         new HtmlWebpackPlugin({
-            template: './src/solitaire-beta.html',
-            filename: 'solitaire-beta.html',
+            template: './src/solitaire.html',
+            filename: 'solitaire.html',
             inject: 'body',
             scriptLoading: 'blocking',
             chunks: ['second'],

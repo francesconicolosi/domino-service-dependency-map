@@ -404,14 +404,20 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
             .attr('preserveAspectRatio', 'xMidYMid meet')
             .style('pointer-events', 'none');
 
-        logoLayer.append('text')
-            .attr('x', x + width / 2)
+        logoLayer.append('foreignObject')
+            .attr('x', x)
             .attr('y', y + height + textMargin)
-            .attr('text-anchor', 'middle')
-            .attr('font-size', '24px')
-            .attr('font-family', 'Arial, sans-serif')
-            .attr('fill', '#333')
-            .text('Digital Service Management');
+            .attr('width', width)
+            .attr('height', 100)
+            .append('xhtml:div')
+            .style('font-size', '10px')
+            .style('font-family', 'Arial, sans-serif')
+            .style('text-align', 'center')
+            .style('color', '#333')
+            .html('<p>Author: Francesco Nicolosi</p>' +
+                '<p>Personal Blog: <a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></p>' +
+                '<p>Usage License: MIT</p>');
+
 
         const legendX = bbox.x;
         const legendY = y;
@@ -755,7 +761,7 @@ function extractData(csvText) {
     });
 
     requestAnimationFrame(() => {
-        placeCompanyLogoUnderDiagram('./assets/company-logo.png', 800, 50);
+        placeCompanyLogoUnderDiagram('./assets/company-logo.png', 200, 50);
     });
 
     fitToContent(0.9);

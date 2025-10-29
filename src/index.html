@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-<h1>Domino  <img src="icon.svg" alt="Domino Icon" width="28" height="28" style="vertical-align: middle; margin-right: 8px;"></h1>
+<h1>Domino ⚅</h1>
 <h3>Dependency Mapping Visualization Tool</h3>
 
 <span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
@@ -17,8 +17,8 @@
     Select the CSV
 </label>
 <button id="hideStoppedServices">Hide Decommissioned Services</button>
+<button id="switchApp" onclick="window.location.href='./solitaire.html'">Switch to Solitaire ♤</button>
 <a href="./100_sample_services.csv" download>Sample CSV</a>
-<a href="./solitaire-beta.html">Try Solitaire: Visual People Database (BETA)</a>
 <span id="latestUpdateDate"></span>
 <input type="text" id="searchInput" placeholder='Search for a service ... e.g. fieldName:"value", fieldName:value, value' />
 
@@ -30,6 +30,7 @@
     <div id="serviceDetails"></div>
 </div>
 <footer>
+    <p><img src="./assets/company-logo.png" alt="Nycosoft" width="120"></p>
     <p>Author: Francesco Nicolosi</p>
     <p>Usage License: MIT</p>
     <p>Personal Blog: <a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></p>
