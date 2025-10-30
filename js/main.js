@@ -116,7 +116,7 @@ window.addEventListener('load', function() {
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
-            toggleSearchButton(searchParam);
+            toggleClearButton('clearSearch', searchParam);
             if (searchParam) {
                 searchTerm = searchParam;
                 searchInput.value = searchParam;
