@@ -1,389 +1,341 @@
-Service Name,Description,Type,Depends on,Used by,Status,Decommission Date,APM,Go Live Date,Business Risk,Product Theme,Owner
+Service Name,Description,Type,Depends on,Used by,Status,Decommission Date,Owner,Go Live Date,Business Risk,Product Theme
 QuantumSync,Event bus per sincronizzazione near‑real‑time tra domini,Platform,"CoreStream
-DataHub",ShieldForce
-VisionWare,Active,,Jules Sage,2023-04-12,Medium,Integration,Tatum Knight
+DataHub",ShieldForce,,,,,,
 CyberEngine,Motore regole per valutazioni rischio in tempo reale,Microservice,"LogicLab
-QuantumCore",CareOps
-RiskRadar,Active,,Casey Summers,2024-01-23,High,Data Science,Casey Summers
-CoreForge,Toolkit build e deploy per microservizi,Platform,"CoreStream",DevStream
-SprintHub,Active,,Avery Blaze,2022-09-05,Low,Back End,Avery Blaze
+QuantumCore",CareOps,,,,,,
+CoreForge,Toolkit build e deploy per microservizi,Platform,CoreStream,DevStream,,,,,,
 AlphaLayer,Layer API pubblico per partner esterni,API Gateway,"QuantumSync
-StreamNet",Partner Portal
-SupportSync,Active,,Elliot Dusk,2024-06-18,Medium,Customer Facing Foundations,Elliot Dusk
+StreamNet",Partner Portal,,,,,,
 StreamNode,Ingestione streaming ad alta velocità,Data Pipeline,"DataPulse
-StreamCore",InsightGrid
-QueryQuest,Active,,Jules Sage,2023-11-30,Medium,Back End,Jules Sage
+StreamCore",InsightGrid,,,,,,
 StreamOps,Console operativa per flussi streaming,UI App,"StreamNode
-VisionLab",NOC
-AgileWorks,Active,,Casey Stone,2024-02-14,Medium,Service Management,Casey Stone
+VisionLab",NOC,,,,,,
 QuantumCore,Servizio identità e token per workload interni,Service,"CoreForge
-CoreSync",EdgeOps
-VaultOps,Active,,Avery Blaze,2022-12-01,High,Infra Pillars,Avery Blaze
+CoreSync",EdgeOps,,,,,,
 NovaNode,Registro dispositivi edge e provisioning,Service,"EdgeGrid
-QuantumCore",EdgeTrack
-CloudAxis,Active,,Tatum Knight,2023-08-09,Medium,Mobile First,Tatum Knight
+QuantumCore",EdgeTrack,,,,,,
 NovaLab,Sandbox dati per prototipazione,Platform,"DataHub
-DataLab",Data Science Guild,Active,,Morgan Ash,2024-05-07,Low,Data Science,Morgan Ash
-QuantumNet,Routing interno per servizi east‑west,Service,"CoreStream",InfraGuard
-EdgeOps,Active,,Casey Summers,2022-10-10,Medium,Infra Pillars,Casey Summers
+DataLab",Data Science Guild,Active,,Morgan Ash,2024-05-07,Low,Data Science
+QuantumNet,Routing interno per servizi east‑west,Service,CoreStream,InfraGuard,,,,,,
 ZenithOps,Orchestratore runbook e change automation,Platform,"CoreForge
-LogicHub",AgileWorks
-ServerSphere,Active,,Casey Stone,2023-02-21,Medium,Service Management,Casey Stone
-LogicLab,Laboratorio regole/feature flag centralizzate,Service,"CoreSync",VisionWare
-SupportSync,Active,,Jules Sage,2023-07-03,Low,Back End,Jules Sage
+LogicHub",AgileWorks,,,,,,
+LogicLab,Laboratorio regole/feature flag centralizzate,Service,CoreSync,VisionWare,,,,,,
 VisionForge,Servizio generazione report e dashboard,Service,"DataHub
-VisionGrid",StatSphere
-Business PMO,Active,,Tatum Knight,2023-03-28,Medium,Customer Facing Foundations,Tatum Knight
+VisionGrid",StatSphere,,,,,,
 VisionLab,Motore analytics self‑service,Platform,"DataLab
-VisionForge",PatternFlow
-FutureForge,Active,,Morgan Ash,2024-03-12,Medium,Data Science,Morgan Ash
-DataLab,Workspace dati governato,Platform,"DataHub",AI Nexus
-QueryQuest,Active,,Casey Summers,2023-05-16,Medium,Data Science,Casey Summers
-DataStream,Trasporto batch‑to‑lake affidabile,Data Pipeline,"CoreStream",DataDock
-FixPoint,Active,,Avery Blaze,2022-11-09,Low,Back End,Avery Blaze
+VisionForge",PatternFlow,,,,,,
+DataLab,Workspace dati governato,Platform,DataHub,AI Nexus,,,,,,
+DataStream,Trasporto batch‑to‑lake affidabile,Data Pipeline,CoreStream,DataDock,,,,,,
 GammaLink,Connettori SaaS verso CRM/ERPs,Service,"Integration
-QuantumSync",SupportSync
-ShieldForce,Active,,Elliot Dusk,2024-04-02,Medium,Integration,Elliot Dusk
+QuantumSync",SupportSync,,,,,,
 LogicEngine,Motore decisionale per promozioni,Microservice,"LogicLab
-DataLab",AssistEdge
-FutureStack,Active,,Jules Sage,2023-09-21,Medium,Selling Opportunities,Jules Sage
+DataLab",AssistEdge,,,,,,
 MatrixNet,Registry schemi e contratti dati,Service,"CoreSync
-DataHub",All teams,Active,,Casey Summers,2023-01-05,Low,Infra Pillars,Casey Summers
+DataHub",All teams,Active,,Casey Summers,2023-01-05,Low,Infra Pillars
 GammaHub,Hub eventi business,Platform,"QuantumSync
-StreamNode",New Initiatives
-CareOps,Active,,Tatum Knight,2024-07-01,Medium,Integration,Tatum Knight
-BetaPulse,Telemetria UX e performance client,Service,"VisionLab",VisionWare
-Mobile Apps,Active,,Morgan Ash,2023-12-13,Medium,Customer Facing Foundations,Morgan Ash
+StreamNode",New Initiatives,,,,,,
+BetaPulse,Telemetria UX e performance client,Service,VisionLab,VisionWare,,,,,,
 MatrixLayer,Strato mapping logico per dati condivisi,Service,"MatrixNet
-DataStream",InsightGrid
-DataDock,Active,,Avery Blaze,2023-06-26,Low,Integration,Avery Blaze
+DataStream",InsightGrid,,,,,,
 MatrixEngine,Calcolo KPI finanziari,Microservice,"DataLab
-LogicEngine",ResolveHub
-AgileWorks,Active,,Casey Stone,2024-01-29,High,Payment Systems,Casey Stone
+LogicEngine",ResolveHub,,,,,,
 ZenithCore,IdP esterno OIDC per clienti,Service,"AlphaLayer
-QuantumCore",Customer Portal,Active,,Elliot Dusk,2024-05-20,High,Customer Facing Foundations,Elliot Dusk
+QuantumCore",Customer Portal,Active,,Elliot Dusk,2024-05-20,High,Customer Facing Foundations
 CyberFlow,Pipeline antifrode transazionale,Data Pipeline,"StreamNode
-LogicEngine",Payment UI
-CareOps,Active,,Tatum Knight,2024-02-05,High,Payment Systems,Tatum Knight
+LogicEngine",Payment UI,,,,,,
 AlphaEngine,Calcolo raccomandazioni catalogo,Microservice,"DataLab
-VisionLab",InsightGrid,Active,,Morgan Ash,2023-10-02,Medium,Selling Opportunities,Morgan Ash
-QuantumGrid,Storage key‑value bassa latenza,Platform,"CoreStream",DevStream
-VisionWare,Active,,Avery Blaze,2022-08-22,Low,Back End,Avery Blaze
+VisionLab",InsightGrid,Active,,Morgan Ash,2023-10-02,Medium,Selling Opportunities
+QuantumGrid,Storage key‑value bassa latenza,Platform,CoreStream,DevStream,,,,,,
 SpherePulse,Monitor sintetico journey utente,Service,"VisionLab
-BetaPulse",SupportSync
-PatternFlow,Active,,Casey Summers,2024-06-03,Medium,Customer Facing Foundations,Casey Summers
+BetaPulse",SupportSync,,,,,,
 OmegaLink,Gateway integrazione partner B2B,API Gateway,"AlphaLayer
-Integration",Partners,Active,,Jules Sage,2024-03-18,Medium,Integration,Jules Sage
+Integration",Partners,Active,,Jules Sage,2024-03-18,Medium,Integration
 CloudZone,Distribuzione feature su mobile,Service,"ZenithOps
-LogicLab",Mobile Apps,Active,,Casey Stone,2023-11-06,Medium,Mobile First,Casey Stone
+LogicLab",Mobile Apps,Active,,Casey Stone,2023-11-06,Medium,Mobile First
 BetaSync,Sync preferenze utente cross‑device,Service,"CoreSync
-QuantumSync",Mobile Apps
-Web,Active,,Tatum Knight,2023-09-12,Low,Customer Facing Foundations,Tatum Knight
+QuantumSync",Mobile Apps,,,,,,
 AlphaLink,Short‑link e campaign tracking,Service,"CoreStream
-VisionLab",FutureStack
-AssistEdge,Active,,Avery Blaze,2023-05-10,Low,Upper Funnel - Brand & Content (Business),Avery Blaze
+VisionLab",FutureStack,,,,,,
 EdgeTrack,Telemetry edge device health,Service,"NovaNode
-EdgeGrid",EdgeOps,Active,,Elliot Dusk,2024-07-22,Medium,Service Management,Elliot Dusk
+EdgeGrid",EdgeOps,Active,,Elliot Dusk,2024-07-22,Medium,Service Management
 LogicSync,Synchronizer regole multi‑region,Service,"LogicLab
-QuantumNet",All services,Active,,Morgan Ash,2023-08-30,Low,Infra Pillars,Morgan Ash
+QuantumNet",All services,Active,,Morgan Ash,2023-08-30,Low,Infra Pillars
 NovaPoint,Catalogo API pubblico,UI App,"AlphaLayer
-MatrixNet",Developers,Active,,Casey Summers,2024-04-29,Medium,Customer Facing Foundations,Casey Summers
+MatrixNet",Developers,Active,,Casey Summers,2024-04-29,Medium,Customer Facing Foundations
 BetaOps,Runbook distribuzione DB,Service,"ZenithOps
-CoreForge",DBA
-DataVista,Active,,Tatum Knight,2023-02-14,Low,Infra Pillars,Tatum Knight
+CoreForge",DBA,,,,,,
 FusionLab,Ambiente PoC per nuovi connettori,Platform,"GammaLink
-NovaLab",Integration Guild,Active,,Casey Stone,2024-02-01,Low,Integration,Casey Stone
+NovaLab",Integration Guild,Active,,Casey Stone,2024-02-01,Low,Integration
 CoreZone,Portale self‑service team tecnici,UI App,"ZenithOps
-CoreForge",Engineering,Active,,Jules Sage,2023-07-17,Low,Service Management,Jules Sage
+CoreForge",Engineering,Active,,Jules Sage,2023-07-17,Low,Service Management
 ZenithLayer,Policy engine per security posture,Service,"QuantumCore
-LogicLab",Security
-RiskRadar,Active,,Elliot Dusk,2024-09-09,High,Infra Pillars,Elliot Dusk
+LogicLab",Security,,,,,,
 GammaLab,Laboratorio modelli antifrode,Platform,"CyberFlow
-DataLab",CareOps,Active,,Avery Blaze,2024-05-13,High,Data Science,Avery Blaze
+DataLab",CareOps,Active,,Avery Blaze,2024-05-13,High,Data Science
 BetaEngine,Calcolo punteggi lead,Microservice,"DataLab
-LogicEngine",AssistEdge,Active,,Casey Summers,2023-10-27,Medium,Selling Opportunities,Casey Summers
+LogicEngine",AssistEdge,Active,,Casey Summers,2023-10-27,Medium,Selling Opportunities
 MatrixFlow,ETL standard verso lakehouse,Data Pipeline,"DataStream
-MatrixLayer",DataDock,Active,,Morgan Ash,2022-12-19,Low,Back End,Morgan Ash
+MatrixLayer",DataDock,Active,,Morgan Ash,2022-12-19,Low,Back End
 FusionEngine,Regole orchestrazione ordini,Microservice,"LogicEngine
-MatrixNet",ResolveHub,Active,,Tatum Knight,2023-06-08,High,Payment Systems,Tatum Knight
-StreamNet,Networking per topic Kafka,Service,"CoreStream",StreamNode
-GammaHub,Active,,Avery Blaze,2022-07-01,Low,Infra Pillars,Avery Blaze
+MatrixNet",ResolveHub,Active,,Tatum Knight,2023-06-08,High,Payment Systems
+StreamNet,Networking per topic Kafka,Service,CoreStream,StreamNode,,,,,,
 PulseLink,Webhooks management e retry,Service,"QuantumSync
-StreamNet",SupportSync
-ShieldForce,Active,,Casey Stone,2023-09-04,Medium,Integration,Casey Stone
+StreamNet",SupportSync,,,,,,
 VisionOps,Runbook BI e data refresh,Service,"VisionForge
-MatrixFlow",StatSphere,Active,,Jules Sage,2023-03-01,Low,Service Management,Jules Sage
+MatrixFlow",StatSphere,Active,,Jules Sage,2023-03-01,Low,Service Management
 PulseStream,Streaming capture da frontend,Data Pipeline,"StreamAxis
-BetaPulse",Web
-Mobile,Active,,Elliot Dusk,2023-08-01,Medium,Customer Facing Foundations,Elliot Dusk
+BetaPulse",Web,,,,,,
 CoreAxis,API core anagrafiche e consensi,API,"CoreSync
-ZenithCore",All customer apps,Active,,Avery Blaze,2022-10-03,Medium,Customer Facing Foundations,Avery Blaze
+ZenithCore",All customer apps,Active,,Avery Blaze,2022-10-03,Medium,Customer Facing Foundations
 PulseFlow,Event processing anti‑churn,Microservice,"PulseStream
-LogicEngine",FutureStack,Active,,Casey Summers,2024-01-11,Medium,Selling Opportunities,Casey Summers
+LogicEngine",FutureStack,Active,,Casey Summers,2024-01-11,Medium,Selling Opportunities
 AlphaOps,Tooling operatività API,Service,"AlphaLayer
-ZenithOps",API Platform,Active,,Morgan Ash,2023-05-23,Low,Service Management,Morgan Ash
+ZenithOps",API Platform,Active,,Morgan Ash,2023-05-23,Low,Service Management
 LogicNet,Mesh servizi di regole,Service,"LogicSync
-QuantumNet",LogicLab
-AlphaOps,Active,,Tatum Knight,2024-06-06,Low,Infra Pillars,Tatum Knight
+QuantumNet",LogicLab,,,,,,
 ZenithGrid,Distribuzione configurazioni runtime,Service,"CoreForge
-QuantumNet",EdgeOps
-DevStream,Active,,Casey Stone,2023-12-08,Low,Infra Pillars,Casey Stone
+QuantumNet",EdgeOps,,,,,,
 CorePulse,Health check centralizzato,Service,"ZenithGrid
-BetaPulse",All services,Active,,Jules Sage,2023-04-03,Low,Service Management,Jules Sage
+BetaPulse",All services,Active,,Jules Sage,2023-04-03,Low,Service Management
 StreamPulse,Heartbeat stream e SLA tracking,Service,"PulseStream
-StreamNet",SRE
-NOC,Active,,Elliot Dusk,2024-03-25,Medium,Service Management,Elliot Dusk
+StreamNet",SRE,,,,,,
 LogicWave,Feature toggle progressive delivery,Service,"LogicLab
-ZenithOps",All apps,Active,,Avery Blaze,2022-11-14,Low,Customer Facing Foundations,Avery Blaze
+ZenithOps",All apps,Active,,Avery Blaze,2022-11-14,Low,Customer Facing Foundations
 OmegaPoint,Audit trail centralizzato,Service,"CoreSync
-QuantumNet",RiskRadar
-CareOps,Active,,Casey Summers,2023-06-20,Medium,Infra Pillars,Casey Summers
-CoreSync,Sincronizzazione configurazioni e segreti,Service,"CoreStream",All services,Active,,Morgan Ash,2022-08-29,High,Infra Pillars,Morgan Ash
+QuantumNet",RiskRadar,,,,,,
+CoreSync,Sincronizzazione configurazioni e segreti,Service,CoreStream,All services,Active,,Morgan Ash,2022-08-29,High,Infra Pillars
 QuantumPoint,Key management e HSM,Service,"CoreSync
-ZenithCore",Payment Systems
-CareOps,Active,,Tatum Knight,2023-05-02,High,Infra Pillars,Tatum Knight
+ZenithCore",Payment Systems,,,,,,
 FusionOps,Pannello operazioni ordini,UI App,"FusionEngine
-OmegaPoint",ResolveHub,Active,,Casey Stone,2023-10-10,Medium,Service Management,Casey Stone
+OmegaPoint",ResolveHub,Active,,Casey Stone,2023-10-10,Medium,Service Management
 DeltaFlow,CDC per DB legacy,Data Pipeline,"CoreHub
-DataNet",FixPoint
-SprintHub,Active,,Avery Blaze,2024-02-20,Medium,Integration,Avery Blaze
+DataNet",FixPoint,,,,,,
 SphereHub,Catalogo journey e touchpoint,Service,"VisionLab
-BetaPulse",PatternFlow
-FutureStack,Planned,,Jules Sage,2025-11-01,Medium,Upper Funnel - Brand & Content (Business),Jules Sage
+BetaPulse",PatternFlow,,,,,,
 StreamForge,Toolkit stream enrichment,Library,"StreamNode
-LogicEngine",DevStream,Active,,Elliot Dusk,2023-01-19,Low,Back End,Elliot Dusk
+LogicEngine",DevStream,Active,,Elliot Dusk,2023-01-19,Low,Back End
 CoreWave,API per preferenze di notifica,API,"CoreSync
-PulseLink",SupportSync
-CloudAxis,Active,,Tatum Knight,2023-09-29,Low,Customer Facing Foundations,Tatum Knight
+PulseLink",SupportSync,,,,,,
 FusionPoint,Orchestrazione pagamenti esterni,Service,"QuantumPoint
-OmegaLink",Payment UI,Active,,Morgan Ash,2024-04-05,High,Payment Systems,Morgan Ash
+OmegaLink",Payment UI,Active,,Morgan Ash,2024-04-05,High,Payment Systems
 DeltaAxis,Gestione migrazioni schema,Service,"MatrixNet
-CoreForge",DataVista,Active,,Casey Summers,2023-02-07,Low,Infra Pillars,Casey Summers
+CoreForge",DataVista,Active,,Casey Summers,2023-02-07,Low,Infra Pillars
 EdgePoint,Gateway edge verso core,Service,"NovaNode
-QuantumNet",EdgeOps,Active,,Avery Blaze,2023-07-24,Medium,Back End,Avery Blaze
+QuantumNet",EdgeOps,Active,,Avery Blaze,2023-07-24,Medium,Back End
 SphereNet,Grafo entità cliente,Service,"MatrixLayer
-VisionLab",AI Nexus
-QueryQuest,Active,,Casey Stone,2024-05-30,High,Data Science,Casey Stone
+VisionLab",AI Nexus,,,,,,
 GammaFlow,Pipeline scoring antifrode,Data Pipeline,"CyberFlow
-MatrixFlow",CareOps,Active,,Jules Sage,2024-03-07,High,Payment Systems,Jules Sage
+MatrixFlow",CareOps,Active,,Jules Sage,2024-03-07,High,Payment Systems
 GammaForge,Toolkit feature engineering,Library,"DataLab
-VisionLab",Data Science Guild,Active,,Elliot Dusk,2023-06-01,Medium,Data Science,Elliot Dusk
+VisionLab",Data Science Guild,Active,,Elliot Dusk,2023-06-01,Medium,Data Science
 OmegaHub,Hub compliance e retention,Service,"OmegaPoint
-CoreSync",AgileWorks
-RiskRadar,Active,,Morgan Ash,2024-08-12,Medium,Service Management,Morgan Ash
+CoreSync",AgileWorks,,,,,,
 GammaNode,Servizio orchestrazione modelli,Service,"VisionLab
-GammaForge",AI Nexus,Active,,Tatum Knight,2023-11-22,High,Data Science,Tatum Knight
+GammaForge",AI Nexus,Active,,Tatum Knight,2023-11-22,High,Data Science
 OmegaOps,Runbook incidenti pagamento,Service,"FusionPoint
-QuantumPoint",Payment Ops,Active,,Casey Summers,2024-01-15,High,Service Management,Casey Summers
+QuantumPoint",Payment Ops,Active,,Casey Summers,2024-01-15,High,Service Management
 CyberNode,Scanner sicurezza dipendenze,Service,"CoreForge
-ZenithOps",DevStream
-SupportSync,Active,,Avery Blaze,2023-03-09,Medium,Infra Pillars,Avery Blaze
+ZenithOps",DevStream,,,,,,
 StreamFlow,Stream ETL real‑time verso lake,Data Pipeline,"StreamNode
-MatrixFlow",DataDock,Active,,Casey Stone,2023-12-19,Medium,Back End,Casey Stone
+MatrixFlow",DataDock,Active,,Casey Stone,2023-12-19,Medium,Back End
 DataHub,Data lakehouse centrale,Platform,"CoreStream
-DeltaFlow",All analytics,Active,,Jules Sage,2022-09-26,High,Infra Pillars,Jules Sage
+DeltaFlow",All analytics,Active,,Jules Sage,2022-09-26,High,Infra Pillars
 DataEngine,Query engine interattivo,Service,"DataHub
-MatrixLayer",StatSphere
-VisionForge,Active,,Elliot Dusk,2023-02-28,Medium,Data Science,Elliot Dusk
+MatrixLayer",StatSphere,,,,,,
 CoreHub,Service bus per sistemi legacy,Service,"CoreStream
-Integration",FixPoint
-SprintHub,Active,,Tatum Knight,2022-12-15,Medium,Integration,Tatum Knight
+Integration",FixPoint,,,,,,
 DeltaWave,Replicazione DB multi‑region,Service,"CoreHub
-DeltaFlow",FixPoint,Active,,Morgan Ash,2023-05-05,Medium,Infra Pillars,Morgan Ash
+DeltaFlow",FixPoint,Active,,Morgan Ash,2023-05-05,Medium,Infra Pillars
 FusionWave,Router eventi pagamenti,Service,"FusionPoint
-QuantumSync",Payment UI,Active,,Casey Summers,2024-06-21,High,Payment Systems,Casey Summers
+QuantumSync",Payment UI,Active,,Casey Summers,2024-06-21,High,Payment Systems
 DataNet,Magistrale dati condivisa,Service,"CoreStream
-MatrixNet",All teams,Active,,Avery Blaze,2022-10-21,Low,Infra Pillars,Avery Blaze
+MatrixNet",All teams,Active,,Avery Blaze,2022-10-21,Low,Infra Pillars
 QuantumHub,Registry topic e ACL eventi,Service,"StreamNet
-QuantumNet",All streaming apps,Active,,Casey Stone,2023-08-11,Low,Infra Pillars,Casey Stone
+QuantumNet",All streaming apps,Active,,Casey Stone,2023-08-11,Low,Infra Pillars
 NovaSync,Sincronizzazione asset marketing,Service,"AlphaLink
-VisionLab",FutureStack,Active,,Jules Sage,2024-03-29,Low,Upper Funnel - Brand & Content (Business),Jules Sage
+VisionLab",FutureStack,Active,,Jules Sage,2024-03-29,Low,Payment Systems
 DataPulse,Metriche qualità dati,Service,"DataNet
-MatrixFlow",DataVista,Active,,Elliot Dusk,2023-10-06,Medium,Service Management,Elliot Dusk
+MatrixFlow",DataVista,Active,,Elliot Dusk,2023-10-06,Medium,Service Management
 VisionGrid,Catalogo dashboard e permessi,Service,"VisionForge
-DataEngine",StatSphere,Active,,Tatum Knight,2023-09-18,Low,Customer Facing Foundations,Tatum Knight
+DataEngine",StatSphere,Active,,Tatum Knight,2023-09-18,Low,Customer Facing Foundations
 ZenithLab,Laboratorio resilienza e chaos,Platform,"ZenithOps
-CoreStream",SRE,Active,,Morgan Ash,2024-07-29,Medium,Infra Pillars,Morgan Ash
+CoreStream",SRE,Active,,Morgan Ash,2024-07-29,Medium,Infra Pillars
 GammaWave,Distribuzione modelli ai servizi,Service,"GammaNode
-QuantumNet",AI Nexus,Active,,Casey Summers,2024-02-26,Medium,Back End,Casey Summers
+QuantumNet",AI Nexus,Active,,Casey Summers,2024-02-26,Medium,Back End
 EdgePulse,Metriche edge e alert,Service,"EdgePoint
-BetaPulse",EdgeOps,Active,,Avery Blaze,2024-01-08,Medium,Service Management,Avery Blaze
+BetaPulse",EdgeOps,Active,,Avery Blaze,2024-01-08,Medium,Service Management
 SphereAxis,Routing journey omnicanale,Service,"SphereNet
-QuantumSync",PatternFlow,Active,,Casey Stone,2024-05-06,Medium,Customer Facing Foundations,Casey Stone
+QuantumSync",PatternFlow,Active,,Casey Stone,2024-05-06,Medium,Customer Facing Foundations
 QuantumForge,SDK integrazione eventi,Library,"QuantumHub
-StreamNet",DevStream,Active,,Jules Sage,2023-01-31,Low,Integration,Jules Sage
+StreamNet",DevStream,Active,,Jules Sage,2023-01-31,Low,Integration
 ZenithSync,Scheduling multicloud,Service,"ZenithOps
-CoreStream",InfraGuard,Active,,Elliot Dusk,2023-11-10,Medium,Infra Pillars,Elliot Dusk
+CoreStream",InfraGuard,Active,,Elliot Dusk,2023-11-10,Medium,Infra Pillars
 AlphaNode,Profilazione real‑time audience,Service,"AlphaLink
-BetaPulse",FutureStack,Active,,Tatum Knight,2024-04-22,High,Upper Funnel - Brand & Content (Business),Tatum Knight
+BetaPulse",FutureStack,Active,,Tatum Knight,2024-04-22,High,Payment Systems
 CloudLab,Laboratorio app mobile,Platform,"CloudZone
-BetaSync",CloudAxis,Active,,Morgan Ash,2023-12-05,Low,Mobile First,Morgan Ash
+BetaSync",CloudAxis,Active,,Morgan Ash,2023-12-05,Low,Mobile First
 CyberWave,Threat intel streaming,Service,"CyberEngine
-QuantumSync",RiskRadar,Active,,Casey Summers,2024-06-10,High,Infra Pillars,Casey Summers
+QuantumSync",RiskRadar,Active,,Casey Summers,2024-06-10,High,Infra Pillars
 QuantumEngine,Engine scoring predittivo,Service,"GammaForge
-DataLab",InsightGrid,Active,,Avery Blaze,2024-02-12,High,Data Science,Avery Blaze
+DataLab",InsightGrid,Active,,Avery Blaze,2024-02-12,High,Data Science
 StreamCore,Core librerie streaming,Library,"StreamNet
-CoreForge",DevStream,Active,,Casey Stone,2022-08-18,Low,Back End,Casey Stone
+CoreForge",DevStream,Active,,Casey Stone,2022-08-18,Low,Back End
 GammaGrid,Dataframe distribuito,Library,"DataEngine
-DataHub",AI Nexus,Active,,Jules Sage,2023-06-14,Low,Back End,Jules Sage
+DataHub",AI Nexus,Active,,Jules Sage,2023-06-14,Low,Back End
 ZenithHub,Portale SRE e affidabilità,UI App,"ZenithLab
-CorePulse",SRE,Active,,Elliot Dusk,2024-03-04,Medium,Service Management,Elliot Dusk
+CorePulse",SRE,Active,,Elliot Dusk,2024-03-04,Medium,Service Management
 ZenithNode,Coordinamento job compute,Service,"ZenithHub
-ZenithOps",DataVista,Active,,Tatum Knight,2024-07-08,Medium,Infra Pillars,Tatum Knight
+ZenithOps",DataVista,Active,,Tatum Knight,2024-07-08,Medium,Infra Pillars
 MatrixSync,Sincronizzazione dataset condivisi,Service,"MatrixLayer
-DataNet",DataDock,Active,,Morgan Ash,2023-09-25,Medium,Integration,Morgan Ash
+DataNet",DataDock,Active,,Morgan Ash,2023-09-25,Medium,Integration
 StreamPoint,API publish/subscribe semplificate,API,"QuantumHub
-StreamCore",Web Apps,Active,,Casey Summers,2023-12-01,Low,Customer Facing Foundations,Casey Summers
+StreamCore",Web Apps,Active,,Casey Summers,2023-12-01,Low,Customer Facing Foundations
 MatrixWave,Framework orchestrazione ETL,Library,"MatrixFlow
-DataNet",DataVista,Active,,Avery Blaze,2023-03-06,Low,Back End,Avery Blaze
+DataNet",DataVista,Active,,Avery Blaze,2023-03-06,Low,Back End
 DeltaOps,Operatività migrazioni DB,Service,"DeltaAxis
-DeltaFlow",DBA,Active,,Casey Stone,2024-08-26,Medium,Service Management,Casey Stone
+DeltaFlow",DBA,Active,,Casey Stone,2024-08-26,Medium,Service Management
 PulseLab,Laboratorio metriche prodotto,Platform,"VisionLab
-BetaPulse",Product Managers,Active,,Jules Sage,2024-01-22,Low,Customer Facing Foundations,Jules Sage
+BetaPulse",Product Managers,Active,,Jules Sage,2024-01-22,Low,Customer Facing Foundations
 EdgeSync,Sync configurazioni edge,Service,"ZenithGrid
-NovaNode",EdgeOps,Active,,Elliot Dusk,2024-04-15,Medium,Infra Pillars,Elliot Dusk
+NovaNode",EdgeOps,Active,,Elliot Dusk,2024-04-15,Medium,Infra Pillars
 LogicAxis,Gestione routing regole,Service,"LogicNet
-LogicSync",LogicLab,Active,,Tatum Knight,2023-10-17,Low,Infra Pillars,Tatum Knight
+LogicSync",LogicLab,Active,,Tatum Knight,2023-10-17,Low,Infra Pillars
 LogicLink,SDK client per regole,Library,"LogicAxis
-LogicLab",Web
-Mobile,Active,,Morgan Ash,2023-05-19,Low,Customer Facing Foundations,Morgan Ash
+LogicLab",Web,,,,,,
 EdgeWave,Distribuzione OTA edge,Service,"EdgeSync
-EdgePoint",EdgeOps,Active,,Casey Summers,2024-05-27,Medium,Mobile First,Casey Summers
+EdgePoint",EdgeOps,Active,,Casey Summers,2024-05-27,Medium,Mobile First
 OmegaPulse,Metriche conformità e audit,Service,"OmegaHub
-OmegaPoint",RiskRadar,Active,,Avery Blaze,2024-06-24,Medium,Service Management,Avery Blaze
+OmegaPoint",RiskRadar,Active,,Avery Blaze,2024-06-24,Medium,Service Management
 QuantumTrack,Tracking journey avanzato,Service,"AlphaLink
-BetaPulse",FutureStack,Active,,Casey Stone,2024-07-15,Medium,Upper Funnel - Brand & Content (Business),Casey Stone
+BetaPulse",FutureStack,Active,,Casey Stone,2024-07-15,Medium,Subscription Model Domain
 LogicHub,Hub automazioni policy,Service,"ZenithOps
-LogicNet",InfraGuard,Active,,Jules Sage,2023-02-13,Low,Infra Pillars,Jules Sage
+LogicNet",InfraGuard,Active,,Jules Sage,2023-02-13,Low,Infra Pillars
 OmegaWave,Distribuzione regole compliance,Service,"OmegaHub
-LogicHub",RiskRadar,Active,,Elliot Dusk,2024-03-28,Medium,Service Management,Elliot Dusk
+LogicHub",RiskRadar,Active,,Elliot Dusk,2024-03-28,Medium,Service Management
 EdgeNode,Runtime servizi su device,Service,"NovaNode
-EdgeWave",EdgeOps,Active,,Tatum Knight,2023-11-01,Medium,Mobile First,Tatum Knight
+EdgeWave",EdgeOps,Active,,Tatum Knight,2023-11-01,Medium,Mobile First
 DeltaEngine,Engine di migrazione dati,Service,"DeltaFlow
-MatrixNet",DataDock,Active,,Morgan Ash,2024-01-09,Medium,Integration,Morgan Ash
+MatrixNet",DataDock,Active,,Morgan Ash,2024-01-09,Medium,Integration
 MatrixOps,Operazioni data governance,Service,"MatrixNet
-DataPulse",DataVista,Active,,Casey Summers,2024-02-05,Medium,Service Management,Casey Summers
+DataPulse",DataVista,Active,,Casey Summers,2024-02-05,Medium,Service Management
 EdgeGrid,Rete overlay per branch/edge,Service,"QuantumNet
-ZenithGrid",EdgeOps,Active,,Avery Blaze,2023-08-07,Medium,Infra Pillars,Avery Blaze
+ZenithGrid",EdgeOps,Active,,Avery Blaze,2023-08-07,Medium,Infra Pillars
 QuantumStream,Stream pubblico per partner,Service,"QuantumHub
-AlphaLayer",Partners,Planned,,Casey Stone,2025-12-01,Medium,Integration,Casey Stone
+AlphaLayer",Partners,Planned,,Casey Stone,2025-12-01,Medium,Integration
 EdgeEngine,Engine policy su edge,Service,"EdgeGrid
-LogicLab",EdgeOps,Active,,Jules Sage,2023-12-22,Medium,Infra Pillars,Jules Sage
+LogicLab",EdgeOps,Active,,Jules Sage,2023-12-22,Medium,Infra Pillars
 QuantumLayer,Layer eventi multi‑tenant,Service,"QuantumNet
-StreamNet",All streaming apps,Active,,Elliot Dusk,2024-05-06,Medium,Integration,Elliot Dusk
+StreamNet",All streaming apps,Active,,Elliot Dusk,2024-05-06,Medium,Integration
 NovaLink,SDK per partner esterni,Library,"AlphaLayer
-NovaPoint",Partners,Active,,Tatum Knight,2023-06-29,Low,Customer Facing Foundations,Tatum Knight
+NovaPoint",Partners,Active,,Tatum Knight,2023-06-29,Low,Customer Facing Foundations
 PulseForge,Regole real‑time campagne,Service,"AlphaLink
-BetaPulse",FutureStack,Active,,Morgan Ash,2024-02-19,Medium,Upper Funnel - Brand & Content (Business),Morgan Ash
+BetaPulse",FutureStack,Active,,Morgan Ash,2024-02-19,Medium,Subscription Model Domain
 CyberLayer,Layer security policy,Service,"CyberEngine
-ZenithLayer",All apps,Active,,Casey Summers,2024-07-29,High,Infra Pillars,Casey Summers
+ZenithLayer",All apps,Active,,Casey Summers,2024-07-29,High,Infra Pillars
 EdgeNet,Peering reti edge/core,Service,"EdgeGrid
-QuantumNet",EdgeOps,Active,,Avery Blaze,2023-10-09,Medium,Infra Pillars,Avery Blaze
+QuantumNet",EdgeOps,Active,,Avery Blaze,2023-10-09,Medium,Infra Pillars
 ZenithPoint,Portale status e incidenti,UI App,"CorePulse
-StreamPulse",All users,Active,,Casey Stone,2024-01-31,Low,Service Management,Casey Stone
+StreamPulse",All users,Active,,Casey Stone,2024-01-31,Low,Service Management
 MatrixStream,Specifica standard eventi,Standard,"QuantumHub
-StreamCore",All teams,Active,,Jules Sage,2023-02-24,Low,Integration,Jules Sage
+StreamCore",All teams,Active,,Jules Sage,2023-02-24,Low,Integration
 ZenithStream,Stream eventi resiliente,Service,"QuantumLayer
-StreamNet",All streaming apps,Active,,Elliot Dusk,2024-04-08,Medium,Back End,Elliot Dusk
+StreamNet",All streaming apps,Active,,Elliot Dusk,2024-04-08,Medium,Back End
 AlphaGrid,Distribuzione workload AI,Service,"ZenithOps
-QuantumCore",AI Nexus,Active,,Tatum Knight,2024-06-17,Medium,Infra Pillars,Tatum Knight
+QuantumCore",AI Nexus,Active,,Tatum Knight,2024-06-17,Medium,Infra Pillars
 CloudTrack,Tracking crash e ANR mobile,Service,"CloudZone
-BetaPulse",Mobile Apps,Active,,Morgan Ash,2023-11-27,Medium,Mobile First,Morgan Ash
+BetaPulse",Mobile Apps,Active,,Morgan Ash,2023-11-27,Medium,Mobile First
 StreamLab,Laboratorio A/B streaming,Platform,"StreamCore
-BetaPulse",InsightGrid,Active,,Casey Summers,2024-03-11,Low,Customer Facing Foundations,Casey Summers
+BetaPulse",InsightGrid,Active,,Casey Summers,2024-03-11,Low,Customer Facing Foundations
 GammaTrack,Tracking frodi avanzato,Service,"CyberFlow
-GammaWave",CareOps,Active,,Avery Blaze,2024-08-05,High,Payment Systems,Avery Blaze
+GammaWave",CareOps,Active,,Avery Blaze,2024-08-05,High,Payment Systems
 FusionPulse,Metriche funnel pagamento,Service,"FusionPoint
-DataEngine",Payment UI,Active,,Casey Stone,2024-06-13,High,Payment Systems,Casey Stone
+DataEngine",Payment UI,Active,,Casey Stone,2024-06-13,High,Payment Systems
 CoreFlow,Workflow engine per ticketing,Service,"ZenithOps
-OmegaPoint",AgileWorks,Active,,Jules Sage,2023-05-08,Medium,Service Management,Jules Sage
+OmegaPoint",AgileWorks,Active,,Jules Sage,2023-05-08,Medium,Service Management
 AlphaAxis,Gestione scope API,Service,"AlphaLayer
-LogicNet",API Platform,Active,,Elliot Dusk,2023-07-20,Low,Service Management,Elliot Dusk
+LogicNet",API Platform,Active,,Elliot Dusk,2023-07-20,Low,Service Management
 PulseWave,Event detector anomalie,Service,"PulseStream
-BetaPulse",NOC
-SRE,Active,,Tatum Knight,2024-01-02,Medium,Service Management,Tatum Knight
+BetaPulse",NOC,,,,,,
 AlphaNet,Registry client app,Service,"AlphaLayer
-CoreSync",Customer Apps,Active,,Morgan Ash,2023-09-01,Low,Customer Facing Foundations,Morgan Ash
+CoreSync",Customer Apps,Active,,Morgan Ash,2023-09-01,Low,Customer Facing Foundations
 StreamHub,UI gestione topic e ACL,UI App,"QuantumHub
-QuantumLayer",SRE
-DevStream,Active,,Casey Summers,2024-05-02,Low,Service Management,Casey Summers
+QuantumLayer",SRE,,,,,,
 CyberLab,Lab sicurezza e red‑team,Platform,"CyberEngine
-OmegaHub",Security,Active,,Avery Blaze,2024-09-16,High,Infra Pillars,Avery Blaze
+OmegaHub",Security,Active,,Avery Blaze,2024-09-16,High,Infra Pillars
 OmegaEngine,Engine policy conformità,Service,"OmegaHub
-LogicHub",RiskRadar,Active,,Casey Stone,2024-07-05,High,Service Management,Casey Stone
+LogicHub",RiskRadar,Active,,Casey Stone,2024-07-05,High,Service Management
 StreamGrid,Sharding stream per region,Service,"ZenithSync
-StreamNet",Stream apps,Active,,Jules Sage,2023-08-25,Medium,Back End,Jules Sage
+StreamNet",Stream apps,Active,,Jules Sage,2023-08-25,Medium,Back End
 NovaAxis,Criteri accesso app partner,Service,"AlphaLayer
-ZenithCore",Partners,Active,,Elliot Dusk,2024-02-06,Medium,Customer Facing Foundations,Elliot Dusk
+ZenithCore",Partners,Active,,Elliot Dusk,2024-02-06,Medium,Customer Facing Foundations
 QuantumPulse,Metriche eventi business,Service,"QuantumHub
-MatrixNet",Business PMO,Active,,Tatum Knight,2024-03-15,Low,Service Management,Tatum Knight
+MatrixNet",Business PMO,Active,,Tatum Knight,2024-03-15,Low,Service Management
 StreamAxis,API streaming lato client,Library,"StreamCore
-StreamNet",Web
-Mobile,Active,,Morgan Ash,2023-10-30,Low,Customer Facing Foundations,Morgan Ash
+StreamNet",Web,,,,,,
 LogicForge,SDK authoring regole,Library,"LogicLab
-LogicHub",Logic owners,Active,,Casey Summers,2024-04-19,Low,Customer Facing Foundations,Casey Summers
+LogicHub",Logic owners,Active,,Casey Summers,2024-04-19,Low,Customer Facing Foundations
 MatrixPulse,Metriche qualità modelli,Service,"GammaHub
-VisionLab",AI Nexus,Active,,Avery Blaze,2024-05-20,Medium,Data Science,Avery Blaze
+VisionLab",AI Nexus,Active,,Avery Blaze,2024-05-20,Medium,Data Science
 CloudCore,Core servizi mobile,Service,"CloudZone
-AlphaNet",Mobile Apps,Active,,Casey Stone,2023-06-26,Medium,Mobile First,Casey Stone
+AlphaNet",Mobile Apps,Active,,Casey Stone,2023-06-26,Medium,Mobile First
 DeltaLink,Bridge DB‑to‑stream,Service,"DeltaFlow
-StreamNode",FixPoint,Active,,Jules Sage,2023-12-07,Low,Integration,Jules Sage
+StreamNode",FixPoint,Active,,Jules Sage,2023-12-07,Low,Integration
 GammaNet,Rete modelli tra region,Service,"GammaWave
-QuantumNet",AI Nexus,Active,,Elliot Dusk,2024-07-18,Medium,Back End,Elliot Dusk
+QuantumNet",AI Nexus,Active,,Elliot Dusk,2024-07-18,Medium,Back End
 MatrixZone,Domini dati ufficiali,Governance,"MatrixNet
-DataPulse",DataVista,Active,,Tatum Knight,2023-04-27,Low,Service Management,Tatum Knight
+DataPulse",DataVista,Active,,Tatum Knight,2023-04-27,Low,Service Management
 VisionCore,API componenti dashboard,Library,"VisionGrid
-DataEngine",PatternFlow,Active,,Morgan Ash,2023-09-14,Low,Customer Facing Foundations,Morgan Ash
+DataEngine",PatternFlow,Active,,Morgan Ash,2023-09-14,Low,Customer Facing Foundations
 VisionPulse,Metriche consumo dashboard,Service,"VisionGrid
-VisionOps",StatSphere,Active,,Casey Summers,2024-06-28,Low,Service Management,Casey Summers
+VisionOps",StatSphere,Active,,Casey Summers,2024-06-28,Low,Service Management
 MatrixTrack,Tracciamento lineage dati,Service,"MatrixZone
-MatrixFlow",DataVista,Active,,Avery Blaze,2024-02-27,Medium,Service Management,Avery Blaze
+MatrixFlow",DataVista,Active,,Avery Blaze,2024-02-27,Medium,Service Management
 VisionLink,Embed analytics in app,Service,"VisionForge
-AlphaLayer",Business Apps,Active,,Casey Stone,2024-03-22,Low,Customer Facing Foundations,Casey Stone
+AlphaLayer",Business Apps,Active,,Casey Stone,2024-03-22,Low,Customer Facing Foundations
 CloudFlow,Sync dati mobile‑core,Service,"CloudCore
-CoreSync",CloudAxis,Active,,Jules Sage,2023-08-02,Medium,Mobile First,Jules Sage
+CoreSync",CloudAxis,Active,,Jules Sage,2023-08-02,Medium,Mobile First
 FusionAxis,Routing verso PSP,Service,"FusionPoint
-OmegaLink",Payment UI,Active,,Elliot Dusk,2024-04-26,High,Payment Systems,Elliot Dusk
+OmegaLink",Payment UI,Active,,Elliot Dusk,2024-04-26,High,Payment Systems
 FusionSync,Sync stato transazioni,Service,"FusionPoint
-DataNet",Payment Ops,Active,,Tatum Knight,2024-08-09,High,Payment Systems,Tatum Knight
+DataNet",Payment Ops,Active,,Tatum Knight,2024-08-09,High,Payment Systems
 GammaSync,Sync modelli e pesi,Service,"GammaWave
-GammaGrid",AI Nexus,Active,,Morgan Ash,2024-07-11,Medium,Back End,Morgan Ash
+GammaGrid",AI Nexus,Active,,Morgan Ash,2024-07-11,Medium,Back End
 MatrixAxis,Controlli accesso dataset,Service,"MatrixNet
-ZenithLayer",DataVista,Active,,Casey Summers,2024-05-23,High,Infra Pillars,Casey Summers
+ZenithLayer",DataVista,Active,,Casey Summers,2024-05-23,High,Infra Pillars
 AlphaCore,Core per client SDK,Library,"AlphaLayer
-CoreSync",Developers,Active,,Avery Blaze,2023-03-03,Low,Customer Facing Foundations,Avery Blaze
+CoreSync",Developers,Active,,Avery Blaze,2023-03-03,Low,Customer Facing Foundations
 ZenithFlow,Playbook incident management,Service,"ZenithHub
-CorePulse",SRE,Active,,Casey Stone,2024-05-17,Medium,Service Management,Casey Stone
+CorePulse",SRE,Active,,Casey Stone,2024-05-17,Medium,Service Management
 CyberNet,Network isolamento build,Service,"CyberLayer
-CoreForge",DevStream,Active,,Jules Sage,2024-01-26,Medium,Infra Pillars,Jules Sage
+CoreForge",DevStream,Active,,Jules Sage,2024-01-26,Medium,Infra Pillars
 CyberZone,Policy device developer,Service,"CyberLayer
-NovaNode",Developers,Active,,Elliot Dusk,2024-08-30,Medium,Infra Pillars,Elliot Dusk
+NovaNode",Developers,Active,,Elliot Dusk,2024-08-30,Medium,Infra Pillars
 OmegaTrack,Tracciamento audit pagamenti,Service,"OmegaPoint
-FusionSync",Payment Ops,Active,,Tatum Knight,2024-06-12,High,Payment Systems,Tatum Knight
+FusionSync",Payment Ops,Active,,Tatum Knight,2024-06-12,High,Payment Systems
 SpherePoint,Portale journey marketing,UI App,"SphereNet
-VisionLink",FutureStack,Planned,,Morgan Ash,2025-11-01,Medium,Upper Funnel - Brand & Content (Business),Morgan Ash
+VisionLink",FutureStack,Planned,,Morgan Ash,2025-11-01,Medium,New Markets
 OmegaForge,SDK compliance,Library,"OmegaHub
-OmegaEngine",Developers,Active,,Casey Summers,2024-03-08,Medium,Service Management,Casey Summers
+OmegaEngine",Developers,Active,,Casey Summers,2024-03-08,Medium,Service Management
 NovaOps,Operatività partner portal,UI App,"NovaPoint
-NovaLink",Partner Ops,Active,,Avery Blaze,2024-02-09,Low,Service Management,Avery Blaze
+NovaLink",Partner Ops,Active,,Avery Blaze,2024-02-09,Low,Service Management
 VisionZone,Zona sicura report esterni,Service,"VisionLink
-ZenithCore",External BI,Active,,Casey Stone,2024-07-01,Medium,Customer Facing Foundations,Casey Stone
-CoreStream,Core messaging aziendale,Platform,,All platforms,Active,,Jules Sage,2022-06-13,High,Infra Pillars,Jules Sage
+ZenithCore",External BI,Active,,Casey Stone,2024-07-01,Medium,Customer Facing Foundations
+CoreStream,Core messaging aziendale,Platform,,All platforms,Active,,Jules Sage,2022-06-13,High,Infra Pillars
 CorePoint,API audit e logging,Service,"OmegaPoint
-CoreStream",All apps,Active,,Elliot Dusk,2022-12-12,Medium,Infra Pillars,Elliot Dusk
+CoreStream",All apps,Active,,Elliot Dusk,2022-12-12,Medium,Infra Pillars
 CloudPoint,Endpoint push notifiche,Service,"CloudCore
-CoreWave",Mobile Apps,Active,,Tatum Knight,2023-11-02,Medium,Mobile First,Tatum Knight
+CoreWave",Mobile Apps,Active,,Tatum Knight,2023-11-02,Medium,Mobile First
 DataNode,Registry dataset edge,Service,"EdgeNode
-MatrixNet",EdgeOps,Active,,Morgan Ash,2024-03-05,Medium,Mobile First,Morgan Ash
+MatrixNet",EdgeOps,Active,,Morgan Ash,2024-03-05,Medium,Mobile First
 SphereEngine,Motore journey real‑time,Service,"SphereAxis
-QuantumSync",PatternFlow,Active,,Casey Summers,2024-09-02,Medium,Customer Facing Foundations,Casey Summers
+QuantumSync",PatternFlow,Active,,Casey Summers,2024-09-02,Medium,Customer Facing Foundations
 DataFlow,Orchestrazione job dati,Service,"MatrixFlow
-DataNet",DataVista,Active,,Avery Blaze,2023-10-16,Medium,Back End,Avery Blaze
+DataNet",DataVista,Active,,Avery Blaze,2023-10-16,Medium,Back End
 OmegaLayer,Layer regole audit,Service,"OmegaPoint
-LogicHub",RiskRadar,Active,,Casey Stone,2024-06-06,Medium,Service Management,Casey Stone
+LogicHub",RiskRadar,Active,,Casey Stone,2024-06-06,Medium,Service Management
 DataSync,Sincronizzazione tabelle chiave,Service,"DataNet
-MatrixSync",FixPoint,Active,,Jules Sage,2023-05-29,Low,Integration,Jules Sage
+MatrixSync",FixPoint,Active,,Jules Sage,2023-05-29,Low,Integration
 FusionHub,Hub backend pagamenti,Service,"FusionPoint
-QuantumPoint",Payment UI,Active,,Elliot Dusk,2024-03-14,High,Payment Systems,Elliot Dusk
+QuantumPoint",Payment UI,Active,,Elliot Dusk,2024-03-14,High,Payment Systems
 OmegaSync,Sync regole e retention,Service,"OmegaHub
-OmegaLayer",RiskRadar,Deprecated,2026-03-31,Tatum Knight,2022-09-01,High,Service Management,Tatum Knight
+OmegaLayer",RiskRadar,Deprecated,2026-03-31,Tatum Knight,2022-09-01,High,Service Management
