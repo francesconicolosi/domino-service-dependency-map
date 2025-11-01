@@ -47,7 +47,7 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 {from: 'css', to: 'css'},
-                {from: 'src/100_sample_services.csv', to: '100_sample_services.csv'},
+                {from: 'src/sample_services.csv', to: 'sample_services.csv'},
                 {from: 'src/sample-people-database.csv', to: 'sample-people-database.csv'},
                 { from: 'assets', to: 'assets' },
             ],

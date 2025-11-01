@@ -89,7 +89,7 @@ function hideActions() {
     document.getElementById('label-file').classList.add('hidden');
     document.getElementById('hideStoppedServices').classList.add('hidden');
     document.getElementById('csvFileInput').classList.add('hidden');
-    document.querySelector('a[href="./100_sample_services.csv"]').classList.add('hidden');
+    document.querySelector('a[href="./sample_services.csv"]').classList.add('hidden');
     document.querySelector('h1').classList.add('hidden');
     document.querySelector('h3').classList.add('hidden');
     document.querySelector('footer').classList.add('hidden');
@@ -113,7 +113,7 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
 window.addEventListener('load', function() {
     let searchParam = null;
     const searchInput = document.getElementById('searchInput');
-    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/100_sample_services.csv')
+    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
             toggleClearButton('clearSearch', searchParam);
@@ -145,7 +145,7 @@ document.getElementById('toggle-cta').addEventListener('click', function() {
     const elements = [
         document.getElementById('label-file'),
         document.getElementById('hideStoppedServices'),
-        document.querySelector('a[href="./100_sample_services.csv"]'),
+        document.querySelector('a[href="./sample_services.csv"]'),
         document.querySelector('h1'),
         document.querySelector('h3'),
         document.querySelector('footer')
@@ -510,6 +510,6 @@ function createLegend(colorScale) {
         const color = colorScale(type);
         const legendItem = legend.append('div').attr('class', 'legend-item');
         legendItem.append('div').attr('class', 'legend-color').style('background-color', color);
-        legendItem.append('span').text(type);
+        legendItem.append('span').text(type ? type : "N/A");
     });
 }
