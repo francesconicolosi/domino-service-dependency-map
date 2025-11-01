@@ -57,8 +57,8 @@ export function clearHighlights(viewport) {
     viewport.selectAll('rect').attr('stroke', null).attr('stroke-width', null);
 }
 
-export function highlightGroup(viewport, groupSel) {
-    clearHighlights(viewport);
+export function highlightGroup(groupSel) {
+    clearHighlights(groupSel);
     const rect = groupSel.select('rect.profile-box').node()
         ? groupSel.select('rect.profile-box')
         : groupSel.select('rect');

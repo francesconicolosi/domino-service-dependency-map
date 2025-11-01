@@ -293,7 +293,6 @@ const addGuestManagersByRole = (person, guestRole, thirdLevel, organization) => 
     guestNames.forEach(name => {
         const manager = findPersonByName(name, organization);
         if (!manager) {
-            console.log(`Manager "${name}" is null`);
             return;
         }
         const alreadyPresent = thirdLevel.some(member => cleanName(member.Name) === cleanName(name));
@@ -453,7 +452,11 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
                 .text(role);
         });
 
-        fitToContent(0.9);
+        let notZoommingToShowSearchResults = !getQueryParam("search");
+        if (notZoommingToShowSearchResults) {
+            fitToContent(0.9);
+        }
+
     };
     img.onerror = () => {
         console.warn('Logo not found:', url);
@@ -720,7 +723,7 @@ function extractData(csvText) {
                             .append('xhtml:img')
                             .attr('class', 'profile-photo')
                             .attr('src', photoPath)
-                            .attr('alt', 'Profile photi');
+                            .attr('alt', 'Profile photo');
                     });
 
                     group.append('foreignObject')
