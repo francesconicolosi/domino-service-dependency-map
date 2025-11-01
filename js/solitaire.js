@@ -810,7 +810,7 @@ function searchByQuery(query) {
     const output = document.getElementById('output');
     if (matches.length === 0) {
         if (output) output.textContent = 'No result found.';
-        clearHighlightsUtils();
+        //clearHighlightsUtils();
         return;
     }
 
