@@ -1,8 +1,6 @@
 import * as d3 from 'd3';
 
-import {
-    getQueryParam, setSearchQuery, toggleClearButton, getFormattedDate
-} from './utils.js';
+import {getFormattedDate, getQueryParam, setSearchQuery, toggleClearButton} from './utils.js';
 
 let nodes = [];
 let links = [];
@@ -299,13 +297,17 @@ function showNodeDetails(node) {
         return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
     }
 
+    function getLink(value) {
+        const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
+        return `<a href="${value}" target="_blank">${displayValue}</a>`;
+    }
+
     for (const [key, value] of Object.entries(node)) {
         if (!excludedFields.includes(key) && typeof value === 'string' && value) {
             const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
             const p = document.createElement('p');
             if (value.includes('http')) {
-                const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
+                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getLink(v)).join(", ") : getLink(value)}</i>`;
             } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getPeopleDbLink(v)).join(", ") : getPeopleDbLink(value)}</i>`;
             } else {
