@@ -298,15 +298,24 @@ function showNodeDetails(node) {
     }
 
     function getLink(value) {
-        const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
-        return `<a href="${value}" target="_blank">${displayValue}</a>`;
+        let cleanValue = value.replace(/^https?:\/\//, '');
+        cleanValue = cleanValue.split(/[?#]/)[0];
+        const segments = cleanValue.split('/').filter(Boolean);
+        const segment = segments.length > 0
+            ? segments[segments.length - 1] || segments[segments.length - 2] || ''
+            : '';
+        const fixedLength = 55;
+        const formattedValue = segment.length > fixedLength
+            ? '...' + segment.slice(-fixedLength)
+            : segment;
+        return `<a href="${value}" target="_blank">${formattedValue}</a>`;
     }
 
     for (const [key, value] of Object.entries(node)) {
         if (!excludedFields.includes(key) && typeof value === 'string' && value) {
             const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
             const p = document.createElement('p');
-            if (value.includes('http')) {
+            if (value.startsWith('http') && !value.includes(' ')) {
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getLink(v)).join(", ") : getLink(value)}</i>`;
             } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
                 p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getPeopleDbLink(v)).join(", ") : getPeopleDbLink(value)}</i>`;
