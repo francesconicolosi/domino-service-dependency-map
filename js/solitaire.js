@@ -79,28 +79,48 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
     };
 }
 
-function openDrawer({ teamName, services }) {
+function openDrawer({ name, description, services }) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
     const listEl = document.getElementById('drawer-list');
+    const descEl = document.getElementById('drawer-description');
 
-    if (!drawer || !titleEl || !listEl) return;
+    if (!drawer || !titleEl || !listEl || !descEl) return;
 
-    titleEl.textContent = `Managed Services — ${teamName}`;
+    titleEl.textContent = `${name}`;
+
+
+    descEl.innerHTML = '';
+
+    if (description) {
+        const lines = description.split('\n');
+        lines.forEach((line, index) => {
+            const parts = line.split(/\s+/);
+            parts.forEach(part => {
+                if (part.startsWith('http')) {
+                    const cleanUrl = part.replace(/[.,;:]+$/, '');
+                    const a = document.createElement('a');
+                    a.href = cleanUrl;
+                    a.textContent = "🔗External Link ";
+                    a.target = '_blank';
+                    a.style.color = '#0078d4';
+                    a.style.textDecoration = 'underline';
+                    descEl.appendChild(a);
+                } else {
+                    descEl.appendChild(document.createTextNode(part + ' '));
+                }
+            });
+
+            if (index < lines.length - 1) {
+                descEl.appendChild(document.createElement('br'));
+            }
+        });
+    }
+
+
     listEl.innerHTML = '';
-
-    if (!services.exists) {
-        const li = document.createElement('li');
-        li.className = 'empty';
-        li.textContent = 'Team Managed Service column is not present.';
-        listEl.appendChild(li);
-    } else if (services.items.length === 0) {
-        const li = document.createElement('li');
-        li.className = 'empty';
-        li.textContent = 'No Service is managed by this team.';
-        listEl.appendChild(li);
-    } else {
+    if (services && services.items && services.items.length !== 0) {
         services.items.forEach(s => {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -110,7 +130,6 @@ function openDrawer({ teamName, services }) {
             li.appendChild(a);
             listEl.appendChild(li);
         });
-        ``
     }
 
     drawer.classList.add('open');
@@ -601,6 +620,12 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
+
+        const firstLevelDescriptionIndex = findHeaderIndex(headers, `${firstOrgLevel} Description`);
+        const firstLevelDescription = firstLevelDescriptionIndex !== -1
+            ? (people.find(p => (p[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(firstLevel))?.[headers[firstLevelDescriptionIndex]] || '')
+            : '';
+
         let secondLevelX = 60;
 
         const firstLevelGroup = backgroundLayer.append('g').attr('transform', `translate(40,${streamY})`);
@@ -616,10 +641,31 @@ function extractData(csvText) {
             .attr('y', 60)
             .attr('text-anchor', 'start')
             .attr('class', 'stream-title')
-            .text(firstLevel);
+            .text(`${firstLevel} ${firstLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
+
+        if (firstLevelDescription !== "") {
+            firstLevelGroup.select('rect.stream-box')
+                .style('cursor', 'pointer')
+                .on('click', () => openDrawer({
+                    name: firstLevel,
+                    description: firstLevelDescription
+                }));
+
+            firstLevelGroup.select('text.stream-title')
+                .style('cursor', 'pointer')
+                .on('click', () => openDrawer({
+                    name: firstLevel,
+                    description: firstLevelDescription
+                }));
+        }
 
         Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems]) => {
             if (secondLevel.includes(secondLevelNA)) return;
+
+            const secondLevelDescriptionIndex = findHeaderIndex(headers, `${secondOrgLevel} Description`);
+            const secondLevelDescription = secondLevelDescriptionIndex !== -1
+                ? (people.find(p => (p[secondOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(secondLevel))?.[headers[secondLevelDescriptionIndex]] || "")
+                : "";
 
             const secondLevelGroup = firstLevelGroup.append('g').attr('transform', `translate(${secondLevelX},100)`);
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + 120;
@@ -636,7 +682,23 @@ function extractData(csvText) {
                 .attr('y', 35)
                 .attr('text-anchor', 'middle')
                 .attr('class', 'theme-title')
-                .text(secondLevel);
+                .text(`${secondLevel} ${secondLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
+
+            if (secondLevelDescription !== "") {
+                secondLevelGroup.select('rect.theme-box')
+                    .style('cursor', 'pointer')
+                    .on('click', () => openDrawer({
+                        name: secondLevel,
+                        description: secondLevelDescription
+                    }));
+
+                secondLevelGroup.select('text.theme-title')
+                    .style('cursor', 'pointer')
+                    .on('click', () => openDrawer({
+                        name: secondLevel,
+                        description: secondLevelDescription
+                    }));
+            }
 
             Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
 
@@ -666,11 +728,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ teamName: thirdLevel, services }));
+                    .on('click', () => openDrawer({ name: thirdLevel, services }));
 
                 thirdLevelGroup.select('text.team-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ teamName: thirdLevel, services }));
+                    .on('click', () => openDrawer({ name: thirdLevel, services }));
 
 
                 members.forEach((member, mIdx) => {
