@@ -25,10 +25,16 @@
 <div id="map"></div>
 <div class="tooltip" id="tooltip" style="opacity: 0;"></div>
 <div class="legend" id="legend"></div>
-<div id="serviceInfo">
-    <h2>Service Information</h2>
-    <div id="serviceDetails"></div>
+<div id="overlay" class="overlay"></div>
+
+<div id="drawer" class="drawer">
+    <div class="drawer-header">
+        <h2>Service Information</h2>
+        <button id="closeDrawer">✖</button>
+    </div>
+    <div id="drawerContent" class="drawer-content"></div>
 </div>
+
 <footer>
     <p><img src="./assets/company-logo.png" alt="Nycosoft" width="120"></p>
     <p>Author: Francesco Nicolosi</p>

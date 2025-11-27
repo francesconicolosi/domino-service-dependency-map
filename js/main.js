@@ -90,7 +90,14 @@ function hideActions() {
     document.querySelector('a[href="./sample_services.csv"]').classList.add('hidden');
     document.querySelector('h1').classList.add('hidden');
     document.querySelector('h3').classList.add('hidden');
-    document.querySelector('footer').classList.add('hidden');
+}
+
+document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+document.getElementById('overlay').addEventListener('click', closeDrawer);
+
+function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
 }
 
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
@@ -286,60 +293,96 @@ function zoomed({transform}) {
 }
 
 
+function getPeopleDbLink(value) {
+    return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
+}
+
+
+function getLink(value) {
+    let cleanValue = value.replace(/^https?:\/\//, '');
+    cleanValue = cleanValue.split(/[?#]/)[0];
+    const segments = cleanValue.split('/').filter(Boolean);
+    const segment = segments.length > 0
+        ? segments[segments.length - 1] || segments[segments.length - 2] || ''
+        : '';
+    const fixedLength = 55;
+    const formattedValue = segment.length > fixedLength
+        ? '...' + segment.slice(-fixedLength)
+        : segment;
+    return `<a href="${value}" target="_blank">${formattedValue}</a>`;
+}
+
 function showNodeDetails(node) {
-    document.getElementById('serviceInfo').style.display = 'block';
-    const serviceDetails = document.getElementById('serviceDetails');
-    serviceDetails.innerHTML = '';
-    const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color'];
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    const drawerContent = document.getElementById('drawerContent');
 
+    const drawerHeaderTitle = drawer.querySelector('.drawer-header h2');
+    drawerHeaderTitle.textContent = node['Service Name'] || 'Service Information';
 
-    function getPeopleDbLink(value) {
-        return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
-    }
+    drawerContent.innerHTML = '';
 
-    function getLink(value) {
-        let cleanValue = value.replace(/^https?:\/\//, '');
-        cleanValue = cleanValue.split(/[?#]/)[0];
-        const segments = cleanValue.split('/').filter(Boolean);
-        const segment = segments.length > 0
-            ? segments[segments.length - 1] || segments[segments.length - 2] || ''
-            : '';
-        const fixedLength = 55;
-        const formattedValue = segment.length > fixedLength
-            ? '...' + segment.slice(-fixedLength)
-            : segment;
-        return `<a href="${value}" target="_blank">${formattedValue}</a>`;
-    }
+    const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name'];
+    const table = document.createElement('table');
 
     for (const [key, value] of Object.entries(node)) {
         if (!excludedFields.includes(key) && typeof value === 'string' && value) {
+            const row = document.createElement('tr');
+            const tdKey = document.createElement('td');
+            const tdValue = document.createElement('td');
+
             const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
-            const p = document.createElement('p');
             if (value.startsWith('http') && !value.includes(' ')) {
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getLink(v)).join(", ") : getLink(value)}</i>`;
+                tdValue.innerHTML = `<i>
+                    ${separator !== ""
+                    ? `<ul>${value.split(separator).map(v => `<li>${getLink(v)}</li>`).join("")}</ul>`
+                    : getLink(value)
+                }</i>`;
             } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${separator !== "" ? value.split(separator).map(v => getPeopleDbLink(v)).join(", ") : getPeopleDbLink(value)}</i>`;
+                tdValue.innerHTML = `
+                  <i>
+                    ${separator !== ""
+                    ? `<ul>${value.split(separator).map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
+                    : getPeopleDbLink(value)
+                }</i>`;
+
             } else {
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
+                tdValue.innerHTML = `<i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
                     `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value}</i>`;
             }
-            serviceDetails.appendChild(p);
+
+            tdKey.textContent = key;
+
+            row.appendChild(tdKey);
+            row.appendChild(tdValue);
+            table.appendChild(row);
         }
     }
+
     serviceInfoEnhancers.forEach(fn => {
         const result = fn(node);
         if (result && result.key && result.value) {
-            const p = document.createElement('p');
-            const {value, key} = result;
-            if (value.includes('http')) {
-                const displayValue = value.length > 20 ? value.substring(0, 40) + '...' : value;
-                p.innerHTML = `<strong><b>${key}:</b></strong> <i><a href="${value}" target="_blank">${displayValue}</a></i>`;
+            const row = document.createElement('tr');
+            const tdKey = document.createElement('td');
+            const tdValue = document.createElement('td');
+
+            tdKey.textContent = result.key;
+            if (result.value.startsWith('http') && !result.value.includes(' ')) {
+                tdValue.innerHTML = `<a href="${result.value}" target="_blank">${getLink(result.value)}</a>`;
             } else {
-                p.innerHTML = `<strong><b>${result.key}:</b></strong> <i>${result.value}</i>`;
+                tdValue.innerHTML = `${result.value}`;
             }
-            serviceDetails.appendChild(p);
+
+            row.appendChild(tdKey);
+            row.appendChild(tdValue);
+            table.appendChild(row);
         }
     });
+
+    drawerContent.appendChild(table);
+
+    drawer.classList.add('open');
+    overlay.classList.add('open');
 }
 
 function createMap() {
