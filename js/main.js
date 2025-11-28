@@ -345,13 +345,10 @@ function showNodeDetails(node) {
                     ? `<ul>${value.split(separator).map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
                     : getPeopleDbLink(value)
                 }</i>`;
+
             } else {
-                tdValue.innerHTML = `
-                  <i>
-                    ${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator)
-                    ? `<ul>${value.split(separator).map(v => `${v} <li><a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#">⌞ ⌝</a></li>`)}</ul>`
-                    : `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value
-                }</i>`;
+                tdValue.innerHTML = `<i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
+                    `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value}</i>`;
             }
 
             tdKey.textContent = key;
