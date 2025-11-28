@@ -331,7 +331,7 @@ function showNodeDetails(node) {
             const tdKey = document.createElement('td');
             const tdValue = document.createElement('td');
 
-            const separator = value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
+            const separator = value.includes("\n,") ? "\n," : value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
             if (value.startsWith('http') && !value.includes(' ')) {
                 tdValue.innerHTML = `<i>
                     ${separator !== ""
