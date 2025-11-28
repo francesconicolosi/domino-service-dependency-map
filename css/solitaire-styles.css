@@ -1,3 +1,9 @@
+@media (max-width: 768px) {
+    .drawer {
+        width: 100%; /* Occupa tutta la larghezza */
+    }
+}
+
 input[type="text"] {
     width: 100%;
     padding: 10px;
