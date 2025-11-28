@@ -40,6 +40,12 @@
     border-bottom: 1px solid #ccc;
 }
 
+@media (max-width: 768px) {
+    .drawer {
+        width: 100%;
+    }
+}
+
 .drawer-content table {
     table-layout: fixed;
     width: 100%;
