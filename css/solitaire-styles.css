@@ -154,6 +154,7 @@ svg {
     text-align: center;
 }
 
+
 #drawer {
     position: fixed;
     top: 0;
@@ -169,6 +170,15 @@ svg {
     display: flex;
     flex-direction: column;
 }
+
+@media (max-width: 768px) {
+    #drawer {
+        width: 100vw !important;
+        max-width: none !important;
+        height: 100vh !important;
+    }
+}
+
 
 #drawer.open {
     transform: translateX(0);
@@ -208,12 +218,6 @@ svg {
     list-style: none;
     color: #666;
     padding-left: 0;
-}
-
-@media (max-width: 768px) {
-    .drawer {
-        width: 100%;
-    }
 }
 
 #drawer-overlay {
