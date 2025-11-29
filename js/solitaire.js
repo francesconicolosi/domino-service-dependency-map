@@ -79,6 +79,96 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
     };
 }
 
+function openSideDrawer() {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
+
+    drawer.classList.add('open');
+    overlay?.classList.add('visible');
+    document.body.classList.add('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'false');
+
+    const lastUpdateEl = document.getElementById('side-last-update');
+    if (lastUpdateEl) {
+        if (latestUpdateDate instanceof Date) {
+            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdateDate.toISOString())}`;
+        } else {
+            lastUpdateEl.textContent = '';
+        }
+    }
+
+    document.getElementById('act-upload')?.focus();
+}
+
+function closeSideDrawer() {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    overlay?.classList.remove('visible');
+    document.body.classList.remove('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'true');
+}
+
+function initSideDrawerEvents() {
+    const overlay = document.getElementById('side-overlay');
+    const closeBtn = document.getElementById('side-close');
+
+    overlay?.addEventListener('click', closeSideDrawer);
+    closeBtn?.addEventListener('click', closeSideDrawer);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSideDrawer();
+    });
+
+    const toggleCta = document.getElementById('toggle-cta');
+    toggleCta?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSideDrawer();
+    });
+
+    document.getElementById('act-upload')?.addEventListener('click', () => {
+        document.getElementById('fileInput')?.click();
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-clear')?.addEventListener('click', () => {
+        searchParam = '';
+        const searchInput = document.getElementById('drawer-search-input');
+        searchInput.value = searchParam;
+        setSearchQuery(searchParam);
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-fit')?.addEventListener('click', () => {
+        fitToContent(0.9);
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-report')?.addEventListener('click', () => {
+        const subject = encodeURIComponent('Request for People Database Update');
+        const body = encodeURIComponent(
+            `Hello Team,
+
+I would like to report the need for an update to the People Database: 
+[insert the change here]
+
+Thank you.`
+        );
+
+        const mailtoLink = `mailto:${peopleDBUpdateRecipients}?subject=${subject}&body=${body}`;
+        window.location.href = mailtoLink;
+        closeSideDrawer();
+    });
+
+    document.getElementById('drawer-search-go')?.addEventListener('click', () => {
+        const q = document.getElementById('drawer-search-input')?.value?.trim().toLowerCase();
+        if (q) searchByQuery(q);
+        closeSideDrawer();
+    });
+}
+
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
 function openDrawer({ name, description, services }) {
@@ -167,7 +257,6 @@ window.addEventListener('load', function () {
         .then(csvData => {
             resetVisualization();
             extractData(csvData);
-            hideActions();
             searchParam = getQueryParam('search');
             if (searchParam) {
                 requestAnimationFrame(() => {

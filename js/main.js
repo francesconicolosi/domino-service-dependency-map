@@ -1,10 +1,13 @@
 import * as d3 from 'd3';
 
-import {getQueryParam, setSearchQuery, toggleClearButton, initSideDrawerEvents} from './utils.js';
+import {
+    getQueryParam, setSearchQuery, toggleClearButton, getFormattedDate
+} from './utils.js';
+
 
 let nodes = [];
 let links = [];
-let hideStoppedServices = false;
+let hideStoppedServices = true;
 let searchTerm = "";
 let activeServiceNodes;
 let activeServiceNodeIds;
@@ -21,6 +24,7 @@ let hasLoaded = false;
 let latestUpdate = null;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
+
 const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
 
 const serviceInfoEnhancers = [
@@ -35,13 +39,16 @@ const serviceInfoEnhancers = [
                 .replace(/[^\w/]/g, '')
         );
 
-        const jiraUrl = `https://instance.ticketmanager.net/issues/?jql=%28project+%3D+%22Company+Managed+Services+Support%22+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+OR+project+%3D+GDT+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+AND+labels+in+%28bug-from-incident%2C+from_l1_portal%29+AND+issuetype+%3D+Bug%29+AND+%22Theme%5BCheckboxes%5D%22+in+%28App%2C+%22Brand+%26+Content%22%2C+Krypto%2C+Content%2C+Cross%2C+Omni%2C+%22Product+Discovery%22%2C+Purchase%2C+Loyalty%2C+%22IT+4+IT%22%29+AND+cf%5B14139%5D+%3D+%22${normalizedId}%22+ORDER+BY+created+ASC`;
+
+        const jiraUrl = `https://guccidigital.atlassian.net/issues/?jql=%28project+%3D+%22Gucci+Managed+Services+Support%22+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+OR+project+%3D+GDT+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+AND+labels+in+%28bug-from-incident%2C+from_l1_portal%29+AND+issuetype+%3D+Bug%29+AND+%22Theme%5BCheckboxes%5D%22+in+%28App%2C+%22Brand+%26+Content%22%2C+Krypto%2C+Content%2C+Cross%2C+Omni%2C+%22Product+Discovery%22%2C+Purchase%2C+Loyalty%2C+%22IT+4+IT%22%29+AND+cf%5B14139%5D+%3D+%22${normalizedId}%22+ORDER+BY+created+ASC`;
 
         return {
             key: "Jira Issues",
             value: jiraUrl,
-        }}
+        }
+    }
 ];
+
 
 function centerAndZoomOnNode(node) {
     const scale = 1;
@@ -50,9 +57,9 @@ function centerAndZoomOnNode(node) {
 
 
     const transform = zoomIdentity
-        .translate(x,y)
+        .translate(x, y)
         .scale(scale)
-        .translate(-0,-0);
+        .translate(-0, -0);
 
     svg.transition().duration(750).call(
         zoom.transform,
@@ -70,27 +77,49 @@ function resetVisualization() {
     linkGraph = null;
     nodeGraph = null;
     labels = [];
-    hideStoppedServices = false;
+    hideStoppedServices = true;
     searchTerm = "";
     activeServiceNodes = [];
     activeServiceNodeIds = [];
-    document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
-window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
+function openSideDrawer() {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
 
-document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-document.getElementById('overlay').addEventListener('click', closeDrawer);
+    drawer.classList.add('open');
+    overlay?.classList.add('visible');
+    document.body.classList.add('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'false');
 
-function closeDrawer() {
-    document.getElementById('drawer').classList.remove('open');
-    document.getElementById('overlay').classList.remove('open');
+    const lastUpdateEl = document.getElementById('side-last-update');
+    if (lastUpdateEl) {
+        if (latestUpdate instanceof Date) {
+            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdate.toISOString())}`;
+        } else {
+            lastUpdateEl.textContent = '';
+        }
+    }
+
+    document.getElementById('act-upload')?.focus();
+}
+
+function closeSideDrawer() {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    overlay?.classList.remove('visible');
+    document.body.classList.remove('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'true');
 }
 
 function fitGraphToViewport(paddingRatio = 0.90) {
     if (!svg || !g) return;
     const bbox = g.node()?.getBBox();
     if (!bbox || !isFinite(bbox.width) || !isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) {
+        // reset zoom se bbox non valido
         svg.call(zoom.transform, d3.zoomIdentity);
         return;
     }
@@ -105,27 +134,114 @@ function fitGraphToViewport(paddingRatio = 0.90) {
     svg.transition().duration(400).call(zoom.transform, t);
 }
 
-document.getElementById('csvFileInput').addEventListener('change', function(event) {
+function initSideDrawerEvents() {
+    const overlay = document.getElementById('side-overlay');
+    const closeBtn = document.getElementById('side-close');
+
+    overlay?.addEventListener('click', closeSideDrawer);
+    closeBtn?.addEventListener('click', closeSideDrawer);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSideDrawer();
+    });
+
+    const toggleCta = document.getElementById('toggle-cta');
+    toggleCta?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSideDrawer();
+    });
+
+    document.getElementById('act-upload')?.addEventListener('click', () => {
+        document.getElementById('csvFileInput')?.click();
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-clear')?.addEventListener('click', () => {
+        clickedNode = null;
+        searchTerm = '';
+        const searchInput = document.getElementById('drawer-search-input');
+        if (searchInput) searchInput.value = '';
+        setSearchQuery('');
+        updateVisualization(nodeGraph, linkGraph, labels);
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-hide')?.addEventListener('click', () => {
+        clickedNode = null;
+        hideStoppedServices = !hideStoppedServices;
+        updateVisualization(nodeGraph, linkGraph, labels);
+        closeSideDrawer();
+    });
+
+    document.getElementById('act-fit')?.addEventListener('click', () => {
+        fitGraphToViewport(0.9);
+        closeSideDrawer();
+    });
+
+    document.getElementById('drawer-search-go')?.addEventListener('click', () => {
+        const q = document.getElementById('drawer-search-input')?.value?.trim();
+        if (q !== undefined) {
+            clickedNode = null;
+            searchTerm = q;
+            const searchInput = document.getElementById('drawer-search-input');
+            if (searchInput) searchInput.value = q;
+            setSearchQuery(q);
+            updateVisualization(nodeGraph, linkGraph, labels);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        closeSideDrawer();
+    });
+
+    document.getElementById('drawer-search-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const q = e.target.value?.trim();
+            if (q) {
+                clickedNode = null;
+                searchTerm = q;
+                const searchInput = document.getElementById('drawer-search-input');
+                if (searchInput) searchInput.value = q;
+                setSearchQuery(q);
+                updateVisualization(nodeGraph, linkGraph, labels);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            e.preventDefault();
+            closeSideDrawer();
+        }
+    });
+}
+
+window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
+
+document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+document.getElementById('overlay').addEventListener('click', closeDrawer);
+
+function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+}
+
+
+document.getElementById('csvFileInput').addEventListener('change', function (event) {
     resetVisualization();
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const csvData = e.target.result;
         const data = d3.csvParse(csvData);
         processData(data);
+        hideActions();
         updateVisualization(nodeGraph, linkGraph, labels);
     };
     reader.readAsText(file);
 });
 
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     let searchParam = null;
     const searchInput = document.getElementById('searchInput');
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
-            toggleClearButton('clearSearch', searchParam);
             if (searchParam) {
                 searchTerm = searchParam;
                 searchInput.value = searchParam;
@@ -158,7 +274,6 @@ function processData(data) {
         return;
     }
 
-
     if (data.columns.includes('Last Update')) {
         const validDates = data
             .map(d => new Date(d['Last Update']))
@@ -171,7 +286,7 @@ function processData(data) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = data.map(d => {
-        const node = { id: d['Service Name'], color: colorScale(d['Type']) };
+        const node = {id: d['Service Name'], color: colorScale(d['Type'])};
         for (const key in d) {
             node[key] = d[key];
         }
@@ -179,7 +294,7 @@ function processData(data) {
     });
     const nodeIds = new Set(nodes.map(d => d.id));
     links = data.flatMap(d => [
-        ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? { source: d['Service Name'], target: dep } : null)
+        ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? {source: d['Service Name'], target: dep} : null)
     ]).filter(link => link !== null);
 
     activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date']));
@@ -212,6 +327,7 @@ function isSearchResultWithKeyValue(node) {
     );
 }
 
+
 function isSearchResultValueOnly(d) {
     if (searchTerm === "" || searchTerm.includes(":")) return false;
 
@@ -222,6 +338,7 @@ function isSearchResultValueOnly(d) {
         terms.some(term => value.toLowerCase().includes(term))
     );
 }
+
 
 function updateVisualization(node, link, labels) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
@@ -249,14 +366,14 @@ function updateVisualization(node, link, labels) {
     });
 
     let nodeToZoom;
-    node.each(d => {
 
+    node.each(d => {
         if (isSearchResultWithKeyValue(d)) {
             nodeToZoom = d;
             relatedNodes.add(d.id);
         }
+
         if (isSearchResultValueOnly(d)) {
-            //nodeToZoom = d; (this is disabled because we dont want to zoom in case theres a more vague search
             relatedNodes.add(d.id);
         }
     });
@@ -274,7 +391,6 @@ function updateVisualization(node, link, labels) {
 function zoomed({transform}) {
     g.attr("transform", transform);
 }
-
 
 function getPeopleDbLink(value) {
     return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target = "_blank" >${value}</a>`;
@@ -368,6 +484,7 @@ function showNodeDetails(node) {
     overlay.classList.add('open');
 }
 
+
 function createMap() {
 
     zoom = d3.zoom()
@@ -424,7 +541,7 @@ function createMap() {
                 .style('top', (event.pageY - 28) + 'px');
         })
         .on('mouseout', mouseout)
-        .on('click', function(event, d) {
+        .on('click', function (event, d) {
             clickedNode = d;
             showNodeDetails(d);
         });
@@ -486,23 +603,21 @@ function createMap() {
         tooltip.transition().duration(500).style('opacity', 0);
     }
 
-
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (e.target.classList.contains('search-trigger')) {
             clickedNode = null;
             e.preventDefault();
             const key = decodeURIComponent(e.target.getAttribute('data-key'));
             const isAccurateSearch = key === "Depends on" || key === "Used by" || key === "id";
-            const mappedKey = isAccurateSearch ? "id": key;
+            const mappedKey = isAccurateSearch ? "id" : key;
             const value = isAccurateSearch ? `"${decodeURIComponent(e.target.getAttribute('data-value'))}"` : `${decodeURIComponent(e.target.getAttribute('data-value'))}`;
             const combinedSearchTerm = `${mappedKey}:${value}`;
             searchTerm = combinedSearchTerm;
             const searchInput = document.getElementById('drawer-search-input');
             searchInput.value = combinedSearchTerm;
-            toggleClearButton('clearSearch', combinedSearchTerm);
             setSearchQuery(combinedSearchTerm);
             updateVisualization(nodeGraph, linkGraph, labels);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
     });
 }
@@ -514,6 +629,6 @@ function createLegend(colorScale) {
         const color = colorScale(type);
         const legendItem = legend.append('div').attr('class', 'legend-item');
         legendItem.append('div').attr('class', 'legend-color').style('background-color', color);
-        legendItem.append('span').text(type ? type : "N/A");
+        legendItem.append('span').text(type);
     });
 }
