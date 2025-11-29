@@ -221,6 +221,7 @@ svg {
     font-weight: bold;
     font-family: Arial, sans-serif;
     fill: #222;
+    text-transform: uppercase;
 }
 
 .theme-title {
