@@ -88,16 +88,18 @@ function initSideDrawerEvents() {
     });
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
+        const output = document.getElementById('output');
+        output.textContent = '';
         searchParam = '';
         const searchInput = document.getElementById('drawer-search-input');
         searchInput.value = searchParam;
         setSearchQuery(searchParam);
-        closeSideDrawer();
+        //closeSideDrawer();
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
         fitToContent(0.9);
-        closeSideDrawer();
+        //closeSideDrawer();
     });
 
     document.getElementById('act-report')?.addEventListener('click', () => {
@@ -903,14 +905,14 @@ function searchByQuery(query) {
     const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, [data-services]'));
 
     const matches = nodes.filter(n => {
-        const textMatch = n.textContent?.toLowerCase().includes(query);
+        const textMatch = n.textContent? n.textContent.toLowerCase().includes(query) || truncateString(n.textContent).toLowerCase().includes(query) : false;
         const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
         return textMatch || attrMatch;
     });
 
     const output = document.getElementById('output');
     if (matches.length === 0) {
-        if (output) output.textContent = 'No result found.';
+        if (output) output.textContent = `No result found for ${query}.`;
         //clearHighlightsUtils();
         return;
     }

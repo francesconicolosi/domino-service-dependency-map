@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, closeSideDrawer, openSideDrawer, initCommonActions
+    getQueryParam, setSearchQuery, closeSideDrawer, initCommonActions
 } from './utils.js';
 
 
