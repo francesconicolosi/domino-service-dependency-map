@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 
 import {
     getQueryParam, setSearchQuery, parseCSV,
-    highlightGroup as highlightGroupUtils
+    highlightGroup as highlightGroupUtils, closeSideDrawer, openSideDrawer, initCommonActions
 } from './utils.js';
 
 let lastSearch = '';
@@ -79,54 +79,8 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
     };
 }
 
-function openSideDrawer() {
-    const drawer = document.getElementById('side-drawer');
-    const overlay = document.getElementById('side-overlay');
-    if (!drawer) return;
-
-    drawer.classList.add('open');
-    overlay?.classList.add('visible');
-    document.body.classList.add('side-drawer-open');
-    drawer.setAttribute('aria-hidden', 'false');
-
-    const lastUpdateEl = document.getElementById('side-last-update');
-    if (lastUpdateEl) {
-        if (latestUpdateDate instanceof Date) {
-            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdateDate.toISOString())}`;
-        } else {
-            lastUpdateEl.textContent = '';
-        }
-    }
-
-    document.getElementById('act-upload')?.focus();
-}
-
-function closeSideDrawer() {
-    const drawer = document.getElementById('side-drawer');
-    const overlay = document.getElementById('side-overlay');
-    if (!drawer) return;
-    drawer.classList.remove('open');
-    overlay?.classList.remove('visible');
-    document.body.classList.remove('side-drawer-open');
-    drawer.setAttribute('aria-hidden', 'true');
-}
-
 function initSideDrawerEvents() {
-    const overlay = document.getElementById('side-overlay');
-    const closeBtn = document.getElementById('side-close');
-
-    overlay?.addEventListener('click', closeSideDrawer);
-    closeBtn?.addEventListener('click', closeSideDrawer);
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeSideDrawer();
-    });
-
-    const toggleCta = document.getElementById('toggle-cta');
-    toggleCta?.addEventListener('click', (e) => {
-        e.preventDefault();
-        openSideDrawer();
-    });
+    initCommonActions(latestUpdateDate);
 
     document.getElementById('act-upload')?.addEventListener('click', () => {
         document.getElementById('fileInput')?.click();

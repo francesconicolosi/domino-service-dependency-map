@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, toggleClearButton, getFormattedDate
+    getQueryParam, setSearchQuery, closeSideDrawer, openSideDrawer, initCommonActions
 } from './utils.js';
 
 
@@ -83,38 +83,6 @@ function resetVisualization() {
     activeServiceNodeIds = [];
 }
 
-function openSideDrawer() {
-    const drawer = document.getElementById('side-drawer');
-    const overlay = document.getElementById('side-overlay');
-    if (!drawer) return;
-
-    drawer.classList.add('open');
-    overlay?.classList.add('visible');
-    document.body.classList.add('side-drawer-open');
-    drawer.setAttribute('aria-hidden', 'false');
-
-    const lastUpdateEl = document.getElementById('side-last-update');
-    if (lastUpdateEl) {
-        if (latestUpdate instanceof Date) {
-            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdate.toISOString())}`;
-        } else {
-            lastUpdateEl.textContent = '';
-        }
-    }
-
-    document.getElementById('act-upload')?.focus();
-}
-
-function closeSideDrawer() {
-    const drawer = document.getElementById('side-drawer');
-    const overlay = document.getElementById('side-overlay');
-    if (!drawer) return;
-    drawer.classList.remove('open');
-    overlay?.classList.remove('visible');
-    document.body.classList.remove('side-drawer-open');
-    drawer.setAttribute('aria-hidden', 'true');
-}
-
 function fitGraphToViewport(paddingRatio = 0.90) {
     if (!svg || !g) return;
     const bbox = g.node()?.getBBox();
@@ -134,27 +102,18 @@ function fitGraphToViewport(paddingRatio = 0.90) {
     svg.transition().duration(400).call(zoom.transform, t);
 }
 
+function handleQuery(q) {
+    clickedNode = null;
+    searchTerm = q;
+    const searchInput = document.getElementById('drawer-search-input');
+    if (searchInput) searchInput.value = q;
+    setSearchQuery(q);
+    updateVisualization(nodeGraph, linkGraph, labels);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
 function initSideDrawerEvents() {
-    const overlay = document.getElementById('side-overlay');
-    const closeBtn = document.getElementById('side-close');
-
-    overlay?.addEventListener('click', closeSideDrawer);
-    closeBtn?.addEventListener('click', closeSideDrawer);
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeSideDrawer();
-    });
-
-    const toggleCta = document.getElementById('toggle-cta');
-    toggleCta?.addEventListener('click', (e) => {
-        e.preventDefault();
-        openSideDrawer();
-    });
-
-    document.getElementById('act-upload')?.addEventListener('click', () => {
-        document.getElementById('csvFileInput')?.click();
-        closeSideDrawer();
-    });
+    initCommonActions(latestUpdate);
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
         clickedNode = null;
@@ -181,13 +140,7 @@ function initSideDrawerEvents() {
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
         const q = document.getElementById('drawer-search-input')?.value?.trim();
         if (q !== undefined) {
-            clickedNode = null;
-            searchTerm = q;
-            const searchInput = document.getElementById('drawer-search-input');
-            if (searchInput) searchInput.value = q;
-            setSearchQuery(q);
-            updateVisualization(nodeGraph, linkGraph, labels);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            handleQuery(q);
         }
         closeSideDrawer();
     });
@@ -196,13 +149,7 @@ function initSideDrawerEvents() {
         if (e.key === 'Enter') {
             const q = e.target.value?.trim();
             if (q) {
-                clickedNode = null;
-                searchTerm = q;
-                const searchInput = document.getElementById('drawer-search-input');
-                if (searchInput) searchInput.value = q;
-                setSearchQuery(q);
-                updateVisualization(nodeGraph, linkGraph, labels);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                handleQuery(q);
             }
             e.preventDefault();
             closeSideDrawer();
@@ -221,7 +168,7 @@ function closeDrawer() {
 }
 
 
-document.getElementById('csvFileInput').addEventListener('change', function (event) {
+document.getElementById('fileInput').addEventListener('change', function (event) {
     resetVisualization();
     const file = event.target.files[0];
     if (!file) return;
@@ -238,7 +185,7 @@ document.getElementById('csvFileInput').addEventListener('change', function (eve
 
 window.addEventListener('load', function () {
     let searchParam = null;
-    const searchInput = document.getElementById('searchInput');
+    const searchInput = document.getElementById('drawer-search-input');
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')

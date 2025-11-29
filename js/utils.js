@@ -15,6 +15,61 @@ export function setSearchQuery(value) {
     setQueryParam('search', value);
 }
 
+export function initCommonActions(latestUpdate) {
+    const overlay = document.getElementById('side-overlay');
+    const closeBtn = document.getElementById('side-close');
+
+    overlay?.addEventListener('click', closeSideDrawer);
+    closeBtn?.addEventListener('click', closeSideDrawer);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSideDrawer();
+    });
+
+    const toggleCta = document.getElementById('toggle-cta');
+    toggleCta?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSideDrawer(latestUpdate);
+    });
+
+    document.getElementById('act-upload')?.addEventListener('click', () => {
+        document.getElementById('fileInput')?.click();
+        closeSideDrawer();
+    });
+}
+
+export function openSideDrawer(latestDate) {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
+
+    drawer.classList.add('open');
+    overlay?.classList.add('visible');
+    document.body.classList.add('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'false');
+
+    const lastUpdateEl = document.getElementById('side-last-update');
+    if (lastUpdateEl) {
+        if (latestDate instanceof Date) {
+            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestDate.toISOString())}`;
+        } else {
+            lastUpdateEl.textContent = '';
+        }
+    }
+
+    document.getElementById('act-upload')?.focus();
+}
+
+export function closeSideDrawer() {
+    const drawer = document.getElementById('side-drawer');
+    const overlay = document.getElementById('side-overlay');
+    if (!drawer) return;
+    drawer.classList.remove('open');
+    overlay?.classList.remove('visible');
+    document.body.classList.remove('side-drawer-open');
+    drawer.setAttribute('aria-hidden', 'true');
+}
+
 export function toggleClearButton(buttonId, value) {
     const el = document.getElementById(buttonId);
     if (!el) return;
