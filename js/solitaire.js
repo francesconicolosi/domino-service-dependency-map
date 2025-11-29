@@ -1,9 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, toggleClearButton,
-    getFormattedDate, parseCSV,
-    clearHighlights as clearHighlightsUtils,
+    getQueryParam, setSearchQuery, parseCSV,
     highlightGroup as highlightGroupUtils
 } from './utils.js';
 
@@ -13,7 +11,7 @@ let logoLayer;
 
 const SECOND_LEVEL_LABEL_EXTRA = 120;
 const FIRST_LEVEL_LEFT_PAD   = 80;
-const FIRST_LEVEL_BOTTOM_PAD   = 110;
+const THIRD_LEVEL_EXTRA = 130;
 
 const firstOrgLevel = 'Team Stream';
 const secondOrgLevel = 'Team Theme';
@@ -25,6 +23,10 @@ const thirdLevelNA = `No ${thirdOrgLevel}`;
 const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
 const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
 const emailField = "Company email"; // this will be used to resolve the photo filename
+
+const peopleDBUpdateRecipients = [
+    'teams@share.software.net'
+].join(',');
 
 const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
@@ -43,16 +45,14 @@ let height = 800;
 
 let latestUpdateDate = null;
 
-function hideActions() {
-    const label = document.getElementById('label-file');
-    const file = document.getElementById('fileInput');
-    const h1 = document.querySelector('h1');
-    [label, file, h1].forEach(el => el && el.classList.add('hidden'));
-}
-
 function findHeaderIndex(headers, name) {
     const target = (name || '').trim().toLowerCase();
     return headers.findIndex(h => (h || '').trim().toLowerCase() === target);
+}
+
+function truncateString(str, maxLength = 25) {
+    if (str.length <= maxLength) return str;
+    return str.slice(0, maxLength) + '...';
 }
 
 function aggregateTeamManagedServices(members, headers, headerName = 'Team Managed Services') {
@@ -78,6 +78,8 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
         items: [...set].sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
     };
 }
+
+window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
 function openDrawer({ name, description, services }) {
     const drawer = document.getElementById('drawer');
@@ -158,13 +160,6 @@ function initDrawerEvents() {
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
 ``
-
-document.getElementById('toggle-cta')?.addEventListener('click', function () {
-    const label = document.getElementById('label-file');
-    const file = document.getElementById('fileInput');
-    const h1 = document.querySelector('h1');
-    [label, file, h1].forEach(el => el && el.classList.toggle('hidden'));
-});
 
 window.addEventListener('load', function () {
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample-people-database.csv')
@@ -359,23 +354,13 @@ function getLatestUpdateFromCsv(headers, rows) {
             .filter(d => !isNaN(d.getTime()));
 
         if (dates.length > 0) {
-            const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-            latestUpdateDate = maxDate.toISOString();
+            latestUpdateDate = new Date(Math.max(...dates.map(d => d.getTime())));
         } else {
             latestUpdateDate = null;
         }
     } else {
         latestUpdateDate = null;
     }
-
-    requestAnimationFrame(() => {
-        const el = document.getElementById("latestUpdateDate");
-        if (latestUpdateDate) {
-            const formatted = getFormattedDate(latestUpdateDate);
-            el.textContent = `Last Update: ${formatted}`;
-        }
-    });
-
 }
 
 function getContentBBox() {
@@ -604,9 +589,9 @@ function extractData(csvText) {
     );
 
     const rowCount = Math.ceil(largestThirdLevelSize / inARow);
-    const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2;
-    const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2;
-    const firstLevelBoxHeight = secondLevelBoxHeight * 1.25;
+    const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2 + 80;
+    const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2 + 100;
+    const firstLevelBoxHeight = secondLevelBoxHeight * 1.2;
 
     const firstLevelBoxWidth = getMaxFirstLevelWidth(
         organizationWithManagers,
@@ -621,10 +606,21 @@ function extractData(csvText) {
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
 
+        let firstLevelDescription = '';
+
         const firstLevelDescriptionIndex = findHeaderIndex(headers, `${firstOrgLevel} Description`);
-        const firstLevelDescription = firstLevelDescriptionIndex !== -1
-            ? (people.find(p => (p[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(firstLevel))?.[headers[firstLevelDescriptionIndex]] || '')
-            : '';
+        if (firstLevelDescriptionIndex !== -1) {
+            const descriptionHeader = headers[firstLevelDescriptionIndex];
+
+            const match = people.find(p => {
+                const levels = (p[firstOrgLevel] || '')
+                    .split(/\n|,/)
+                    .map(s => s.trim().toLowerCase());
+                return levels.includes(firstLevel.toLowerCase());
+            });
+
+            firstLevelDescription = match ? (match[descriptionHeader] || '') : '';
+        }
 
         let secondLevelX = 60;
 
@@ -638,7 +634,7 @@ function extractData(csvText) {
 
         firstLevelGroup.append('text')
             .attr('x', 50)
-            .attr('y', 60)
+            .attr('y', 70)
             .attr('text-anchor', 'start')
             .attr('class', 'stream-title')
             .text(`${firstLevel} ${firstLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
@@ -668,7 +664,7 @@ function extractData(csvText) {
                 : "";
 
             const secondLevelGroup = firstLevelGroup.append('g').attr('transform', `translate(${secondLevelX},100)`);
-            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + 120;
+            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
             secondLevelGroup.append('rect')
                 .attr('class', 'theme-box')
@@ -679,10 +675,10 @@ function extractData(csvText) {
 
             secondLevelGroup.append('text')
                 .attr('x', themeWidth / 2)
-                .attr('y', 35)
+                .attr('y', 85)
                 .attr('text-anchor', 'middle')
                 .attr('class', 'theme-title')
-                .text(`${secondLevel} ${secondLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
+                .text(`${truncateString(secondLevel)} ${secondLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
 
             if (secondLevelDescription !== "") {
                 secondLevelGroup.select('rect.theme-box')
@@ -707,7 +703,7 @@ function extractData(csvText) {
                 const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
 
 
-                const thirdLevelGroup = secondLevelGroup.append('g').attr('transform', `translate(${teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50},70)`);
+                const thirdLevelGroup = secondLevelGroup.append('g').attr('transform', `translate(${teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50},${THIRD_LEVEL_EXTRA})`);
                 thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
                     .attr('width', thirdLevelBoxWidth)
@@ -720,11 +716,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.append('text')
                     .attr('x', thirdLevelBoxWidth / 2)
-                    .attr('y', 28)
+                    .attr('y', 70)
                     .attr('text-anchor', 'middle')
                     .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
                     .attr('class', 'team-title')
-                    .text(titleText);
+                    .text(truncateString(titleText));
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
@@ -739,7 +735,7 @@ function extractData(csvText) {
                     const col = mIdx % inARow;
                     const row = Math.floor(mIdx / inARow);
                     const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
-                    const cardY = streamY + 100 + 70 + 45 + row * (cardBaseHeight + 10);
+                    const cardY = streamY + 100 + 70 + 45 + row * (cardBaseHeight + 10) + 130;
 
                     const group = cardLayer.append('g')
                         .attr('class', 'draggable')
@@ -839,24 +835,24 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     reader.onload = function (evt) {
         resetVisualization();
         extractData(evt.target.result);
-        hideActions();
     };
     reader.readAsText(file, 'UTF-8');
 });
 
-document.getElementById('clearSearch').addEventListener('click', function () {
-    searchParam = '';
-    const searchInput = document.getElementById('searchBar');
-    searchInput.value = searchParam;
-    toggleClearButton('clearSearch', searchParam);
-    setSearchQuery(searchParam);
+document.getElementById('drawer-search-input')?.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+        const query = e.target.value.trim().toLowerCase();
+        if (query) {
+            searchByQuery(query);
+        }
+        e.preventDefault();
+    }
 });
 
 function searchByQuery(query) {
     if (!query) return;
 
-    toggleClearButton('clearSearch', query);
-    const searchInput = document.getElementById('searchBar');
+    const searchInput = document.getElementById('drawer-search-input');
     if (!searchInput.value) {
         searchInput.value = query;
     }
@@ -892,10 +888,3 @@ function searchByQuery(query) {
     }
     setSearchQuery(query);
 }
-
-document.getElementById('searchBar')?.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
-
-    const query = e.target.value.trim().toLowerCase();
-    searchByQuery(query);
-});

@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-import {getFormattedDate, getQueryParam, setSearchQuery, toggleClearButton} from './utils.js';
+import {getQueryParam, setSearchQuery, toggleClearButton, initSideDrawerEvents} from './utils.js';
 
 let nodes = [];
 let links = [];
@@ -22,11 +22,6 @@ let latestUpdate = null;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
-
-function getDecommButtonLabel() {
-    return hideStoppedServices ? 'Show Decommissioned Services' : 'Hide Decommissioned Services';
-}
-
 
 const serviceInfoEnhancers = [
 
@@ -82,15 +77,7 @@ function resetVisualization() {
     document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
-
-function hideActions() {
-    document.getElementById('label-file').classList.add('hidden');
-    document.getElementById('hideStoppedServices').classList.add('hidden');
-    document.getElementById('csvFileInput').classList.add('hidden');
-    document.querySelector('a[href="./sample_services.csv"]').classList.add('hidden');
-    document.querySelector('h1').classList.add('hidden');
-    document.querySelector('h3').classList.add('hidden');
-}
+window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 document.getElementById('overlay').addEventListener('click', closeDrawer);
@@ -98,6 +85,24 @@ document.getElementById('overlay').addEventListener('click', closeDrawer);
 function closeDrawer() {
     document.getElementById('drawer').classList.remove('open');
     document.getElementById('overlay').classList.remove('open');
+}
+
+function fitGraphToViewport(paddingRatio = 0.90) {
+    if (!svg || !g) return;
+    const bbox = g.node()?.getBBox();
+    if (!bbox || !isFinite(bbox.width) || !isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) {
+        svg.call(zoom.transform, d3.zoomIdentity);
+        return;
+    }
+    const w = width;
+    const h = height;
+    const scale = Math.min(w / bbox.width, h / bbox.height) * paddingRatio;
+
+    const tx = w / 2 - (bbox.x + bbox.width / 2) * scale;
+    const ty = h / 2 - (bbox.y + bbox.height / 2) * scale;
+
+    const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+    svg.transition().duration(400).call(zoom.transform, t);
 }
 
 document.getElementById('csvFileInput').addEventListener('change', function(event) {
@@ -109,7 +114,6 @@ document.getElementById('csvFileInput').addEventListener('change', function(even
         const csvData = e.target.result;
         const data = d3.csvParse(csvData);
         processData(data);
-        hideActions();
         updateVisualization(nodeGraph, linkGraph, labels);
     };
     reader.readAsText(file);
@@ -131,7 +135,6 @@ window.addEventListener('load', function() {
         .then(csvData => {
             const data = d3.csvParse(csvData);
             processData(data);
-            hideActions();
             if (searchParam) {
                 simulation.on('end', () => {
                     if (!hasLoaded) {
@@ -144,18 +147,6 @@ window.addEventListener('load', function() {
             }
         })
         .catch(error => console.error('Error loading the CSV file:', error));
-});
-
-document.getElementById('toggle-cta').addEventListener('click', function() {
-    const elements = [
-        document.getElementById('label-file'),
-        document.getElementById('hideStoppedServices'),
-        document.querySelector('a[href="./sample_services.csv"]'),
-        document.querySelector('h1'),
-        document.querySelector('h3'),
-        document.querySelector('footer')
-    ];
-    elements.forEach(element => element.classList.toggle('hidden'));
 });
 
 function processData(data) {
@@ -175,14 +166,6 @@ function processData(data) {
 
         if (validDates.length > 0) {
             latestUpdate = new Date(Math.max(...validDates));
-            requestAnimationFrame(() => {
-                const el = document.getElementById("latestUpdateDate");
-                if (latestUpdate) {
-                    const formatted = getFormattedDate(latestUpdate);
-                    el.textContent = `Last Update: ${formatted}`;
-                }
-            });
-
         }
     }
 
@@ -504,30 +487,6 @@ function createMap() {
     }
 
 
-
-    document.getElementById('searchInput').addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            clickedNode = null;
-            searchTerm = event.target.value;
-            event.stopImmediatePropagation();
-            toggleClearButton('clearSearch', searchTerm);
-            setSearchQuery(searchTerm);
-            updateVisualization(nodeGraph, linkGraph, labels);
-        }
-    });
-
-
-    document.getElementById('clearSearch').addEventListener('click', function () {
-        searchTerm = '';
-        const searchInput = document.getElementById('searchInput');
-        searchInput.value = searchTerm;
-        toggleClearButton('clearSearch', searchTerm);
-        setSearchQuery(searchTerm);
-        updateVisualization(nodeGraph, linkGraph, labels);
-    });
-
-
-
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('search-trigger')) {
             clickedNode = null;
@@ -538,7 +497,7 @@ function createMap() {
             const value = isAccurateSearch ? `"${decodeURIComponent(e.target.getAttribute('data-value'))}"` : `${decodeURIComponent(e.target.getAttribute('data-value'))}`;
             const combinedSearchTerm = `${mappedKey}:${value}`;
             searchTerm = combinedSearchTerm;
-            const searchInput = document.getElementById('searchInput');
+            const searchInput = document.getElementById('drawer-search-input');
             searchInput.value = combinedSearchTerm;
             toggleClearButton('clearSearch', combinedSearchTerm);
             setSearchQuery(combinedSearchTerm);
@@ -546,15 +505,6 @@ function createMap() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
-
-    document.getElementById('hideStoppedServices').addEventListener('click', function(event) {
-        event.stopImmediatePropagation();
-        clickedNode = null;
-        hideStoppedServices = !hideStoppedServices;
-        document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
-        updateVisualization(nodeGraph, linkGraph, labels);
-    });
-
 }
 
 function createLegend(colorScale) {
