@@ -5,11 +5,6 @@ export function getQueryParam(param) {
     return urlParams.get(param);
 }
 
-const peopleDBUpdateRecipients = [
-    'teams@share.software.net'
-].join(',');
-
-
 export function initSideDrawerEvents() {
     const overlay = document.getElementById('side-overlay');
     const closeBtn = document.getElementById('side-close');
@@ -33,9 +28,10 @@ export function initSideDrawerEvents() {
     });
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
+        searchParam = '';
         const searchInput = document.getElementById('drawer-search-input');
-        searchInput.value = '';
-        setSearchQuery('');
+        searchInput.value = searchParam;
+        setSearchQuery(searchParam);
         closeSideDrawer();
     });
 
@@ -76,6 +72,15 @@ export function openSideDrawer() {
     overlay?.classList.add('visible');
     document.body.classList.add('side-drawer-open');
     drawer.setAttribute('aria-hidden', 'false');
+
+    const lastUpdateEl = document.getElementById('side-last-update');
+    if (lastUpdateEl) {
+        if (latestUpdate instanceof Date) {
+            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdate.toISOString())}`;
+        } else {
+            lastUpdateEl.textContent = '';
+        }
+    }
 
     document.getElementById('act-upload')?.focus();
 }

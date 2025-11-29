@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, parseCSV, initSideDrawerEvents,
-    highlightGroup as highlightGroupUtils, getFormattedDate
+    getQueryParam, setSearchQuery, parseCSV,
+    highlightGroup as highlightGroupUtils
 } from './utils.js';
 
 let lastSearch = '';
@@ -23,6 +23,10 @@ const thirdLevelNA = `No ${thirdOrgLevel}`;
 const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
 const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
 const emailField = "Company email"; // this will be used to resolve the photo filename
+
+const peopleDBUpdateRecipients = [
+    'teams@share.software.net'
+].join(',');
 
 const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
@@ -163,6 +167,7 @@ window.addEventListener('load', function () {
         .then(csvData => {
             resetVisualization();
             extractData(csvData);
+            hideActions();
             searchParam = getQueryParam('search');
             if (searchParam) {
                 requestAnimationFrame(() => {
@@ -350,14 +355,6 @@ function getLatestUpdateFromCsv(headers, rows) {
 
         if (dates.length > 0) {
             latestUpdateDate = new Date(Math.max(...dates.map(d => d.getTime())));
-            const lastUpdateEl = document.getElementById('side-last-update');
-            if (lastUpdateEl) {
-                if (latestUpdateDate instanceof Date) {
-                    lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdateDate.toISOString())}`;
-                } else {
-                    lastUpdateEl.textContent = '';
-                }
-            }
         } else {
             latestUpdateDate = null;
         }

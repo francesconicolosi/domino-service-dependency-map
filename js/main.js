@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-import {getQueryParam, setSearchQuery, toggleClearButton, initSideDrawerEvents, getFormattedDate} from './utils.js';
+import {getQueryParam, setSearchQuery, toggleClearButton, initSideDrawerEvents} from './utils.js';
 
 let nodes = [];
 let links = [];
@@ -74,6 +74,7 @@ function resetVisualization() {
     searchTerm = "";
     activeServiceNodes = [];
     activeServiceNodeIds = [];
+    document.getElementById('hideStoppedServices').textContent = getDecommButtonLabel();
 }
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
@@ -104,7 +105,7 @@ function fitGraphToViewport(paddingRatio = 0.90) {
     svg.transition().duration(400).call(zoom.transform, t);
 }
 
-document.getElementById('fileInput').addEventListener('change', function(event) {
+document.getElementById('csvFileInput').addEventListener('change', function(event) {
     resetVisualization();
     const file = event.target.files[0];
     if (!file) return;
@@ -120,10 +121,11 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 
 window.addEventListener('load', function() {
     let searchParam = null;
-    const searchInput = document.getElementById('drawer-search-input');
+    const searchInput = document.getElementById('searchInput');
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
+            toggleClearButton('clearSearch', searchParam);
             if (searchParam) {
                 searchTerm = searchParam;
                 searchInput.value = searchParam;
@@ -164,14 +166,6 @@ function processData(data) {
 
         if (validDates.length > 0) {
             latestUpdate = new Date(Math.max(...validDates));
-            const lastUpdateEl = document.getElementById('side-last-update');
-            if (lastUpdateEl) {
-                if (latestUpdate instanceof Date) {
-                    lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestUpdate.toISOString())}`;
-                } else {
-                    lastUpdateEl.textContent = '';
-                }
-            }
         }
     }
 
