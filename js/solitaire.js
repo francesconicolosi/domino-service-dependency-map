@@ -905,7 +905,7 @@ function searchByQuery(query) {
     const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, [data-services]'));
 
     const matches = nodes.filter(n => {
-        const textMatch = n.textContent? n.textContent.toLowerCase().includes(query) || truncateString(n.textContent).toLowerCase().includes(query) : false;
+        const textMatch = n.textContent? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
         const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
         return textMatch || attrMatch;
     });
