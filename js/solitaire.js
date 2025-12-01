@@ -94,6 +94,7 @@ function initSideDrawerEvents() {
         const searchInput = document.getElementById('drawer-search-input');
         searchInput.value = searchParam;
         setSearchQuery(searchParam);
+        fitToContent(0.9);
         //closeSideDrawer();
     });
 
@@ -257,6 +258,30 @@ function resetVisualization() {
         });
 
     svg.call(zoom);
+}
+
+function showToast(message, duration = 3000) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
 }
 
 function fitToContent(paddingRatio = 0.9) {
@@ -910,11 +935,8 @@ function searchByQuery(query) {
         return textMatch || attrMatch;
     });
 
-    const output = document.getElementById('output');
     if (matches.length === 0) {
-        if (output) output.textContent = `No result found for ${query}.`;
-        //clearHighlightsUtils();
-        return;
+        showToast(`No result found for ${query}`);
     }
 
     if (query === lastSearch) {
@@ -926,10 +948,8 @@ function searchByQuery(query) {
 
     const target = matches[currentIndex];
 
-    zoomToElement(target, 1.6, 600);
+    zoomToElement(target, 1.1, 600);
 
-    if (output) {
-        output.textContent = `Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`;
-    }
+    showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
     setSearchQuery(query);
 }

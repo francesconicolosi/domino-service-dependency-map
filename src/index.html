@@ -18,16 +18,10 @@
     <nav class="content">
         <ul class="actions">
             <li><button id="act-upload">📤 Upload CSV</button></li>
-            <li><button id="act-clear">✖ Clear search</button></li>
             <li><button id="act-fit">↺ Fit to content</button></li>
             <li><button id="act-hide">🚫 Toggle Decommissioned</button></li>
             <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Switch to Solitaire</button></li>
         </ul>
-
-        <div class="drawer-search">
-            <input type="text" id="drawer-search-input" placeholder='Search… (field:"value" | field:value | value)' />
-            <button id="drawer-search-go">🔎</button>
-        </div>
     </nav>
 
     <footer class="drawer-footer">
@@ -35,7 +29,16 @@
     </footer>
 
 </aside>
-<span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
+
+<div class="top-bar">
+    <span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
+    <div class="top-search">
+        <input type="text" id="drawer-search-input" placeholder="Person or group..." />
+        <button id="drawer-search-go">🔎</button>
+        <button id="act-clear">❌</button>
+    </div>
+</div>
+
 <label id="label-file" class="custom-file-upload">
     <input type="file" id="fileInput" accept=".csv" class="file-input" />
     Select the CSV

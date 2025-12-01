@@ -102,13 +102,13 @@ function fitGraphToViewport(paddingRatio = 0.90) {
     svg.transition().duration(400).call(zoom.transform, t);
 }
 
-function handleQuery(q) {
+function handleQuery(q, showDrawer = true) {
     clickedNode = null;
     searchTerm = q;
     const searchInput = document.getElementById('drawer-search-input');
     if (searchInput) searchInput.value = q;
     setSearchQuery(q);
-    updateVisualization(nodeGraph, linkGraph, labels);
+    updateVisualization(nodeGraph, linkGraph, labels, showDrawer);
     window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
@@ -140,7 +140,7 @@ function initSideDrawerEvents() {
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
         const q = document.getElementById('drawer-search-input')?.value?.trim();
         if (q !== undefined) {
-            handleQuery(q);
+            handleQuery(q, false);
         }
         //closeSideDrawer();
     });
@@ -149,7 +149,7 @@ function initSideDrawerEvents() {
         if (e.key === 'Enter') {
             const q = e.target.value?.trim();
             if (q) {
-                handleQuery(q);
+                handleQuery(q, false);
             }
             e.preventDefault();
             //closeSideDrawer();
@@ -287,7 +287,7 @@ function isSearchResultValueOnly(d) {
 }
 
 
-function updateVisualization(node, link, labels) {
+function updateVisualization(node, link, labels, showDrawer = true) {
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
     const relatedNodes = new Set();
     const searchedNodes = new Set();
@@ -331,7 +331,7 @@ function updateVisualization(node, link, labels) {
     labels.style('text-decoration', d => searchedNodes.has(d.id) ? 'underline' : 'none');
     if (!clickedNode && nodeToZoom) {
         centerAndZoomOnNode(nodeToZoom);
-        showNodeDetails(nodeToZoom);
+        showNodeDetails(nodeToZoom, showDrawer);
     }
 }
 
@@ -358,7 +358,7 @@ function getLink(value) {
     return `<a href="${value}" target="_blank">${formattedValue}</a>`;
 }
 
-function showNodeDetails(node) {
+function showNodeDetails(node, openDrawer = true) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('overlay');
     const drawerContent = document.getElementById('drawerContent');
@@ -427,8 +427,10 @@ function showNodeDetails(node) {
 
     drawerContent.appendChild(table);
 
-    drawer.classList.add('open');
-    overlay.classList.add('open');
+    if (openDrawer) {
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+    }
 }
 
 
