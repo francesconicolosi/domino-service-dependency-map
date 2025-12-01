@@ -15,7 +15,7 @@ export function setSearchQuery(value) {
     setQueryParam('search', value);
 }
 
-export function initCommonActions(latestUpdate) {
+export function initCommonActions() {
     const overlay = document.getElementById('side-overlay');
     const closeBtn = document.getElementById('side-close');
 
@@ -29,7 +29,7 @@ export function initCommonActions(latestUpdate) {
     const toggleCta = document.getElementById('toggle-cta');
     toggleCta?.addEventListener('click', (e) => {
         e.preventDefault();
-        openSideDrawer(latestUpdate);
+        openSideDrawer();
     });
 
     document.getElementById('act-upload')?.addEventListener('click', () => {
@@ -38,7 +38,7 @@ export function initCommonActions(latestUpdate) {
     });
 }
 
-export function openSideDrawer(latestDate) {
+export function openSideDrawer() {
     const drawer = document.getElementById('side-drawer');
     const overlay = document.getElementById('side-overlay');
     if (!drawer) return;
@@ -47,15 +47,6 @@ export function openSideDrawer(latestDate) {
     overlay?.classList.add('visible');
     document.body.classList.add('side-drawer-open');
     drawer.setAttribute('aria-hidden', 'false');
-
-    const lastUpdateEl = document.getElementById('side-last-update');
-    if (lastUpdateEl) {
-        if (latestDate instanceof Date) {
-            lastUpdateEl.textContent = `Last Update: ${getFormattedDate(latestDate.toISOString())}`;
-        } else {
-            lastUpdateEl.textContent = '';
-        }
-    }
 
     document.getElementById('act-upload')?.focus();
 }

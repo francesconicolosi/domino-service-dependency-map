@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 
 import {
     getQueryParam, setSearchQuery, parseCSV,
-    highlightGroup as highlightGroupUtils, closeSideDrawer, openSideDrawer, initCommonActions
+    highlightGroup as highlightGroupUtils, closeSideDrawer, openSideDrawer, initCommonActions, getFormattedDate
 } from './utils.js';
 
 let lastSearch = '';
@@ -43,8 +43,6 @@ let zoom;
 let width = 1200;
 let height = 800;
 
-let latestUpdateDate = null;
-
 function findHeaderIndex(headers, name) {
     const target = (name || '').trim().toLowerCase();
     return headers.findIndex(h => (h || '').trim().toLowerCase() === target);
@@ -80,7 +78,7 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
 }
 
 function initSideDrawerEvents() {
-    initCommonActions(latestUpdateDate);
+    initCommonActions();
 
     document.getElementById('act-upload')?.addEventListener('click', () => {
         document.getElementById('fileInput')?.click();
@@ -424,12 +422,11 @@ function getLatestUpdateFromCsv(headers, rows) {
             .filter(d => !isNaN(d.getTime()));
 
         if (dates.length > 0) {
-            latestUpdateDate = new Date(Math.max(...dates.map(d => d.getTime())));
-        } else {
-            latestUpdateDate = null;
+            const lastUpdateEl = document.getElementById('side-last-update');
+            if (lastUpdateEl) {
+                lastUpdateEl.textContent = `Last Update: ${getFormattedDate(new Date(Math.max(...dates.map(d => d.getTime()))).toISOString())}`;
+            }
         }
-    } else {
-        latestUpdateDate = null;
     }
 }
 

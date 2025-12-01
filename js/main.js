@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, closeSideDrawer, initCommonActions
+    getQueryParam, setSearchQuery, closeSideDrawer, initCommonActions, getFormattedDate
 } from './utils.js';
 
 
@@ -21,7 +21,6 @@ let zoomIdentity;
 let svg;
 let clickedNode;
 let hasLoaded = false;
-let latestUpdate = null;
 const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
@@ -113,7 +112,7 @@ function handleQuery(q, showDrawer = true) {
 }
 
 function initSideDrawerEvents() {
-    initCommonActions(latestUpdate);
+    initCommonActions();
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
         clickedNode = null;
@@ -227,7 +226,10 @@ function processData(data) {
             .filter(date => !isNaN(date.getTime()));
 
         if (validDates.length > 0) {
-            latestUpdate = new Date(Math.max(...validDates));
+            const lastUpdateEl = document.getElementById('side-last-update');
+            if (lastUpdateEl) {
+                lastUpdateEl.textContent = `Last Update: ${getFormattedDate(new Date(Math.max(...validDates.map(d => d.getTime()))).toISOString())}`;
+            }
         }
     }
 
