@@ -142,7 +142,7 @@ function initSideDrawerEvents() {
         if (q !== undefined) {
             handleQuery(q);
         }
-        closeSideDrawer();
+        //closeSideDrawer();
     });
 
     document.getElementById('drawer-search-input')?.addEventListener('keydown', (e) => {
@@ -152,7 +152,7 @@ function initSideDrawerEvents() {
                 handleQuery(q);
             }
             e.preventDefault();
-            closeSideDrawer();
+            //closeSideDrawer();
         }
     });
 }

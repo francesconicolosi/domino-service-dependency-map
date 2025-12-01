@@ -121,7 +121,7 @@ Thank you.`
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
         const q = document.getElementById('drawer-search-input')?.value?.trim().toLowerCase();
         if (q) searchByQuery(q);
-        closeSideDrawer();
+        //closeSideDrawer();
     });
 }
 
