@@ -934,6 +934,7 @@ function searchByQuery(query) {
 
     if (matches.length === 0) {
         showToast(`No result found for ${query}`);
+        return;
     }
 
     if (query === lastSearch) {
