@@ -18,7 +18,14 @@
   <nav class="content">
     <ul class="actions">
       <li><button id="act-upload">📤 Upload CSV</button></li>
-      <li><button id="act-fit">↺ Fit to content</button></li>
+      <li>
+        <label class="switch-label">
+          ↩ Draggable
+          <input type="checkbox" id="toggle-draggable">
+          <span class="slider"></span>
+        </label>
+      </li>
+
       <li><button id="act-report">📝 Report a change</button></li>
       <li><button id="act-switch" onclick="window.location.href='./index.html'">⚅ Switch to Domino</button></li>
     </ul>

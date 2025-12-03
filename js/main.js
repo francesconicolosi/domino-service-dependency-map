@@ -7,7 +7,7 @@ import {
 
 let nodes = [];
 let links = [];
-let hideStoppedServices = true;
+let hideStoppedServices = !(document.getElementById('toggle-decommissioned').checked);
 let searchTerm = "";
 let activeServiceNodes;
 let activeServiceNodeIds;
@@ -124,11 +124,11 @@ function initSideDrawerEvents() {
         closeSideDrawer();
     });
 
-    document.getElementById('act-hide')?.addEventListener('click', () => {
+    document.getElementById('toggle-decommissioned')?.addEventListener('change', (e) => {
         clickedNode = null;
-        hideStoppedServices = !hideStoppedServices;
+        hideStoppedServices = !(e.target.checked);
         updateVisualization(nodeGraph, linkGraph, labels);
-        closeSideDrawer();
+        //closeSideDrawer();
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -137,10 +137,8 @@ function initSideDrawerEvents() {
     });
 
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
-        const q = document.getElementById('drawer-search-input')?.value?.trim();
-        if (q !== undefined) {
-            handleQuery(q, false);
-        }
+        const q = e.target.value ? e.target.value.trim() : "";
+        handleQuery(q, false);
         //closeSideDrawer();
     });
 
@@ -331,7 +329,7 @@ function updateVisualization(node, link, labels, showDrawer = true) {
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     labels.style('text-decoration', d => searchedNodes.has(d.id) ? 'underline' : 'none');
-    if (!clickedNode && nodeToZoom) {
+    if (!clickedNode && nodeToZoom && (!hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
         centerAndZoomOnNode(nodeToZoom);
         showNodeDetails(nodeToZoom, showDrawer);
     }

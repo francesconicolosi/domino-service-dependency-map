@@ -32,6 +32,19 @@ const roleColors = Object.fromEntries(
     guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
 );
 
+const drag = d3.drag()
+    .on("start", function () {
+        d3.select(this).raise();
+    })
+    .on("drag", function (event) {
+        const transform = d3.select(this).attr("transform");
+        const translate = transform.match(/translate\(([^,]+),([^\)]+)\)/);
+        const x = parseFloat(translate[1]) + event.dx;
+        const y = parseFloat(translate[2]) + event.dy;
+        d3.select(this).attr("transform", `translate(${x},${y})`);
+    });
+
+
 let searchParam;
 
 let svg;
@@ -602,6 +615,18 @@ function getMaxFirstLevelWidth(
     return Number.isFinite(maxW) ? maxW : minWidth;
 }
 
+let isDraggable = false;
+
+
+document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
+    isDraggable = e.target.checked;
+    if (isDraggable) {
+        d3.selectAll('.draggable').call(drag);
+    } else {
+        d3.selectAll('.draggable').on('.drag', null);
+    }
+});
+
 function extractData(csvText) {
     if (!csvText) { alert('Missing CSV File!'); return; }
     const rows = parseCSV(csvText);
@@ -618,18 +643,6 @@ function extractData(csvText) {
 
     const organization = buildOrganization(people);
     const organizationWithManagers = addGuestManagersTo(organization);
-
-    const drag = d3.drag()
-        .on("start", function () {
-            d3.select(this).raise();
-        })
-        .on("drag", function (event) {
-            const transform = d3.select(this).attr("transform");
-            const translate = transform.match(/translate\(([^,]+),([^\)]+)\)/);
-            const x = parseFloat(translate[1]) + event.dx;
-            const y = parseFloat(translate[2]) + event.dy;
-            d3.select(this).attr("transform", `translate(${x},${y})`);
-        });
 
     const inARow = 6;
     const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", emailField];
@@ -691,7 +704,7 @@ function extractData(csvText) {
 
         let secondLevelX = 60;
 
-        const firstLevelGroup = backgroundLayer.append('g').attr('transform', `translate(40,${streamY})`);
+        const firstLevelGroup = backgroundLayer.append('g').attr('class', 'draggable').attr('transform', `translate(40,${streamY})`);
         firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
             .attr('width', firstLevelBoxWidth)
@@ -730,7 +743,7 @@ function extractData(csvText) {
                 ? (people.find(p => (p[secondOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(secondLevel))?.[headers[secondLevelDescriptionIndex]] || "")
                 : "";
 
-            const secondLevelGroup = firstLevelGroup.append('g').attr('transform', `translate(${secondLevelX},100)`);
+            const secondLevelGroup = firstLevelGroup.append('g').attr('class', 'draggable').attr('transform', `translate(${secondLevelX},100)`);
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
             secondLevelGroup.append('rect')
@@ -878,7 +891,6 @@ function extractData(csvText) {
                             infoDiv.append('div').html(`<strong>${key}:</strong> ${value}`);
                         }
                     });
-                    group.call(drag);
                 });
             });
 

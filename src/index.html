@@ -19,7 +19,14 @@
         <ul class="actions">
             <li><button id="act-upload">📤 Upload CSV</button></li>
             <li><button id="act-fit">↺ Fit to content</button></li>
-            <li><button id="act-hide">🚫 Toggle Decommissioned</button></li>
+            <li>
+                <label class="switch-label">
+                    🚫 Show Decommissioned
+                    <input type="checkbox" id="toggle-decommissioned">
+                    <span class="slider"></span>
+                </label>
+            </li>
+
             <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Switch to Solitaire</button></li>
         </ul>
     </nav>
