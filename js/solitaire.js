@@ -11,7 +11,6 @@ let logoLayer;
 
 const SECOND_LEVEL_LABEL_EXTRA = 120;
 const FIRST_LEVEL_LEFT_PAD   = 80;
-const THIRD_LEVEL_EXTRA = 130;
 
 const firstOrgLevel = 'Team Stream';
 const secondOrgLevel = 'Team Theme';
@@ -51,6 +50,9 @@ let svg;
 let viewport;
 let backgroundLayer;
 let cardLayer;
+let streamLayer;
+let themeLayer;
+let teamLayer;
 
 let zoom;
 let width = 1200;
@@ -256,7 +258,9 @@ function resetVisualization() {
         .attr('cursor', 'grab');
 
     viewport = svg.append('g').attr('id', 'viewport');
-    backgroundLayer = viewport.append('g').attr('id', 'backgroundLayer');
+    streamLayer = viewport.append('g').attr('id', 'streamLayer');
+    themeLayer = viewport.append('g').attr('id', 'themeLayer');
+    teamLayer = viewport.append('g').attr('id', 'teamLayer');
     cardLayer = viewport.append('g').attr('id', 'cardLayer');
     logoLayer = viewport.append('g').attr('id', 'logoLayer');
 
@@ -682,6 +686,7 @@ function extractData(csvText) {
     );
 
     let streamY = 40;
+    let streamX = 40;
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
@@ -704,7 +709,9 @@ function extractData(csvText) {
 
         let secondLevelX = 60;
 
-        const firstLevelGroup = backgroundLayer.append('g').attr('class', 'draggable').attr('transform', `translate(40,${streamY})`);
+        const firstLevelGroup = streamLayer.append('g')
+            .attr('class', 'draggable')
+            .attr('transform', `translate(${streamX},${streamY})`);
         firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
             .attr('width', firstLevelBoxWidth)
@@ -743,7 +750,9 @@ function extractData(csvText) {
                 ? (people.find(p => (p[secondOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(secondLevel))?.[headers[secondLevelDescriptionIndex]] || "")
                 : "";
 
-            const secondLevelGroup = firstLevelGroup.append('g').attr('class', 'draggable').attr('transform', `translate(${secondLevelX},100)`);
+            const secondLevelGroup = themeLayer.append('g')
+                .attr('class', 'draggable')
+                .attr('transform', `translate(${streamX + secondLevelX},${streamY + 100})`);
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
             secondLevelGroup.append('rect')
@@ -783,7 +792,13 @@ function extractData(csvText) {
                 const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
 
 
-                const thirdLevelGroup = secondLevelGroup.append('g').attr('transform', `translate(${teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50},${THIRD_LEVEL_EXTRA})`);
+                const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
+                const teamLocalY = 130;
+
+                const thirdLevelGroup = teamLayer.append('g')
+                    .attr('class', 'draggable')
+                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${streamY + 100 + teamLocalY})`);
+                
                 thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
                     .attr('width', thirdLevelBoxWidth)
