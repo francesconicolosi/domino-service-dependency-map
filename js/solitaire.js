@@ -63,6 +63,202 @@ function findHeaderIndex(headers, name) {
     return headers.findIndex(h => (h || '').trim().toLowerCase() === target);
 }
 
+let LS_KEY = 'dsm-layout-v1:default';
+
+function normalizeKey(s) {
+    return (s ?? '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_-]/g, '');
+}
+
+function loadLayout() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
+    catch { return {}; }
+}
+function saveLayout(obj) { localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+
+function getItemLayout(key) { return loadLayout()[key]; }
+function upsertItemLayout(key, patch) {
+    const all = loadLayout();
+    all[key] = { ...(all[key] || {}), ...patch };
+    saveLayout(all);
+}
+
+function parseTranslate(transform) {
+    if (!transform) return { x: 0, y: 0 };
+    const m = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+    return m ? { x: +m[1] || 0, y: +m[2] || 0 } : { x: 0, y: 0 };
+}
+
+function restoreGroupPosition(groupSel) {
+    const key = groupSel.attr('data-key');
+    if (!key) return false;
+    const saved = getItemLayout(key);
+    if (!saved || !Number.isFinite(saved.x) || !Number.isFinite(saved.y)) return false;
+    groupSel.attr('transform', `translate(${saved.x},${saved.y})`);
+    return true;
+}
+
+function getSavedSizeForGroup(groupSel) {
+    const key = groupSel.attr('data-key');
+    if (!key) return null;
+    const saved = getItemLayout(key);
+    if (!saved || !Number.isFinite(saved.width) || !Number.isFinite(saved.height)) return null;
+    return { w: saved.width, h: saved.height };
+}
+
+
+function makeResizable(group, rect, opts = {}) {
+    const minW = Number(opts.minWidth) || 200;
+    const minH = Number(opts.minHeight) || 150;
+
+    const title = group.select('text');
+
+    const savedSize = getSavedSizeForGroup(group);
+    let w = (savedSize?.w ?? Number(rect.attr('width'))) || minW;
+    let h = (savedSize?.h ?? Number(rect.attr('height'))) || minH;
+
+    const handleSize = 14;
+    const hitPad     = 10;
+
+    const handles = group.append('g').attr('class', 'resize-handles');
+    handles.raise();
+
+    const handleE  = handles.append('rect').attr('class', 'resize-handle e');
+    const handleS  = handles.append('rect').attr('class', 'resize-handle s');
+    const handleSE = handles.append('rect').attr('class', 'resize-handle se');
+
+    const hitE  = handles.append('rect').attr('class', 'resize-hit e');
+    const hitS  = handles.append('rect').attr('class', 'resize-hit s');
+    const hitSE = handles.append('rect').attr('class', 'resize-hit se');
+
+    function positionHandles() {
+        handleE
+            .attr('x', w - handleSize / 2)
+            .attr('y', h / 2 - handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleS
+            .attr('x', w / 2 - handleSize / 2)
+            .attr('y', h - handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleSE
+            .attr('x', w - handleSize / 2)
+            .attr('y', h - handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        hitE
+            .attr('x', w - (handleSize / 2 + hitPad))
+            .attr('y', h / 2 - (handleSize / 2 + hitPad))
+            .attr('width', handleSize + 2 * hitPad)
+            .attr('height', handleSize + 2 * hitPad);
+
+        hitS
+            .attr('x', w / 2 - (handleSize / 2 + hitPad))
+            .attr('y', h - (handleSize / 2 + hitPad))
+            .attr('width', handleSize + 2 * hitPad)
+            .attr('height', handleSize + 2 * hitPad);
+
+        hitSE
+            .attr('x', w - (handleSize / 2 + hitPad))
+            .attr('y', h - (handleSize / 2 + hitPad))
+            .attr('width', handleSize + 2 * hitPad)
+            .attr('height', handleSize + 2 * hitPad);
+    }
+
+    function applySize() {
+        rect.attr('width', w).attr('height', h);
+
+        if (!title.empty()) {
+            const anchor = title.attr('text-anchor');
+            if (anchor === 'middle') {
+                title.attr('x', w / 2);
+            }
+        }
+
+        positionHandles();
+        if (typeof opts.onResize === 'function') {
+            opts.onResize({ width: w, height: h });
+        }
+    }
+
+    function makeDeltaTracker() {
+        let prev = null;
+        const getSvgPoint = (event) => {
+            const t = d3.zoomTransform(svg.node());
+            const [px, py] = d3.pointer(event, svg.node());
+            return t.invert([px, py]);
+        };
+        return {
+            start(event) { prev = getSvgPoint(event); },
+            drag(event) {
+                const curr = getSvgPoint(event);
+                if (!prev) prev = curr;
+                const dx = curr[0] - prev[0];
+                const dy = curr[1] - prev[1];
+                prev = curr;
+                return { dx, dy };
+            }
+        };
+    }
+
+    const trackerE  = makeDeltaTracker();
+    const trackerS  = makeDeltaTracker();
+    const trackerSE = makeDeltaTracker();
+
+    const dragE = d3.drag()
+        .on('start', (event) => {
+            event.sourceEvent?.stopPropagation();
+            trackerE.start(event);
+        })
+        .on('drag', (event) => {
+            const { dx } = trackerE.drag(event);
+            w = Math.max(minW, w + dx);
+            applySize();
+        });
+
+    const dragS = d3.drag()
+        .on('start', (event) => {
+            event.sourceEvent?.stopPropagation();
+            trackerS.start(event);
+        })
+        .on('drag', (event) => {
+            const { dy } = trackerS.drag(event);
+            h = Math.max(minH, h + dy);
+            applySize();
+        });
+
+    const dragSE = d3.drag()
+        .on('start', (event) => {
+            event.sourceEvent?.stopPropagation();
+            trackerSE.start(event);
+        })
+        .on('drag', (event) => {
+            const { dx, dy } = trackerSE.drag(event);
+            w = Math.max(minW, w + dx);
+            h = Math.max(minH, h + dy);
+            applySize();
+        });
+
+    handleE.call(dragE);   hitE.call(dragE);
+    handleS.call(dragS);   hitS.call(dragS);
+    handleSE.call(dragSE); hitSE.call(dragSE);
+
+    handles
+        .style('display', isDraggable ? null : 'none')
+        .style('pointer-events', isDraggable ? 'all' : 'none');
+
+    applySize();
+}
+
+
 function truncateString(str, maxLength = 25) {
     if (str.length <= maxLength) return str;
     return str.slice(0, maxLength) + '...';
@@ -239,6 +435,36 @@ window.addEventListener('load', function () {
         .catch(error => console.error('Error loading the CSV file:', error));
 });
 ``
+
+document.getElementById('act-save')?.addEventListener('click', () => {
+    const layout = {};
+
+    d3.selectAll('.draggable').each(function () {
+        const sel = d3.select(this);
+        const key = sel.attr('data-key');
+        if (!key) return;
+
+        const { x, y } = parseTranslate(sel.attr('transform'));
+        layout[key] = { x, y };
+    });
+
+    d3.selectAll('.draggable').each(function () {
+        const sel = d3.select(this);
+        const key = sel.attr('data-key');
+        if (!key) return;
+
+        const rect = sel.select('rect');
+        if (!rect.empty()) {
+            const w = +rect.attr('width');
+            const h = +rect.attr('height');
+            layout[key] = { ...(layout[key] || {}), width: w, height: h };
+        }
+    });
+
+    localStorage.setItem(LS_KEY, JSON.stringify(layout));
+    showToast('Scenario successfully saved!');
+});
+
 
 function resetVisualization() {
     const svgEl = document.getElementById('canvas');
@@ -481,7 +707,7 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
         const height = Math.round(width * aspect);
 
         const x = bbox.x + (bbox.width - width) / 2;
-        const y = bbox.y + bbox.height + 80;
+        const y = bbox.y + bbox.height + Math.max(300, bbox.height * 0.12);
         logoLayer.append('image')
             .attr('href', url)
             .attr('x', x)
@@ -621,14 +847,27 @@ function getMaxFirstLevelWidth(
 
 let isDraggable = false;
 
+function applyDraggableToggleState() {
+    const groups = d3.selectAll('.draggable');
+    const handles = d3.selectAll('.resize-handles');
+    if (isDraggable) {
+        groups.call(drag);
+        handles.style('display', null).style('pointer-events', 'all');
+    } else {
+        groups.on('.drag', null);
+        handles.style('display', 'none')
+            .style('pointer-events', 'none');
+    }
+}
+
+document.getElementById('act-reset-layout')?.addEventListener('click', () => {
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+});
 
 document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
     isDraggable = e.target.checked;
-    if (isDraggable) {
-        d3.selectAll('.draggable').call(drag);
-    } else {
-        d3.selectAll('.draggable').on('.drag', null);
-    }
+    applyDraggableToggleState();
 });
 
 function extractData(csvText) {
@@ -642,6 +881,24 @@ function extractData(csvText) {
         headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
         return obj;
     }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
+
+    let lastUpdateISO = '';
+    if (headers.includes('Last Update')) {
+        const idx = headers.indexOf('Last Update');
+        const dates = rows.slice(1)
+            .map(r => r[idx]?.trim())
+            .filter(Boolean)
+            .map(d => new Date(d))
+            .filter(d => !isNaN(d));
+        if (dates.length) {
+            const maxTs = Math.max(...dates.map(d => d.getTime()));
+            lastUpdateISO = new Date(maxTs).toISOString().slice(0,10); // yyyy-mm-dd
+        }
+    }
+    const peopleCount = people.length;
+    const datasetVersion = `people:${peopleCount}|lu:${lastUpdateISO || 'n/a'}`;
+    LS_KEY = `dsm-layout-v1::${datasetVersion}`;
+
 
     getLatestUpdateFromCsv(headers, rows);
 
@@ -711,13 +968,24 @@ function extractData(csvText) {
 
         const firstLevelGroup = streamLayer.append('g')
             .attr('class', 'draggable')
-            .attr('transform', `translate(${streamX},${streamY})`);
-        firstLevelGroup.append('rect')
+            .attr('transform', `translate(${streamX},${streamY})`)
+            .attr('data-key', `stream::${normalizeKey(firstLevel)}`);
+
+        restoreGroupPosition(firstLevelGroup);
+        const streamRect = firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
             .attr('width', firstLevelBoxWidth)
             .attr('height', firstLevelBoxHeight)
             .attr('rx', 40)
             .attr('ry', 40);
+
+        makeResizable(firstLevelGroup, streamRect, {
+            minWidth: 600,
+            minHeight: 300,
+            onResize: () => {
+                console.log('resizing')
+            }
+        });
 
         firstLevelGroup.append('text')
             .attr('x', 50)
@@ -752,15 +1020,23 @@ function extractData(csvText) {
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
-                .attr('transform', `translate(${streamX + secondLevelX},${streamY + 100})`);
+                .attr('transform', `translate(${streamX + secondLevelX},${streamY + 100})`)
+                .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
+
+            restoreGroupPosition(secondLevelGroup);
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
-            secondLevelGroup.append('rect')
+            const secondLevelRect = secondLevelGroup.append('rect')
                 .attr('class', 'theme-box')
                 .attr('width', themeWidth)
                 .attr('height', secondLevelBoxHeight)
                 .attr('rx', 30)
                 .attr('ry', 30);
+
+            makeResizable(secondLevelGroup, secondLevelRect, {
+                minWidth: 400,
+                minHeight: 250
+            });
 
             secondLevelGroup.append('text')
                 .attr('x', themeWidth / 2)
@@ -797,14 +1073,22 @@ function extractData(csvText) {
 
                 const thirdLevelGroup = teamLayer.append('g')
                     .attr('class', 'draggable')
-                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${streamY + 100 + teamLocalY})`);
-                
-                thirdLevelGroup.append('rect')
+                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${streamY + 100 + teamLocalY})`)
+                    .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`);
+
+                restoreGroupPosition(thirdLevelGroup);
+
+                const thirdLevelRect = thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
                     .attr('width', thirdLevelBoxWidth)
                     .attr('height', thirdLevelBoxHeight)
                     .attr('rx', 20)
                     .attr('ry', 20);
+
+                makeResizable(thirdLevelGroup, thirdLevelRect, {
+                    minWidth: 360,
+                    minHeight: 220
+                });
 
                 const serviceCount = services?.items?.length || 0;
                 const titleText = `${thirdLevel} - ⚙️ (${serviceCount})`;
@@ -834,7 +1118,10 @@ function extractData(csvText) {
 
                     const group = cardLayer.append('g')
                         .attr('class', 'draggable')
-                        .attr('transform', `translate(${cardX},${cardY})`);
+                        .attr('transform', `translate(${cardX},${cardY})`)
+                        .attr('data-key', `card::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}::${normalizeKey(member['Name'] || member['User'] || mIdx)}`);
+
+                    restoreGroupPosition(group);
 
                     group.append('rect')
                         .attr('class', 'profile-box')
@@ -920,6 +1207,8 @@ function extractData(csvText) {
     });
 
     fitToContent(0.9);
+
+    applyDraggableToggleState();
 }
 
 document.getElementById('fileInput')?.addEventListener('change', function (e) {

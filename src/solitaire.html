@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solitaire: Visual People Database</title>
   <link rel="stylesheet" href="./css/solitaire-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="side-overlay" tabindex="-1"></div>
@@ -20,14 +21,16 @@
       <li><button id="act-upload">📤 Upload CSV</button></li>
       <li>
         <label class="switch-label">
-          ↩ Draggable
+          ↩ Change Scenario
           <input type="checkbox" id="toggle-draggable">
           <span class="slider"></span>
         </label>
       </li>
+      <li><button id="act-save">💾 Save scenario</button></li>
+      <li><button id="act-reset-layout" type="button">❌ Reset scenario</button></li>
 
       <li><button id="act-report">📝 Report a change</button></li>
-      <li><button id="act-switch" onclick="window.location.href='./index.html'">⚅ Switch to Domino</button></li>
+      <li><button id="act-switch" onclick="window.location.href='./index.html'">⚅ Domino</button></li>
     </ul>
   </nav>
 
