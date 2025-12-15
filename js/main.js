@@ -121,6 +121,7 @@ function initSideDrawerEvents() {
         if (searchInput) searchInput.value = '';
         setSearchQuery('');
         updateVisualization(nodeGraph, linkGraph, labels);
+        fitGraphToViewport(0.9);
         closeSideDrawer();
     });
 
@@ -174,7 +175,6 @@ document.getElementById('fileInput').addEventListener('change', function (event)
         const csvData = e.target.result;
         const data = d3.csvParse(csvData);
         processData(data);
-        hideActions();
         updateVisualization(nodeGraph, linkGraph, labels);
     };
     reader.readAsText(file);
