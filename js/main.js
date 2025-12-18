@@ -577,7 +577,7 @@ function createLegend(colorScale) {
     types.forEach(type => {
         const color = colorScale(type);
         const legendItem = legend.append('div').attr('class', 'legend-item');
-        legendItem.append('div').attr('class', 'legend-color').style('background-color', color);
+        legendItem.append('div').attr('class', 'legend-swatch').style('background-color', color);
         legendItem.append('span').text(type);
     });
 }

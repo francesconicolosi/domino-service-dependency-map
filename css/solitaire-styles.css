@@ -1,4 +1,47 @@
-.resize-handle {
+
+#legend {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    max-width: 240px;
+    font-family: Inter, sans-serif;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#legend .legend-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+#legend .legend-items {
+    display: flex;
+    flex-direction: column; /* verticale */
+    gap: 6px; /* spazio tra le righe */
+}
+
+#legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #333;
+}
+
+#legend .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    flex-shrink: 0;
+}
+
+    .resize-handle {
     fill: #0078d4;
     stroke: #fff;
     stroke-width: 1.5px;

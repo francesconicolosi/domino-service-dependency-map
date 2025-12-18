@@ -1,5 +1,98 @@
 import { zoomIdentity, zoomTransform, zoom as d3zoom, select } from 'd3';
 
+export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, bodyParam) {
+    window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
+}
+
+export function updateLegend(scale, field, d3param) {
+    const legend = d3param.select('#legend');
+    legend.html('');
+
+    legend.append('div')
+        .attr('class', 'legend-title')
+        .text(`${field} Legenda`);
+
+    const itemsWrap = legend.append('div').attr('class', 'legend-items');
+
+    const domain = scale.domain();
+
+    domain.forEach(label => {
+        const key = label || 'Unknown';
+        const row = itemsWrap.append('div').attr('class', 'legend-item');
+
+        row.append('span')
+            .attr('class', 'legend-swatch')
+            .style('background', scale(key));
+
+        row.append('span')
+            .attr('class', 'legend-label')
+            .text(`${key}`);
+    });
+}
+
+export function buildLegendaColorScale(field, items, d3param, palette, neutralColor, specialMappedField, specialLegendaItemsMap) {
+    if (specialMappedField === undefined || field !== specialMappedField) {
+        const domainArr = Array.from(new Set(
+            items.map(m => (m?.[field] ?? '').toString().trim() || 'Unknown')
+        ));
+        return d3param.scaleOrdinal(domainArr, palette);
+    }
+
+    const additionalExclusiveDomain = [...specialLegendaItemsMap.values()]
+        .flat()
+        .filter(r => new Set(
+            items
+                .map(m => (m?.[specialMappedField] ?? '').toString().trim())
+                .filter(Boolean)
+        ).has(r));
+
+    const domainWithOther = [...additionalExclusiveDomain, 'Other'];
+    const paletteForSpecialEntries = domainWithOther.map((_, i) => i < additionalExclusiveDomain.length
+        ? palette[i % palette.length]
+        : neutralColor
+    );
+
+
+    const scale = d3param.scaleOrdinal(domainWithOther, paletteForSpecialEntries);
+
+    scale.isGuest = (specificField) => {
+        return additionalExclusiveDomain.includes((specificField || '').trim());
+    }
+    return scale;
+}
+
+export function openOutlookWebCompose({to = [], cc = [], bcc = [], subject = '', body = ''}) {
+    const toParam = to.length ? encodeURIComponent(to.join(';')) : '';
+    const ccParam = cc.length ? encodeURIComponent(cc.join(';')) : '';
+
+    const subjectParam = encodeURIComponent(subject);
+    const bodyParam = encodeURIComponent(body);
+
+    let url = `https://outlook.office.com/mail/deeplink/compose?subject=${subjectParam}&body=${bodyParam}`;
+    if (toParam) url += `&to=${toParam}`;
+    if (ccParam) url += `&cc=${ccParam}`;
+
+    window.open(url, '_blank', 'noopener');
+}
+
+export function isMobileDevice() {
+    try {
+        if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+            return navigator.userAgentData.mobile;
+        }
+    } catch (_) {}
+
+    const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+    const uaIsMobile =
+        /android|iphone|ipod|ipad|iemobile|mobile|blackberry|opera mini|opera mobi|silk/.test(ua) ||
+        ((/macintosh/.test(ua) || /mac os x/.test(ua)) && 'ontouchend' in document);
+
+    const smallViewport = Math.min(window.screen.width, window.screen.height) <= 820; // tablet/phone
+
+    return uaIsMobile || smallViewport;
+}
+
+
 export function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);

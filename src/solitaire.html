@@ -19,6 +19,26 @@
   <nav class="content">
     <ul class="actions">
       <li><button id="act-upload">📤 Upload CSV</button></li>
+        <label class="switch-label">
+          🎨 Legenda by Role
+          <input type="radio" id="toggle-color-role" checked>
+          <span class="slider"></span>
+        </label>
+      </li>
+      <li>
+        <label class="switch-label">
+          🏢 Legenda by Company
+          <input type="radio" id="toggle-color-company">
+          <span class="slider"></span>
+        </label>
+      </li>
+      <li>
+        <label class="switch-label">
+          📍 Legenda by Location
+          <input type="radio" id="toggle-color-location">
+          <span class="slider"></span>
+        </label>
+      </li>
       <li>
         <label class="switch-label">
           ↩ Change Scenario
@@ -26,6 +46,7 @@
           <span class="slider"></span>
         </label>
       </li>
+      <li>
       <li><button id="act-save">💾 Save scenario</button></li>
       <li><button id="act-reset-layout" type="button">❌ Reset scenario</button></li>
 
@@ -53,6 +74,7 @@
   Upload a CSV People DB
 </label>
 <div id="output"></div>
+<div id="legend" class="legend"></div>
 <svg id="canvas"></svg>
 
 <div id="drawer-overlay"></div>

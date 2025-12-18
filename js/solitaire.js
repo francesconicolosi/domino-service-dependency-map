@@ -1,13 +1,18 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, parseCSV,
-    highlightGroup as highlightGroupUtils, closeSideDrawer, openSideDrawer, initCommonActions, getFormattedDate
+    getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
+    highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
+    buildLegendaColorScale, updateLegend
 } from './utils.js';
 
 let lastSearch = '';
 let currentIndex = 0;
 let logoLayer;
+
+let people = [];
+let colorScale = null;
+
 
 const SECOND_LEVEL_LABEL_EXTRA = 120;
 const FIRST_LEVEL_LEFT_PAD   = 80;
@@ -19,17 +24,104 @@ const firstLevelNA = `No ${firstOrgLevel}`;
 const secondLevelNA = `No ${secondOrgLevel}`;
 const thirdLevelNA = `No ${thirdOrgLevel}`;
 
-const guestRoleColors = ["#ffe066", "#b2f7ef", "#a0c4ff", "#ffd6e0", "#f1faee"];
-const guestRoles = ["Team Product Manager", "Team Delivery Manager", "Team Scrum Master", "Team Architect", "Team Development Manager"];
+const PALETTE = [
+    '#a0c4ff', '#ffd6e0', '#b2f7ef', '#ffe066', '#caffbf',
+    '#ffadad', '#fdffb6', '#bdb2ff', '#9bf6ff', '#ffc6ff'
+];
+
+const ROLE_FIELD_WITH_MAPPING = 'Role';
+const LOCATION_FIELD = 'Location';
+const COMPANY_FIELD = 'Company';
+let colorBy = ROLE_FIELD_WITH_MAPPING;
+
+const guestRolesMap = new Map([
+    ["Team Product Manager", ["Product Manager"]],
+    ["Team Delivery Manager", ["Delivery Manager"]],
+    ["Team Scrum Master", ["Agile Coach/Scrum Master"]],
+    ["Team Solution Architect", ["Solution Architect"]],
+    ["Team Development Manager", ["Development Manager"]]
+]);
+
+const guestRoleColumns = Array.from(guestRolesMap.keys());
+
+let colorKeyMappings = new Map();
 const emailField = "Company email"; // this will be used to resolve the photo filename
 
 const peopleDBUpdateRecipients = [
     'teams@share.software.net'
-].join(',');
+];
 
-const roleColors = Object.fromEntries(
-    guestRoles.map((role, i) => [role, guestRoleColors[i % guestRoleColors.length]])
-);
+const NEUTRAL_COLOR = '#fcfcfc';
+
+
+function initColorScale(initialField, members) {
+    colorBy = initialField;
+    colorScale = buildLegendaColorScale(colorBy, members.slice(), d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, guestRolesMap);
+
+    if (typeof colorScale !== 'function') {
+        throw new Error('colorScale was not created as a function');
+    }
+}
+
+function getCardFill(g) {
+    let colorKey =
+        colorBy === ROLE_FIELD_WITH_MAPPING     ? (g.attr('data-role')     || 'Unknown') :
+            colorBy === COMPANY_FIELD  ? (g.attr('data-company')  || 'Unknown') :
+                (g.attr('data-location') || 'Unknown');
+
+    if (typeof colorScale !== 'function') return NEUTRAL_COLOR;
+
+    if (colorBy === ROLE_FIELD_WITH_MAPPING) {
+        const role = (colorKey || '').toString().trim();
+        colorKey = (colorScale.isGuest && colorScale.isGuest(role)) ? role : 'Other';;
+    }
+
+    const finalColor = colorScale(colorKey);
+    return (typeof finalColor === 'string' && finalColor) ? finalColor : NEUTRAL_COLOR;
+}
+
+function recolorProfileCards(field) {
+    colorBy = field;
+    colorScale = buildLegendaColorScale(colorBy, people, d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, guestRolesMap);
+    updateLegend(colorScale, colorBy, d3);
+
+    d3.selectAll('g[data-key^="card::"]').each(function () {
+        const g = d3.select(this);
+        g.select('rect.profile-box')
+            .transition().duration(200)
+            .attr('fill', getCardFill(g));
+    });
+
+}
+
+
+function setColorMode(mode) {
+    const roleEl = document.getElementById('toggle-color-role');
+    const compEl = document.getElementById('toggle-color-company');
+    const locEl = document.getElementById('toggle-color-location');
+
+    if (!roleEl || !compEl || !locEl) return;
+
+
+    if (mode === ROLE_FIELD_WITH_MAPPING) {
+        roleEl.checked = true;
+        compEl.checked = false;
+        locEl.checked = false;
+    } else if (mode === COMPANY_FIELD) {
+        roleEl.checked = false;
+        compEl.checked = true;
+        locEl.checked = false;
+    } else {
+        if (mode === LOCATION_FIELD) {
+                roleEl.checked = false;
+                compEl.checked = false;
+                locEl.checked = true;
+            }
+    }
+
+    recolorProfileCards(mode);
+}
+
 
 const drag = d3.drag()
     .on("start", function () {
@@ -291,11 +383,6 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
 function initSideDrawerEvents() {
     initCommonActions();
 
-    document.getElementById('act-upload')?.addEventListener('click', () => {
-        document.getElementById('fileInput')?.click();
-        closeSideDrawer();
-    });
-
     document.getElementById('act-clear')?.addEventListener('click', () => {
         const output = document.getElementById('output');
         output.textContent = '';
@@ -312,19 +399,58 @@ function initSideDrawerEvents() {
         //closeSideDrawer();
     });
 
+    document.getElementById('toggle-color-role')?.addEventListener('change', (e) => {
+        if (e.target.checked) setColorMode(ROLE_FIELD_WITH_MAPPING);
+    });
+    document.getElementById('toggle-color-company')?.addEventListener('change', (e) => {
+        if (e.target.checked) setColorMode(COMPANY_FIELD);
+    });
+    document.getElementById('toggle-color-location')?.addEventListener('change', (e) => {
+        if (e.target.checked) setColorMode(LOCATION_FIELD);
+    });
+
+
     document.getElementById('act-report')?.addEventListener('click', () => {
-        const subject = encodeURIComponent('Request for People Database Update');
-        const body = encodeURIComponent(
-            `Hello Team,
 
-I would like to report the need for an update to the People Database: 
-[insert the change here]
+        const subject = 'Request for People Database Update';
 
-Thank you.`
-        );
+        const body = `
+Hello,
 
-        const mailtoLink = `mailto:${peopleDBUpdateRecipients}?subject=${subject}&body=${body}`;
-        window.location.href = mailtoLink;
+I would like to report the need for an update to the People Database:
+
+FIRST NAME: 
+LAST NAME: 
+COMPANY NAME: 
+TEAM: 
+ROLE: 
+START DATE (for new Joiners or movers): 
+END DATE (for leavers): 
+ON-SITE/OFF-SITE: 
+CITY/COUNTRY: 
+ROOM: 
+LINE MANAGER: 
+PHOTO: 
+
+Regards,
+`;
+
+        try {
+            if (isMobileDevice()) {
+                buildFallbackMailToLink(peopleDBUpdateRecipients, subject, body);
+            } else {
+                openOutlookWebCompose({
+                    to: peopleDBUpdateRecipients,
+                    cc: [],
+                    bcc: [],
+                    subject,
+                    body
+                });
+            }
+        } catch (e) {
+            console.log(e);
+            buildFallbackMailToLink(peopleDBUpdateRecipients, subject, body);
+        }
         closeSideDrawer();
     });
 
@@ -556,7 +682,7 @@ function zoomToElement(element, desiredScale = 1.5, duration = 500) {
     const [cx, cy] = t.invert([centerScreenX, centerScreenY]);
 
     const k = desiredScale;
-    const offsetY = 380;
+    const offsetY = 250;
     const tx = width / 2 - cx * k;
     const ty = height / 2 - cy * k - offsetY;
 
@@ -640,11 +766,11 @@ function addGuestManagersTo(organization) {
                 for (const p of members) {
                     const names = Object.values(result[firstLevel][secondLevel][thirdLevel]).map(entry => entry.Name);
                     if (!names.includes(p.Name)) result[firstLevel][secondLevel][thirdLevel].push(p);
-                    guestRoles.forEach(role => addGuestManagersByRole(p, role, result[firstLevel][secondLevel][thirdLevel], organization));
+                    guestRoleColumns.forEach(role => addGuestManagersByRole(p, role, result[firstLevel][secondLevel][thirdLevel], organization));
                 }
                 result[firstLevel][secondLevel][thirdLevel].sort((a, b) => {
-                    const aIsGuest = guestRoles.includes(a.guestRole);
-                    const bIsGuest = guestRoles.includes(b.guestRole);
+                    const aIsGuest = guestRoleColumns.includes(a.guestRole);
+                    const bIsGuest = guestRoleColumns.includes(b.guestRole);
                     if (aIsGuest && !bIsGuest) return 1;
                     if (!aIsGuest && bIsGuest) return -1;
                     return 0;
@@ -730,41 +856,6 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
             .html('<p>Author: Francesco Nicolosi</p>' +
                 '<p>Personal Blog: <a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></p>' +
                 '<p>Usage License: MIT</p>');
-
-
-        const legendX = bbox.x;
-        const legendY = y;
-        const boxSize = 18;
-        const spacing = 10;
-
-        logoLayer.append('text')
-            .attr('x', legendX)
-            .attr('y', legendY - 10)
-            .attr('font-size', '18px')
-            .attr('font-family', 'Arial, sans-serif')
-            .attr('fill', '#333')
-            .text('Legenda:');
-
-        guestRoles.forEach((role, i) => {
-            const rowY = legendY + i * (boxSize + spacing);
-            logoLayer.append('rect')
-                .attr('x', legendX)
-                .attr('y', rowY)
-                .attr('width', boxSize)
-                .attr('height', boxSize)
-                .attr('fill', roleColors[role])
-                .attr('stroke', '#333')
-                .attr('rx', 4)
-                .attr('ry', 4);
-
-            logoLayer.append('text')
-                .attr('x', legendX + boxSize + 10)
-                .attr('y', rowY + boxSize - 4)
-                .attr('font-size', '16px')
-                .attr('font-family', 'Arial, sans-serif')
-                .attr('fill', '#333')
-                .text(role);
-        });
 
         let notZoommingToShowSearchResults = !getQueryParam("search");
         if (notZoommingToShowSearchResults) {
@@ -862,7 +953,7 @@ function applyDraggableToggleState() {
 
 document.getElementById('act-reset-layout')?.addEventListener('click', () => {
     localStorage.removeItem(LS_KEY);
-    location.reload();
+    LOCATION_FIELD.reload();
 });
 
 document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
@@ -872,15 +963,20 @@ document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
 
 function extractData(csvText) {
     if (!csvText) { alert('Missing CSV File!'); return; }
+    colorKeyMappings = new Map();
     const rows = parseCSV(csvText);
     if (rows.length < 2) return;
 
     const headers = rows[0].map(h => h.trim());
-    const people = rows.slice(1).map(row => {
+    people = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
         return obj;
     }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
+
+    initColorScale(ROLE_FIELD_WITH_MAPPING, people, d3, guestRolesMap, ROLE_FIELD_WITH_MAPPING);
+    updateLegend(colorScale, colorBy, d3);
+    setColorMode(ROLE_FIELD_WITH_MAPPING)
 
     let lastUpdateISO = '';
     if (headers.includes('Last Update')) {
@@ -1117,21 +1213,42 @@ function extractData(csvText) {
                     const cardY = streamY + 100 + 70 + 45 + row * (cardBaseHeight + 10) + 130;
 
                     const group = cardLayer.append('g')
+                        .attr('data-role', (member[ROLE_FIELD_WITH_MAPPING] || '').toString().trim())
+                        .attr('data-company', (member[COMPANY_FIELD] || '').toString().trim())
+                        .attr('data-location', (member[LOCATION_FIELD] || '').toString().trim())
                         .attr('class', 'draggable')
                         .attr('transform', `translate(${cardX},${cardY})`)
                         .attr('data-key', `card::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}::${normalizeKey(member['Name'] || member['User'] || mIdx)}`);
 
+
+                    const colorKey =
+                        colorBy === ROLE_FIELD_WITH_MAPPING ?  group.attr('data-role') :
+                            colorBy === COMPANY_FIELD ? group.attr('data-company') :
+                                group.attr('data-location');
+
+                    colorKeyMappings.set(
+                        colorBy,
+                        (colorKeyMappings.get(colorBy) ?? new Set()).add(colorKey)
+                    );
+
                     restoreGroupPosition(group);
 
-                    group.append('rect')
+                    const memberRect = group.append('rect')
                         .attr('class', 'profile-box')
                         .attr('width', memberWidth)
                         .attr('height', cardBaseHeight)
                         .attr('rx', 14)
                         .attr('ry', 14)
-                        .attr('fill', member.guestRole ? roleColors[member.guestRole] : 'white');
+                        .attr('fill', getCardFill(group) ? getCardFill(group) : NEUTRAL_COLOR);
 
-                    function resolvePhoto(email, fallback = './assets/user-icon.png') {
+                    if (member.guestRole) {
+                        memberRect.attr('stroke', '#333')
+                            .attr('stroke-width', 1.5)
+                            .attr('stroke-dasharray', '4 2');
+                    }
+
+
+                        function resolvePhoto(email, fallback = './assets/user-icon.png') {
                         const paths = email ? getPhotoPath(email) : fallback;
                         return new Promise((resolve) => {
                             const img = new Image();
@@ -1154,7 +1271,6 @@ function extractData(csvText) {
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
-                        console.log(photoPath);
                         group.append('foreignObject')
                             .attr('x', (memberWidth - 60) / 2)
                             .attr('y', 8)
