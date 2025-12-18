@@ -1,6 +1,6 @@
 
 #legend {
-    position: fixed; /* o absolute, se preferisci */
+    position: fixed;
     bottom: 20px;
     right: 20px;
     background: rgba(255, 255, 255, 0.95);
