@@ -10,15 +10,7 @@
     max-width: 240px;
     font-family: Inter, sans-serif;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    cursor: move;
-    user-select: none;
-    z-index: 10001;
 }
-
-#legend.dragging {
-    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
-}
-
 
 #legend .legend-title {
     font-weight: 700;
