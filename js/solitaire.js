@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {
     getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
     highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
-    buildLegendaColorScale, updateLegend
+    buildLegendaColorScale, updateLegend, initLegendDrag
 } from './utils.js';
 
 let lastSearch = '';
@@ -84,6 +84,7 @@ function recolorProfileCards(field) {
     colorBy = field;
     colorScale = buildLegendaColorScale(colorBy, people, d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, guestRolesMap);
     updateLegend(colorScale, colorBy, d3);
+    initLegendDrag();
 
     d3.selectAll('g[data-key^="card::"]').each(function () {
         const g = d3.select(this);
@@ -541,7 +542,8 @@ function initDrawerEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
-``
+window.addEventListener('DOMContentLoaded', initLegendDrag);
+
 
 window.addEventListener('load', function () {
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample-people-database.csv')
@@ -976,6 +978,7 @@ function extractData(csvText) {
 
     initColorScale(ROLE_FIELD_WITH_MAPPING, people, d3, guestRolesMap, ROLE_FIELD_WITH_MAPPING);
     updateLegend(colorScale, colorBy, d3);
+    initLegendDrag();
     setColorMode(ROLE_FIELD_WITH_MAPPING)
 
     let lastUpdateISO = '';

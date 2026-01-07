@@ -1,4 +1,101 @@
-import { zoomIdentity, zoomTransform, zoom as d3zoom, select } from 'd3';
+import * as d3 from 'd3';
+
+const LEGEND_KEY = 'legend::pos';
+
+export function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+}
+
+export function getLegend() {
+    return document.getElementById('legend');
+}
+
+export function saveLegendPosition() {
+    const legend = getLegend();
+    if (!legend) return;
+    const top  = parseFloat(legend.style.top)  || 0;
+    const left = parseFloat(legend.style.left) || 0;
+
+    const all = loadLayout();
+    all[LEGEND_KEY] = { top, left };
+    saveLayout(all);
+}
+
+export function restoreLegendPosition() {
+    const legend = getLegend();
+    if (!legend) return;
+    const saved = getItemLayout(LEGEND_KEY);
+    if (!saved || !Number.isFinite(saved.top) || !Number.isFinite(saved.left)) return;
+
+    legend.style.top    = `${clamp(saved.top, 0, window.innerHeight - legend.offsetHeight)}px`;
+    legend.style.left   = `${clamp(saved.left, 0, window.innerWidth  - legend.offsetWidth)}px`;
+    legend.style.bottom = 'auto';
+    legend.style.right  = 'auto';
+}
+
+export function initLegendDrag() {
+    const legend = document.getElementById('legend');
+    if (!legend) return;
+
+    legend.style.zIndex = '10001';
+    legend.style.userSelect = 'none';
+    legend.style.cursor = 'move';
+    legend.style.touchAction = 'none';
+
+    const comp = window.getComputedStyle(legend);
+    const rect = legend.getBoundingClientRect();
+    const hasBottom = comp.bottom !== 'auto' && comp.bottom !== '' && comp.bottom !== '0px';
+
+    if (hasBottom || !legend.style.top) {
+        const bottom = parseFloat(comp.bottom || '20') || 20;
+        const left   = parseFloat(comp.left   || '20') || 20;
+        const top    = window.innerHeight - bottom - rect.height;
+
+        legend.style.top    = `${Math.max(0, Math.min(top,  window.innerHeight - rect.height))}px`;
+        legend.style.left   = `${Math.max(0, Math.min(left, window.innerWidth  - rect.width ))}px`;
+        legend.style.bottom = 'auto';
+        legend.style.right  = 'auto';
+    }
+
+    legend.addEventListener('mousedown',  e => e.stopPropagation(), { capture: true });
+    legend.addEventListener('touchstart', e => e.stopPropagation(), { capture: true, passive: true });
+
+    let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+    const dragHandler = d3.drag()
+        .on('start', (event) => {
+            const se = event.sourceEvent;
+            const r  = legend.getBoundingClientRect();
+            startX    = (se?.touches?.[0]?.clientX ?? se?.clientX ?? 0);
+            startY    = (se?.touches?.[0]?.clientY ?? se?.clientY ?? 0);
+            startLeft = r.left;
+            startTop  = r.top;
+            legend.classList.add('dragging');
+        })
+        .on('drag', (event) => {
+            const se   = event.sourceEvent;
+            const cx   = (se?.touches?.[0]?.clientX ?? se?.clientX ?? startX);
+            const cy   = (se?.touches?.[0]?.clientY ?? se?.clientY ?? startY);
+            const dx   = cx - startX;
+            const dy   = cy - startY;
+            const left = Math.max(0, Math.min(window.innerWidth  - legend.offsetWidth,  startLeft + dx));
+            const top  = Math.max(0, Math.min(window.innerHeight - legend.offsetHeight, startTop  + dy));
+
+            legend.style.left = `${left}px`;
+            legend.style.top  = `${top}px`;
+        })
+        .on('end', () => {
+            legend.classList.remove('dragging');
+        });
+
+    d3.select(legend).on('.drag', null).call(dragHandler); // pulisci eventuali handler precedenti
+
+    window.addEventListener('resize', () => {
+        const r = legend.getBoundingClientRect();
+        legend.style.left = `${Math.max(0, Math.min(r.left, window.innerWidth  - r.width))}px`;
+        legend.style.top  = `${Math.max(0, Math.min(r.top,  window.innerHeight - r.height))}px`;
+    });
+}
 
 export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, bodyParam) {
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
