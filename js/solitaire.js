@@ -855,7 +855,7 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
             .style('color', '#333')
             .html('<p>Author: Francesco Nicolosi</p>' +
                 '<p>Personal Blog: <a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></p>' +
-                '<p>Usage License: MIT</p>');
+                '<p>Usage: <img src="https://img.shields.io/badge/license-NonCommercial-blue.svg"></p>');
 
         let notZoommingToShowSearchResults = !getQueryParam("search");
         if (notZoommingToShowSearchResults) {

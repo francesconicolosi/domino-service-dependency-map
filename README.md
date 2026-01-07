@@ -118,8 +118,15 @@ Use the same delimiter convention (\n inside quoted cells) for multi‑value fie
 Contributions are welcome! Please open an issue or submit a pull request to suggest improvements or fix issues.
 
 ## License & Attribution
-This application is freely available for use under the MIT License. If you use this application or any part of its code, please give appropriate credit to the original author. You can do this by including a link to the original repository and mentioning the author's name in your documentation or project.
+Copyright (c) 2025 Francesco "Nyconator" Nicolosi
 
+Personal Blog: https://www.gamerdad.cloud
+
+Permission is hereby granted to use, copy, modify, and distribute this software for personal and non-commercial purposes only, provided that proper credit is given to the original author.
+
+Commercial use of this software, including but not limited to selling, sublicensing, or integrating into products or services for profit, is strictly prohibited without prior written permission from the author.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Original Author: Francesco "Nyconator" Nicolosi
 
 Original Repository: https://github.com/francesconicolosi/domino-service-dependency-map
