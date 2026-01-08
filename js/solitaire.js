@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {
     getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
     highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
-    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped
+    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped, SECOND_LEVEL_LABEL_EXTRA
 } from './utils.js';
 
 let lastSearch = '';
@@ -14,8 +14,6 @@ let people = [];
 let colorScale = null;
 
 
-const SECOND_LEVEL_LABEL_EXTRA = 120;
-const FIRST_LEVEL_LEFT_PAD   = 80;
 const THEMES_PER_ROW = 4;
 const secondLevelRowPadY = 60;
 
@@ -67,15 +65,16 @@ function initColorScale(initialField, members) {
 
 function getCardFill(g) {
     let colorKey =
-        colorBy === ROLE_FIELD_WITH_MAPPING     ? (g.attr('data-role')     || 'Unknown') :
-            colorBy === COMPANY_FIELD  ? (g.attr('data-company')  || 'Unknown') :
+        colorBy === ROLE_FIELD_WITH_MAPPING ? (g.attr('data-role') || 'Unknown') :
+            colorBy === COMPANY_FIELD ? (g.attr('data-company') || 'Unknown') :
                 (g.attr('data-location') || 'Unknown');
 
     if (typeof colorScale !== 'function') return NEUTRAL_COLOR;
 
     if (colorBy === ROLE_FIELD_WITH_MAPPING) {
         const role = (colorKey || '').toString().trim();
-        colorKey = (colorScale.isGuest && colorScale.isGuest(role)) ? role : 'Other';;
+        colorKey = (colorScale.isGuest && colorScale.isGuest(role)) ? role : 'Other';
+        ;
     }
 
     const finalColor = colorScale(colorKey);
@@ -115,10 +114,10 @@ function setColorMode(mode) {
         locEl.checked = false;
     } else {
         if (mode === LOCATION_FIELD) {
-                roleEl.checked = false;
-                compEl.checked = false;
-                locEl.checked = true;
-            }
+            roleEl.checked = false;
+            compEl.checked = false;
+            locEl.checked = true;
+        }
     }
 
     recolorProfileCards(mode);
@@ -169,22 +168,31 @@ function normalizeKey(s) {
 }
 
 function loadLayout() {
-    try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
-    catch { return {}; }
+    try {
+        return JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    } catch {
+        return {};
+    }
 }
-function saveLayout(obj) { localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
 
-function getItemLayout(key) { return loadLayout()[key]; }
+function saveLayout(obj) {
+    localStorage.setItem(LS_KEY, JSON.stringify(obj));
+}
+
+function getItemLayout(key) {
+    return loadLayout()[key];
+}
+
 function upsertItemLayout(key, patch) {
     const all = loadLayout();
-    all[key] = { ...(all[key] || {}), ...patch };
+    all[key] = {...(all[key] || {}), ...patch};
     saveLayout(all);
 }
 
 function parseTranslate(transform) {
-    if (!transform) return { x: 0, y: 0 };
+    if (!transform) return {x: 0, y: 0};
     const m = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-    return m ? { x: +m[1] || 0, y: +m[2] || 0 } : { x: 0, y: 0 };
+    return m ? {x: +m[1] || 0, y: +m[2] || 0} : {x: 0, y: 0};
 }
 
 function restoreGroupPosition(groupSel) {
@@ -201,7 +209,7 @@ function getSavedSizeForGroup(groupSel) {
     if (!key) return null;
     const saved = getItemLayout(key);
     if (!saved || !Number.isFinite(saved.width) || !Number.isFinite(saved.height)) return null;
-    return { w: saved.width, h: saved.height };
+    return {w: saved.width, h: saved.height};
 }
 
 
@@ -216,17 +224,17 @@ function makeResizable(group, rect, opts = {}) {
     let h = (savedSize?.h ?? Number(rect.attr('height'))) || minH;
 
     const handleSize = 14;
-    const hitPad     = 10;
+    const hitPad = 10;
 
     const handles = group.append('g').attr('class', 'resize-handles');
     handles.raise();
 
-    const handleE  = handles.append('rect').attr('class', 'resize-handle e');
-    const handleS  = handles.append('rect').attr('class', 'resize-handle s');
+    const handleE = handles.append('rect').attr('class', 'resize-handle e');
+    const handleS = handles.append('rect').attr('class', 'resize-handle s');
     const handleSE = handles.append('rect').attr('class', 'resize-handle se');
 
-    const hitE  = handles.append('rect').attr('class', 'resize-hit e');
-    const hitS  = handles.append('rect').attr('class', 'resize-hit s');
+    const hitE = handles.append('rect').attr('class', 'resize-hit e');
+    const hitS = handles.append('rect').attr('class', 'resize-hit s');
     const hitSE = handles.append('rect').attr('class', 'resize-hit se');
 
     function positionHandles() {
@@ -279,7 +287,7 @@ function makeResizable(group, rect, opts = {}) {
 
         positionHandles();
         if (typeof opts.onResize === 'function') {
-            opts.onResize({ width: w, height: h });
+            opts.onResize({width: w, height: h});
         }
     }
 
@@ -291,20 +299,22 @@ function makeResizable(group, rect, opts = {}) {
             return t.invert([px, py]);
         };
         return {
-            start(event) { prev = getSvgPoint(event); },
+            start(event) {
+                prev = getSvgPoint(event);
+            },
             drag(event) {
                 const curr = getSvgPoint(event);
                 if (!prev) prev = curr;
                 const dx = curr[0] - prev[0];
                 const dy = curr[1] - prev[1];
                 prev = curr;
-                return { dx, dy };
+                return {dx, dy};
             }
         };
     }
 
-    const trackerE  = makeDeltaTracker();
-    const trackerS  = makeDeltaTracker();
+    const trackerE = makeDeltaTracker();
+    const trackerS = makeDeltaTracker();
     const trackerSE = makeDeltaTracker();
 
     const dragE = d3.drag()
@@ -313,7 +323,7 @@ function makeResizable(group, rect, opts = {}) {
             trackerE.start(event);
         })
         .on('drag', (event) => {
-            const { dx } = trackerE.drag(event);
+            const {dx} = trackerE.drag(event);
             w = Math.max(minW, w + dx);
             applySize();
         });
@@ -324,7 +334,7 @@ function makeResizable(group, rect, opts = {}) {
             trackerS.start(event);
         })
         .on('drag', (event) => {
-            const { dy } = trackerS.drag(event);
+            const {dy} = trackerS.drag(event);
             h = Math.max(minH, h + dy);
             applySize();
         });
@@ -335,15 +345,18 @@ function makeResizable(group, rect, opts = {}) {
             trackerSE.start(event);
         })
         .on('drag', (event) => {
-            const { dx, dy } = trackerSE.drag(event);
+            const {dx, dy} = trackerSE.drag(event);
             w = Math.max(minW, w + dx);
             h = Math.max(minH, h + dy);
             applySize();
         });
 
-    handleE.call(dragE);   hitE.call(dragE);
-    handleS.call(dragS);   hitS.call(dragS);
-    handleSE.call(dragSE); hitSE.call(dragSE);
+    handleE.call(dragE);
+    hitE.call(dragE);
+    handleS.call(dragS);
+    hitS.call(dragS);
+    handleSE.call(dragSE);
+    hitSE.call(dragSE);
 
     handles
         .style('display', isDraggable ? null : 'none')
@@ -361,7 +374,7 @@ function truncateString(str, maxLength = 25) {
 function aggregateTeamManagedServices(members, headers, headerName = 'Team Managed Services') {
     const idx = findHeaderIndex(headers, headerName);
     if (idx === -1) {
-        return { exists: false, items: [] };
+        return {exists: false, items: []};
     }
     const headerRealName = headers[idx];
     const set = new Set();
@@ -378,7 +391,7 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
 
     return {
         exists: true,
-        items: [...set].sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
+        items: [...set].sort((a, b) => a.localeCompare(b, 'it', {sensitivity: 'base'}))
     };
 }
 
@@ -465,7 +478,7 @@ Regards,
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
-function openDrawer({ name, description, services }) {
+function openDrawer({name, description, services}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
@@ -539,7 +552,9 @@ function initDrawerEvents() {
     const closeBtn = document.getElementById('drawer-close');
     overlay?.addEventListener('click', closeDrawer);
     closeBtn?.addEventListener('click', closeDrawer);
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDrawer();
+    });
 }
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
@@ -572,8 +587,8 @@ document.getElementById('act-save')?.addEventListener('click', () => {
         const key = sel.attr('data-key');
         if (!key) return;
 
-        const { x, y } = parseTranslate(sel.attr('transform'));
-        layout[key] = { x, y };
+        const {x, y} = parseTranslate(sel.attr('transform'));
+        layout[key] = {x, y};
     });
 
     d3.selectAll('.draggable').each(function () {
@@ -585,7 +600,7 @@ document.getElementById('act-save')?.addEventListener('click', () => {
         if (!rect.empty()) {
             const w = +rect.attr('width');
             const h = +rect.attr('height');
-            layout[key] = { ...(layout[key] || {}), width: w, height: h };
+            layout[key] = {...(layout[key] || {}), width: w, height: h};
         }
     });
 
@@ -811,10 +826,9 @@ function getContentBBox() {
     const y1 = Math.min(...boxes.map(b => b.y));
     const x2 = Math.max(...boxes.map(b => b.x + b.width));
     const y2 = Math.max(...boxes.map(b => b.y + b.height));
-    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+    return {x: x1, y: y1, width: x2 - x1, height: y2 - y1};
 
 }
-
 
 
 function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidth = 240, textMargin = 40) {
@@ -872,36 +886,6 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
 }
 
 
-function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
-    const n = Number(numTeams) || 0;
-    if (n <= 0) {
-        return SECOND_LEVEL_LABEL_EXTRA;
-    }
-    return n * thirdLevelBoxWidth + (n - 1) * thirdLevelBoxPadX + SECOND_LEVEL_LABEL_EXTRA;
-}
-
-function computeStreamBoxWidth(
-    numThemes,
-    teamsPerTheme,
-    thirdLevelBoxWidth,
-    thirdLevelBoxPadX,
-    secondLevelBoxPadX,
-    minWidth = 600
-) {
-    const tCount = Number(numThemes) || 0;
-    if (tCount === 0) return minWidth;
-
-    const themeWidths = teamsPerTheme.map(n =>
-        computeThemeWidth(n, thirdLevelBoxWidth, thirdLevelBoxPadX)
-    );
-
-    const sumThemes = themeWidths.reduce((sum, w) => sum + (Number(w) || 0), 0);
-    const interThemePad = (tCount - 1) * secondLevelBoxPadX;
-
-    const total = sumThemes + interThemePad + FIRST_LEVEL_LEFT_PAD;
-    return Math.max(total, minWidth);
-}
-
 let isDraggable = false;
 
 function applyDraggableToggleState() {
@@ -928,7 +912,10 @@ document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
 });
 
 function extractData(csvText) {
-    if (!csvText) { alert('Missing CSV File!'); return; }
+    if (!csvText) {
+        alert('Missing CSV File!');
+        return;
+    }
     colorKeyMappings = new Map();
     const rows = parseCSV(csvText);
     if (rows.length < 2) return;
@@ -954,7 +941,7 @@ function extractData(csvText) {
             .filter(d => !isNaN(d));
         if (dates.length) {
             const maxTs = Math.max(...dates.map(d => d.getTime()));
-            lastUpdateISO = new Date(maxTs).toISOString().slice(0,10); // yyyy-mm-dd
+            lastUpdateISO = new Date(maxTs).toISOString().slice(0, 10); // yyyy-mm-dd
         }
     }
     const peopleCount = people.length;
@@ -1017,22 +1004,12 @@ function extractData(csvText) {
             firstLevelDescription = match ? (match[descriptionHeader] || '') : '';
         }
 
-        const themeEntries = Object.entries(secondLevelItems)
-            .filter(([themeKey]) => !themeKey.includes(secondLevelNA));
-
-        const teamsPerThemeInStream = themeEntries.map(([, thirdLevelItems]) =>
-            Object.keys(thirdLevelItems).length
-        );
-
-        const themeWidthsInStream = teamsPerThemeInStream.map(n =>
-            computeThemeWidth(n, thirdLevelBoxWidth, thirdLevelBoxPadX)
-        );
-
         const firstLevelBoxWidth = computeStreamBoxWidthWrapped(
-            themeWidthsInStream,
+            secondLevelItems,
             secondLevelBoxPadX,
-            THEMES_PER_ROW,
-            600
+            secondLevelNA,
+            thirdLevelBoxPadX,
+            thirdLevelBoxWidth,
         );
 
 
@@ -1090,27 +1067,32 @@ function extractData(csvText) {
                 }));
         }
 
-        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems], themeIdx) => {
+
+        let visibleIdx = 0;
+
+        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems]) => {
             if (secondLevel.includes(secondLevelNA)) return;
 
-            const secondLevelDescriptionIndex = findHeaderIndex(headers, `${secondOrgLevel} Description`);
-            const secondLevelDescription = secondLevelDescriptionIndex !== -1
-                ? (people.find(p => (p[secondOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(secondLevel))?.[headers[secondLevelDescriptionIndex]] || "")
-                : "";
-            const themeRow = Math.floor(themeIdx / THEMES_PER_ROW);
-            const themeCol = themeIdx % THEMES_PER_ROW;
+            const themeRow = Math.floor(visibleIdx / THEMES_PER_ROW);
+            const themeCol = visibleIdx % THEMES_PER_ROW;
+
+            const secondLevelDescription = getSecondLevelDescription(
+                secondLevel, headers, people, secondOrgLevel
+            );
+
 
             if (themeCol === 0) {
                 secondLevelX = 60;
             }
-            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
+            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
             const secondLevelY = streamY + 100 + themeRow * (secondLevelBoxHeight + secondLevelRowPadY);
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
                 .attr('transform', `translate(${streamX + secondLevelX},${secondLevelY})`)
                 .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
+
 
             restoreGroupPosition(secondLevelGroup);
 
@@ -1121,7 +1103,7 @@ function extractData(csvText) {
                 .attr('rx', 30)
                 .attr('ry', 30);
 
-            makeResizable(secondLevelGroup, secondLevelRect, { minWidth: 400, minHeight: 250 });
+            makeResizable(secondLevelGroup, secondLevelRect, {minWidth: 400, minHeight: 250});
 
             secondLevelGroup.append('text')
                 .attr('x', themeWidth / 2)
@@ -1133,11 +1115,11 @@ function extractData(csvText) {
             if (secondLevelDescription !== "") {
                 secondLevelGroup.select('rect.theme-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
+                    .on('click', () => openDrawer({name: secondLevel, description: secondLevelDescription}));
 
                 secondLevelGroup.select('text.theme-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
+                    .on('click', () => openDrawer({name: secondLevel, description: secondLevelDescription}));
             }
 
             Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
@@ -1164,7 +1146,7 @@ function extractData(csvText) {
                     .attr('rx', 20)
                     .attr('ry', 20);
 
-                makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
+                makeResizable(thirdLevelGroup, thirdLevelRect, {minWidth: 360, minHeight: 220});
 
                 const serviceCount = services?.items?.length || 0;
                 const titleText = `${thirdLevel} - ⚙️ (${serviceCount})`;
@@ -1179,11 +1161,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, services }));
+                    .on('click', () => openDrawer({name: thirdLevel, services}));
 
                 thirdLevelGroup.select('text.team-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, services }));
+                    .on('click', () => openDrawer({name: thirdLevel, services}));
 
 
                 members.forEach((member, mIdx) => {
@@ -1202,7 +1184,7 @@ function extractData(csvText) {
 
 
                     const colorKey =
-                        colorBy === ROLE_FIELD_WITH_MAPPING ?  group.attr('data-role') :
+                        colorBy === ROLE_FIELD_WITH_MAPPING ? group.attr('data-role') :
                             colorBy === COMPANY_FIELD ? group.attr('data-company') :
                                 group.attr('data-location');
 
@@ -1228,7 +1210,7 @@ function extractData(csvText) {
                     }
 
 
-                        function resolvePhoto(email, fallback = './assets/user-icon.png') {
+                    function resolvePhoto(email, fallback = './assets/user-icon.png') {
                         const paths = email ? getPhotoPath(email) : fallback;
                         return new Promise((resolve) => {
                             const img = new Image();
@@ -1293,6 +1275,7 @@ function extractData(csvText) {
             });
 
             secondLevelX += themeWidth + secondLevelBoxPadX;
+            visibleIdx++
         });
 
         streamY += firstLevelBoxHeight + firstLevelBoxPadY;
@@ -1328,6 +1311,23 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
     }
 });
 
+function getSecondLevelDescription(secondLevelName, headers, people, secondOrgLevel) {
+    const idx = findHeaderIndex(headers, `${secondOrgLevel} Description`);
+    if (idx === -1) return "";
+
+    const descHeader = headers[idx];
+
+    const match = people.find(p => {
+        const levels = (p[secondOrgLevel] || '')
+            .split(/\n|,/)
+            .map(s => s.trim());
+        return levels.includes(secondLevelName);
+    });
+
+    return match ? (match[descHeader] || "") : "";
+}
+
+
 function searchByQuery(query) {
     if (!query) return;
 
@@ -1339,7 +1339,7 @@ function searchByQuery(query) {
     const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, [data-services]'));
 
     const matches = nodes.filter(n => {
-        const textMatch = n.textContent? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
+        const textMatch = n.textContent ? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
         const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
         return textMatch || attrMatch;
     });

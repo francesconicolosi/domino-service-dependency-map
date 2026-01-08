@@ -1,16 +1,41 @@
-import { zoomIdentity, zoomTransform, zoom as d3zoom, select } from 'd3';
+export const SECOND_LEVEL_LABEL_EXTRA = 120;
 
 export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, bodyParam) {
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
 }
 
+
+function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
+    const n = Number(numTeams) || 0;
+    if (n <= 0) {
+        return SECOND_LEVEL_LABEL_EXTRA;
+    }
+    return n * thirdLevelBoxWidth + (n - 1) * thirdLevelBoxPadX + SECOND_LEVEL_LABEL_EXTRA;
+}
+
+
 export function computeStreamBoxWidthWrapped(
-    themeWidths,
+    secondLevelItems,
     secondLevelBoxPadX,
+    secondLevelNA,
+    thirdLevelBoxPadX,
+    thirdLevelBoxWidth,
     themesPerRow = 4,
     minWidth = 600,
     firstLevelPad = 80
 ) {
+
+    const themeEntries = Object.entries(secondLevelItems)
+        .filter(([themeKey]) => !themeKey.includes(secondLevelNA));
+
+    const teamsPerThemeInStream = themeEntries.map(([, thirdLevelItems]) =>
+        Object.keys(thirdLevelItems).length
+    );
+
+    const themeWidths = teamsPerThemeInStream.map(n =>
+        computeThemeWidth(n, thirdLevelBoxWidth, thirdLevelBoxPadX)
+    );
+
     if (!themeWidths || themeWidths.length === 0) return minWidth;
 
     let maxRowWidth = 0;
@@ -19,6 +44,7 @@ export function computeStreamBoxWidthWrapped(
         const rowSum = row.reduce((acc, w) => acc + (Number(w) || 0), 0);
         const pads = (row.length - 1) * secondLevelBoxPadX;
         const rowWidth = rowSum + pads + firstLevelPad;
+
         if (rowWidth > maxRowWidth) maxRowWidth = rowWidth;
     }
     return Math.max(maxRowWidth, minWidth);
