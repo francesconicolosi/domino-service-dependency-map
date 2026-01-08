@@ -4,6 +4,26 @@ export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, 
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
 }
 
+export function computeStreamBoxWidthWrapped(
+    themeWidths,
+    secondLevelBoxPadX,
+    themesPerRow = 4,
+    minWidth = 600,
+    firstLevelPad = 80
+) {
+    if (!themeWidths || themeWidths.length === 0) return minWidth;
+
+    let maxRowWidth = 0;
+    for (let i = 0; i < themeWidths.length; i += themesPerRow) {
+        const row = themeWidths.slice(i, i + themesPerRow);
+        const rowSum = row.reduce((acc, w) => acc + (Number(w) || 0), 0);
+        const pads = (row.length - 1) * secondLevelBoxPadX;
+        const rowWidth = rowSum + pads + firstLevelPad;
+        if (rowWidth > maxRowWidth) maxRowWidth = rowWidth;
+    }
+    return Math.max(maxRowWidth, minWidth);
+}
+
 export function updateLegend(scale, field, d3param) {
     const legend = d3param.select('#legend');
     legend.html('');

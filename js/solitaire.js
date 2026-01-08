@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {
     getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
     highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
-    buildLegendaColorScale, updateLegend
+    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped
 } from './utils.js';
 
 let lastSearch = '';
@@ -16,6 +16,8 @@ let colorScale = null;
 
 const SECOND_LEVEL_LABEL_EXTRA = 120;
 const FIRST_LEVEL_LEFT_PAD   = 80;
+const THEMES_PER_ROW = 4;
+const secondLevelRowPadY = 60;
 
 const firstOrgLevel = 'Team Stream';
 const secondOrgLevel = 'Team Theme';
@@ -900,42 +902,6 @@ function computeStreamBoxWidth(
     return Math.max(total, minWidth);
 }
 
-function getMaxFirstLevelWidth(
-    organizationWithManagers,
-    thirdLevelBoxWidth,
-    thirdLevelBoxPadX,
-    secondLevelBoxPadX,
-    minWidth = 600
-) {
-    const widths = Object
-        .entries(organizationWithManagers)
-        .filter(([streamKey]) => streamKey !== firstLevelNA)
-        .map(([, secondLevelItems]) => {
-            const themeEntries = Object.entries(secondLevelItems)
-                .filter(([themeKey]) => themeKey !== secondLevelNA);
-
-            const numThemes = themeEntries.length;
-            const teamsPerTheme = themeEntries.map(([, thirdLevelItems]) =>
-                Object.keys(thirdLevelItems).length
-            );
-
-            return computeStreamBoxWidth(
-                numThemes,
-                teamsPerTheme,
-                thirdLevelBoxWidth,
-                thirdLevelBoxPadX,
-                secondLevelBoxPadX,
-                minWidth
-            );
-        });
-
-    if (!widths.length) return minWidth;
-
-    const maxW = Math.max(...widths);
-
-    return Number.isFinite(maxW) ? maxW : minWidth;
-}
-
 let isDraggable = false;
 
 function applyDraggableToggleState() {
@@ -1028,15 +994,6 @@ function extractData(csvText) {
     const rowCount = Math.ceil(largestThirdLevelSize / inARow);
     const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2 + 80;
     const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2 + 100;
-    const firstLevelBoxHeight = secondLevelBoxHeight * 1.2;
-
-    const firstLevelBoxWidth = getMaxFirstLevelWidth(
-        organizationWithManagers,
-        thirdLevelBoxWidth,
-        thirdLevelBoxPadX,
-        secondLevelBoxPadX,
-        600
-    );
 
     let streamY = 40;
     let streamX = 40;
@@ -1060,6 +1017,25 @@ function extractData(csvText) {
             firstLevelDescription = match ? (match[descriptionHeader] || '') : '';
         }
 
+        const themeEntries = Object.entries(secondLevelItems)
+            .filter(([themeKey]) => !themeKey.includes(secondLevelNA));
+
+        const teamsPerThemeInStream = themeEntries.map(([, thirdLevelItems]) =>
+            Object.keys(thirdLevelItems).length
+        );
+
+        const themeWidthsInStream = teamsPerThemeInStream.map(n =>
+            computeThemeWidth(n, thirdLevelBoxWidth, thirdLevelBoxPadX)
+        );
+
+        const firstLevelBoxWidth = computeStreamBoxWidthWrapped(
+            themeWidthsInStream,
+            secondLevelBoxPadX,
+            THEMES_PER_ROW,
+            600
+        );
+
+
         let secondLevelX = 60;
 
         const firstLevelGroup = streamLayer.append('g')
@@ -1068,6 +1044,14 @@ function extractData(csvText) {
             .attr('data-key', `stream::${normalizeKey(firstLevel)}`);
 
         restoreGroupPosition(firstLevelGroup);
+
+        const numThemesInStream = Object.entries(secondLevelItems)
+            .filter(([themeKey]) => !themeKey.includes(secondLevelNA)).length;
+
+        const themeRows = Math.ceil(numThemesInStream / THEMES_PER_ROW);
+        const firstLevelBoxHeight =
+            themeRows * (secondLevelBoxHeight + secondLevelRowPadY) + 140;
+
         const streamRect = firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
             .attr('width', firstLevelBoxWidth)
@@ -1106,21 +1090,29 @@ function extractData(csvText) {
                 }));
         }
 
-        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems]) => {
+        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems], themeIdx) => {
             if (secondLevel.includes(secondLevelNA)) return;
 
             const secondLevelDescriptionIndex = findHeaderIndex(headers, `${secondOrgLevel} Description`);
             const secondLevelDescription = secondLevelDescriptionIndex !== -1
                 ? (people.find(p => (p[secondOrgLevel] || '').split(/\n|,/).map(s => s.trim()).includes(secondLevel))?.[headers[secondLevelDescriptionIndex]] || "")
                 : "";
+            const themeRow = Math.floor(themeIdx / THEMES_PER_ROW);
+            const themeCol = themeIdx % THEMES_PER_ROW;
+
+            if (themeCol === 0) {
+                secondLevelX = 60;
+            }
+            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
+
+            const secondLevelY = streamY + 100 + themeRow * (secondLevelBoxHeight + secondLevelRowPadY);
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
-                .attr('transform', `translate(${streamX + secondLevelX},${streamY + 100})`)
+                .attr('transform', `translate(${streamX + secondLevelX},${secondLevelY})`)
                 .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
 
             restoreGroupPosition(secondLevelGroup);
-            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
 
             const secondLevelRect = secondLevelGroup.append('rect')
                 .attr('class', 'theme-box')
@@ -1129,10 +1121,7 @@ function extractData(csvText) {
                 .attr('rx', 30)
                 .attr('ry', 30);
 
-            makeResizable(secondLevelGroup, secondLevelRect, {
-                minWidth: 400,
-                minHeight: 250
-            });
+            makeResizable(secondLevelGroup, secondLevelRect, { minWidth: 400, minHeight: 250 });
 
             secondLevelGroup.append('text')
                 .attr('x', themeWidth / 2)
@@ -1144,17 +1133,11 @@ function extractData(csvText) {
             if (secondLevelDescription !== "") {
                 secondLevelGroup.select('rect.theme-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({
-                        name: secondLevel,
-                        description: secondLevelDescription
-                    }));
+                    .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
 
                 secondLevelGroup.select('text.theme-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({
-                        name: secondLevel,
-                        description: secondLevelDescription
-                    }));
+                    .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
             }
 
             Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
@@ -1169,7 +1152,7 @@ function extractData(csvText) {
 
                 const thirdLevelGroup = teamLayer.append('g')
                     .attr('class', 'draggable')
-                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${streamY + 100 + teamLocalY})`)
+                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${secondLevelY + teamLocalY})`)
                     .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`);
 
                 restoreGroupPosition(thirdLevelGroup);
@@ -1181,10 +1164,7 @@ function extractData(csvText) {
                     .attr('rx', 20)
                     .attr('ry', 20);
 
-                makeResizable(thirdLevelGroup, thirdLevelRect, {
-                    minWidth: 360,
-                    minHeight: 220
-                });
+                makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
 
                 const serviceCount = services?.items?.length || 0;
                 const titleText = `${thirdLevel} - ⚙️ (${serviceCount})`;
@@ -1210,7 +1190,7 @@ function extractData(csvText) {
                     const col = mIdx % inARow;
                     const row = Math.floor(mIdx / inARow);
                     const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
-                    const cardY = streamY + 100 + 70 + 45 + row * (cardBaseHeight + 10) + 130;
+                    const cardY = secondLevelY + 70 + 45 + row * (cardBaseHeight + 10) + 130;
 
                     const group = cardLayer.append('g')
                         .attr('data-role', (member[ROLE_FIELD_WITH_MAPPING] || '').toString().trim())
