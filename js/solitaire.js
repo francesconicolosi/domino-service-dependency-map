@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {
     getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
     highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
-    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped, SECOND_LEVEL_LABEL_EXTRA
+    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped, SECOND_LEVEL_LABEL_EXTRA, TEAM_MEMBER_LEGENDA_LABEL
 } from './utils.js';
 
 let lastSearch = '';
@@ -39,7 +39,8 @@ const guestRolesMap = new Map([
     ["Team Delivery Manager", ["Delivery Manager"]],
     ["Team Scrum Master", ["Agile Coach/Scrum Master"]],
     ["Team Solution Architect", ["Solution Architect"]],
-    ["Team Development Manager", ["Development Manager"]]
+    ["Team Development Manager", ["Development Manager"]],
+    ["Team Security Champion", ["Security Champion"]]
 ]);
 
 const guestRoleColumns = Array.from(guestRolesMap.keys());
@@ -64,17 +65,23 @@ function initColorScale(initialField, members) {
 }
 
 function getCardFill(g) {
-    let colorKey =
-        colorBy === ROLE_FIELD_WITH_MAPPING ? (g.attr('data-role') || 'Unknown') :
-            colorBy === COMPANY_FIELD ? (g.attr('data-company') || 'Unknown') :
-                (g.attr('data-location') || 'Unknown');
-
     if (typeof colorScale !== 'function') return NEUTRAL_COLOR;
 
+    let colorKey;
+
     if (colorBy === ROLE_FIELD_WITH_MAPPING) {
-        const role = (colorKey || '').toString().trim();
-        colorKey = (colorScale.isGuest && colorScale.isGuest(role)) ? role : 'Other';
-        ;
+        const dataRole = (g.attr('data-role') || '').toString().toLowerCase();
+
+        const guestValues = Array.from(guestRolesMap.values()).flat();
+
+        const firstIncludedGuest = guestValues.find(v =>
+            v && dataRole.includes(v.toLowerCase())
+        );
+        colorKey = firstIncludedGuest ? firstIncludedGuest : TEAM_MEMBER_LEGENDA_LABEL;
+    } else if (colorBy === COMPANY_FIELD) {
+        colorKey = (g.attr('data-company') || 'Unknown');
+    } else {
+        colorKey = (g.attr('data-location') || 'Unknown');
     }
 
     const finalColor = colorScale(colorKey);
@@ -1268,7 +1275,9 @@ function extractData(csvText) {
 
                     Object.entries(member).forEach(([key, value]) => {
                         if (key !== 'Name' && fieldsToShow.includes(key) && value !== undefined) {
-                            infoDiv.append('div').html(`<strong>${key}:</strong> ${value}`);
+                            infoDiv.append('div')
+                                .attr('class', key.toLowerCase() + '-field')
+                                .html(`<strong>${key}:</strong> ${value}`);
                         }
                     });
                 });
@@ -1336,7 +1345,7 @@ function searchByQuery(query) {
         searchInput.value = query;
     }
 
-    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, [data-services]'));
+    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .role-field, [data-services]'));
 
     const matches = nodes.filter(n => {
         const textMatch = n.textContent ? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;

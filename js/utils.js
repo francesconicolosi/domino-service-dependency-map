@@ -1,4 +1,5 @@
 export const SECOND_LEVEL_LABEL_EXTRA = 120;
+export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
 export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, bodyParam) {
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
@@ -84,26 +85,31 @@ export function buildLegendaColorScale(field, items, d3param, palette, neutralCo
         return d3param.scaleOrdinal(domainArr, palette);
     }
 
-    const additionalExclusiveDomain = [...specialLegendaItemsMap.values()]
-        .flat()
-        .filter(r => new Set(
-            items
-                .map(m => (m?.[specialMappedField] ?? '').toString().trim())
-                .filter(Boolean)
-        ).has(r));
 
-    const domainWithOther = [...additionalExclusiveDomain, 'Other'];
-    const paletteForSpecialEntries = domainWithOther.map((_, i) => i < additionalExclusiveDomain.length
-        ? palette[i % palette.length]
-        : neutralColor
+    const guestValues = Array.from(specialLegendaItemsMap.values()).flat().map(s => s.trim()).filter(Boolean);
+    const foundGuests = new Set();
+    for (const m of items) {
+        const raw = (m?.[specialMappedField] ?? '').toString();
+        const rawLower = raw.toLowerCase();
+        guestValues.forEach(gv => {
+            if (gv && rawLower.includes(gv.toLowerCase())) {
+                foundGuests.add(gv);
+            }
+        });
+    }
+
+    const domainWithOther = [...foundGuests, TEAM_MEMBER_LEGENDA_LABEL];
+    const paletteForSpecialEntries = domainWithOther.map((_, i) =>
+        i < foundGuests.size ? palette[i % palette.length] : neutralColor
     );
 
 
     const scale = d3param.scaleOrdinal(domainWithOther, paletteForSpecialEntries);
 
     scale.isGuest = (specificField) => {
-        return additionalExclusiveDomain.includes((specificField || '').trim());
-    }
+        const val = (specificField || '').toString().toLowerCase();
+        return guestValues.some(gv => val.includes(gv.toLowerCase()));
+    };
     return scale;
 }
 
