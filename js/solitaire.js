@@ -378,7 +378,7 @@ function truncateString(str, maxLength = 25) {
     return str.slice(0, maxLength) + '...';
 }
 
-function aggregateTeamManagedServices(members, headers, headerName = 'Team Managed Services') {
+function aggregateInfoByHeader(members, headers, headerName = 'Team Managed Services', sortElements = false) {
     const idx = findHeaderIndex(headers, headerName);
     if (idx === -1) {
         return {exists: false, items: []};
@@ -389,16 +389,22 @@ function aggregateTeamManagedServices(members, headers, headerName = 'Team Manag
     members.forEach(m => {
         const raw = m[headerRealName];
         if (!raw) return;
-        raw
-            .split(/\n|,/)
-            .map(s => s.trim())
-            .filter(Boolean)
-            .forEach(v => set.add(v));
+        if (sortElements) {
+            raw
+                .split(/\n|,/)
+                .map(s => s.trim())
+                .filter(Boolean)
+                .forEach(v => set.add(v));
+        } else {
+            set.add(raw);
+        }
     });
+
+    const itemsToReturn = sortElements ? [...set].sort((a, b) => a.localeCompare(b, 'it', {sensitivity: 'base'})) : [...set];
 
     return {
         exists: true,
-        items: [...set].sort((a, b) => a.localeCompare(b, 'it', {sensitivity: 'base'}))
+        items: itemsToReturn
     };
 }
 
@@ -527,6 +533,10 @@ function openDrawer({name, description, services}) {
 
     listEl.innerHTML = '';
     if (services && services.items && services.items.length !== 0) {
+        if (description) listEl.appendChild(document.createElement('br'));
+        const servicesTitle = document.createElement('p');
+        servicesTitle.textContent = "Managed Services:"
+        listEl.appendChild(servicesTitle);
         services.items.forEach(s => {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -994,22 +1004,8 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
-
-        let firstLevelDescription = '';
-
-        const firstLevelDescriptionIndex = findHeaderIndex(headers, `${firstOrgLevel} Description`);
-        if (firstLevelDescriptionIndex !== -1) {
-            const descriptionHeader = headers[firstLevelDescriptionIndex];
-
-            const match = people.find(p => {
-                const levels = (p[firstOrgLevel] || '')
-                    .split(/\n|,/)
-                    .map(s => s.trim().toLowerCase());
-                return levels.includes(firstLevel.toLowerCase());
-            });
-
-            firstLevelDescription = match ? (match[descriptionHeader] || '') : '';
-        }
+        const firstLevelDescription = aggregateInfoByHeader(Object.values(organization[firstLevel]|| {})
+            .flat(), headers, "Team Stream Description")?.items?.join("") ?? '';
 
         const firstLevelBoxWidth = computeStreamBoxWidthWrapped(
             secondLevelItems,
@@ -1083,9 +1079,9 @@ function extractData(csvText) {
             const themeRow = Math.floor(visibleIdx / THEMES_PER_ROW);
             const themeCol = visibleIdx % THEMES_PER_ROW;
 
-            const secondLevelDescription = getSecondLevelDescription(
-                secondLevel, headers, people, secondOrgLevel
-            );
+            const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {})
+                .flat()
+            const secondLevelDescription = aggregateInfoByHeader(originalThemeMembers, headers, 'Team Theme Description')?.items?.join("") ?? '';
 
 
             if (themeCol === 0) {
@@ -1133,8 +1129,8 @@ function extractData(csvText) {
 
                 const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
 
-                const services = aggregateTeamManagedServices(originalMembers, headers, 'Team Managed Services');
-
+                const services = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
+                const description = aggregateInfoByHeader(originalMembers, headers, 'Team Description')?.items?.join("") ?? '';
 
                 const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
                 const teamLocalY = 130;
@@ -1168,11 +1164,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: thirdLevel, services}));
+                    .on('click', () => openDrawer({ name: thirdLevel, description, services }));
 
                 thirdLevelGroup.select('text.team-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: thirdLevel, services}));
+                    .on('click', () => openDrawer({ name: thirdLevel, description, services }));
 
 
                 members.forEach((member, mIdx) => {
@@ -1319,23 +1315,6 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
         e.preventDefault();
     }
 });
-
-function getSecondLevelDescription(secondLevelName, headers, people, secondOrgLevel) {
-    const idx = findHeaderIndex(headers, `${secondOrgLevel} Description`);
-    if (idx === -1) return "";
-
-    const descHeader = headers[idx];
-
-    const match = people.find(p => {
-        const levels = (p[secondOrgLevel] || '')
-            .split(/\n|,/)
-            .map(s => s.trim());
-        return levels.includes(secondLevelName);
-    });
-
-    return match ? (match[descHeader] || "") : "";
-}
-
 
 function searchByQuery(query) {
     if (!query) return;

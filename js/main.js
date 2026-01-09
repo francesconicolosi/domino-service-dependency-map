@@ -25,6 +25,7 @@ const width = document.getElementById('map').clientWidth;
 const height = document.getElementById('map').clientHeight;
 
 const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
+const defaultSearchKey = "id";
 
 const serviceInfoEnhancers = [
 
@@ -288,6 +289,14 @@ function isSearchResultValueOnly(d) {
 
 
 function updateVisualization(node, link, labels, showDrawer = true) {
+    let relaxedSearchEnabled = document.getElementById('relaxed-search').checked;
+    if (searchTerm !== "" && !searchTerm.includes(":") && !searchTerm.includes(",") && !relaxedSearchEnabled) {
+        searchTerm = `${defaultSearchKey}:"${searchTerm}"`;
+        const searchInput = document.getElementById('drawer-search-input');
+        if (searchInput) searchInput.value = searchTerm;
+        setSearchQuery(searchTerm);
+    }
+
     const filteredLinks = links.filter(link => activeServiceNodeIds.has(link.source.id) && activeServiceNodeIds.has(link.target.id));
     const relatedNodes = new Set();
     const searchedNodes = new Set();
@@ -318,9 +327,7 @@ function updateVisualization(node, link, labels, showDrawer = true) {
         if (isSearchResultWithKeyValue(d)) {
             nodeToZoom = d;
             relatedNodes.add(d.id);
-        }
-
-        if (isSearchResultValueOnly(d)) {
+        } else if (relaxedSearchEnabled && isSearchResultValueOnly(d)) {
             relatedNodes.add(d.id);
         }
     });
@@ -381,14 +388,14 @@ function showNodeDetails(node, openDrawer = true) {
             if (value.startsWith('http') && !value.includes(' ')) {
                 tdValue.innerHTML = `<i>
                     ${separator !== ""
-                    ? `<ul>${value.split(separator).map(v => `<li>${getLink(v)}</li>`).join("")}</ul>`
+                    ? `<ul>${[...new Set(value.split(separator).map(v => v.trim()).filter(Boolean))].map(v => `<li>${getLink(v)}</li>`).join("")}</ul>`
                     : getLink(value)
                 }</i>`;
             } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
                 tdValue.innerHTML = `
                   <i>
                     ${separator !== ""
-                    ? `<ul>${value.split(separator).map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
+                    ? `<ul>${[...new Set(value.split(separator).map(v => v.trim()).filter(Boolean))].map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
                     : getPeopleDbLink(value)
                 }</i>`;
 
