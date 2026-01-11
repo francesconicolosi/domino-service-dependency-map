@@ -1004,8 +1004,13 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
-        const firstLevelDescription = aggregateInfoByHeader(Object.values(organization[firstLevel]|| {})
-            .flat(), headers, "Team Stream Description")?.items?.join("") ?? '';
+        
+        const firstLevelMembers =
+            Object.values(organization[firstLevel] || {})
+                .flatMap(themeObj => Object.values(themeObj))
+                .flat();
+
+        const firstLevelDescription = aggregateInfoByHeader(firstLevelMembers, headers, "Team Stream Description")?.items?.join("") ?? '';
 
         const firstLevelBoxWidth = computeStreamBoxWidthWrapped(
             secondLevelItems,
