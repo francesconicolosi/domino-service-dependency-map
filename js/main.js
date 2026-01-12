@@ -1,7 +1,12 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, closeSideDrawer, initCommonActions, getFormattedDate
+    getQueryParam,
+    setSearchQuery,
+    closeSideDrawer,
+    initCommonActions,
+    getFormattedDate,
+    createFormattedLongTextElementsFrom
 } from './utils.js';
 
 
@@ -376,6 +381,7 @@ function showNodeDetails(node, openDrawer = true) {
     drawerContent.innerHTML = '';
 
     const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name'];
+    const descriptionFields = ['Contingency and Recovery Planning', 'Description'];
     const table = document.createElement('table');
 
     for (const [key, value] of Object.entries(node)) {
@@ -399,9 +405,15 @@ function showNodeDetails(node, openDrawer = true) {
                     : getPeopleDbLink(value)
                 }</i>`;
 
+            } else if (!descriptionFields.includes(key) && value !== "") {
+                if (separator !== "" && value.includes(separator)) {
+                    tdValue.innerHTML = `
+                    <i>${value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `)}</i>`;
+                } else {
+                    tdValue.innerHTML = `<i>${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a></i>`;
+                }
             } else {
-                tdValue.innerHTML = `<i>${key !== "Description" && value !== "" ? separator !== "" && value.includes(separator) ? value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `) :
-                    `${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a>` : value}</i>`;
+                createFormattedLongTextElementsFrom(value).forEach(element => tdValue.appendChild(element));
             }
 
             tdKey.textContent = key;

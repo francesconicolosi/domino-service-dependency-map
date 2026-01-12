@@ -5,6 +5,34 @@ export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, 
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
 }
 
+export function createFormattedLongTextElementsFrom(description) {
+    const elementsToAppend = [];
+    if (description) {
+        const lines = description.split('\n');
+        lines.forEach((line, index) => {
+            const parts = line.split(/\s+/);
+            parts.forEach(part => {
+                if (part.startsWith('http')) {
+                    const cleanUrl = part.replace(/[.,;:]+$/, '');
+                    const a = document.createElement('a');
+                    a.href = cleanUrl;
+                    a.textContent = "🔗External Link";
+                    a.target = '_blank';
+                    a.style.color = '#0078d4';
+                    a.style.textDecoration = 'underline';
+                    elementsToAppend.push(a);
+                } else {
+                    elementsToAppend.push(document.createTextNode(part + ' '));
+                }
+            });
+
+            if (index < lines.length - 1) {
+                elementsToAppend.push(document.createElement('br'));
+            }
+        });
+    }
+    return elementsToAppend;
+}
 
 function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
     const n = Number(numTeams) || 0;

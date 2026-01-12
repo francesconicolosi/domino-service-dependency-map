@@ -1,9 +1,22 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam, setSearchQuery, parseCSV, openOutlookWebCompose, buildFallbackMailToLink,
-    highlightGroup as highlightGroupUtils, closeSideDrawer, initCommonActions, getFormattedDate, isMobileDevice,
-    buildLegendaColorScale, updateLegend, computeStreamBoxWidthWrapped, SECOND_LEVEL_LABEL_EXTRA, TEAM_MEMBER_LEGENDA_LABEL
+    getQueryParam,
+    setSearchQuery,
+    parseCSV,
+    openOutlookWebCompose,
+    buildFallbackMailToLink,
+    highlightGroup as highlightGroupUtils,
+    closeSideDrawer,
+    initCommonActions,
+    getFormattedDate,
+    isMobileDevice,
+    buildLegendaColorScale,
+    updateLegend,
+    computeStreamBoxWidthWrapped,
+    SECOND_LEVEL_LABEL_EXTRA,
+    TEAM_MEMBER_LEGENDA_LABEL,
+    createFormattedLongTextElementsFrom
 } from './utils.js';
 
 let lastSearch = '';
@@ -505,31 +518,7 @@ function openDrawer({name, description, services}) {
 
     descEl.innerHTML = '';
 
-    if (description) {
-        const lines = description.split('\n');
-        lines.forEach((line, index) => {
-            const parts = line.split(/\s+/);
-            parts.forEach(part => {
-                if (part.startsWith('http')) {
-                    const cleanUrl = part.replace(/[.,;:]+$/, '');
-                    const a = document.createElement('a');
-                    a.href = cleanUrl;
-                    a.textContent = "🔗External Link ";
-                    a.target = '_blank';
-                    a.style.color = '#0078d4';
-                    a.style.textDecoration = 'underline';
-                    descEl.appendChild(a);
-                } else {
-                    descEl.appendChild(document.createTextNode(part + ' '));
-                }
-            });
-
-            if (index < lines.length - 1) {
-                descEl.appendChild(document.createElement('br'));
-            }
-        });
-    }
-
+    createFormattedLongTextElementsFrom(description).forEach(element => descEl.appendChild(element));
 
     listEl.innerHTML = '';
     if (services && services.items && services.items.length !== 0) {
