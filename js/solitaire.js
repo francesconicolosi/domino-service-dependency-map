@@ -1004,7 +1004,7 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
-        
+
         const firstLevelMembers =
             Object.values(organization[firstLevel] || {})
                 .flatMap(themeObj => Object.values(themeObj))

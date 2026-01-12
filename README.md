@@ -113,6 +113,129 @@ To enable cross‑navigation between Solitaire and Domino:
 Keep Solitaire → Services values identical to Domino → Service Name.
 Use the same delimiter convention (\n inside quoted cells) for multi‑value fields to simplify parsing in both apps.
 
+## Database Structure & Relationships (UML)
+This section provides an Entity-Relationship (ER) UML diagram describing the logical connections between the main data sources used by Domino and Solitaire.
+The diagram is based on the exported CSVs from Confluence:
+
+- Streams Database: Macro-areas (streams) grouping product and business domains.
+- Product Themes: Product or business themes, each belonging to a stream.
+- Team Database: Teams, their members, and their association to themes and streams.
+- People Database: Individual people, their roles, teams, and assignments.
+- Service Catalog: Digital services, their dependencies, responsible teams, and associated themes.
+
+The UML below shows how these entities relate and lists all available attributes for Person and Service as found in the CSVs.
+This model helps developers, analysts, and maintainers understand how to join, filter, and extend the data for both visualization and reporting.
+If I'll decide to move to a proper database, this would probably be the scheme I would follow. 
+
+The underscore ('_') used on the field names is in the following uml just for visualization purposes and it is currently not considered by the current implementation of Solitaire and Domino.
+
+```mermaid
+
+erDiagram
+STREAM {
+string Name
+string Description
+string Teams
+string Themes
+}
+THEME {
+string Name
+string Description
+string Teams
+string Services
+string Stream
+string Stream_Description
+}
+TEAM {
+string Name
+string Description
+string Team_Page
+string Members
+string Theme
+string Theme_Description
+string Team_email
+string Development_Manager
+string Architect
+string Scrum_Master
+string Product_Manager
+string Delivery_Manager
+string Security_Champion
+string Administering_accounts_for
+string Stream
+string Stream_Description
+string Managed_Services
+}
+PERSON {
+string User
+string Role
+string Team_member_of
+string Working_also_with_teams
+string Team_Description
+string Status
+string Company
+string Location
+string Room
+string In_team_since
+string Name
+string Gucci_email
+string Team_Theme
+string Team_Theme_Description
+string Team_Stream
+string Team_Stream_Description
+string Team_Development_Manager
+string Team_Solution_Architect
+string Team_Delivery_Manager
+string Team_Security_Champion
+string Team_Scrum_Master
+string Team_Product_Manager
+string Last_Update
+string Team_Managed_Services
+}
+SERVICE {
+string Service_Name
+string Description
+string Depends_on
+string Used_by
+string Application_Performance_Monitoring
+string Type
+string Product_Theme
+string Security_Level
+string Audit_Log
+string Vendor_Management_References
+string Status
+string Business_Risk_Level
+string Technology_Risk_Level
+string Code_Repository
+string Responsible_Teams
+string Owner
+string Go_Live_Date
+string Decommission_Date
+string Jira_Service_Registry_link
+string Admin_consoles
+string Environments
+string Hosting_platform_references
+string Accounts_administered_by
+string Accounts_approved_by
+string Accessed_by
+string Admin_Panel
+string Access_type
+string Legal_Compliance_Impact
+string Financial_Objective_Impact
+string Business_Objective_Impact
+string Reputational_Damage_Impact
+string Business_Processes
+string Downtime_Targets
+string Knowledge_base
+string Contingency_and_Recovery_Planning
+string Last_Update
+}
+
+    STREAM ||--o{ THEME : contains
+    THEME ||--o{ TEAM : includes
+    TEAM ||--o{ PERSON : has
+    THEME ||--o{ SERVICE : "is related to"
+    TEAM ||--o{ SERVICE : "is responsible for"
+```
 
 ## Contributions
 Contributions are welcome! Please open an issue or submit a pull request to suggest improvements or fix issues.
