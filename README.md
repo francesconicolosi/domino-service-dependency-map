@@ -132,109 +132,104 @@ The underscore ('_') used on the field names is in the following uml just for vi
 ```mermaid
 
 erDiagram
-STREAM {
-string Name
-string Description
-string Teams
-string Themes
-}
-THEME {
-string Name
-string Description
-string Teams
-string Services
-string Stream
-string Stream_Description
-}
-TEAM {
-string Name
-string Description
-string Team_Page
-string Members
-string Theme
-string Theme_Description
-string Team_email
-string Development_Manager
-string Architect
-string Scrum_Master
-string Product_Manager
-string Delivery_Manager
-string Security_Champion
-string Administering_accounts_for
-string Stream
-string Stream_Description
-string Managed_Services
-}
-PERSON {
-string User
-string Role
-string Team_member_of
-string Working_also_with_teams
-string Team_Description
-string Status
-string Company
-string Location
-string Room
-string In_team_since
-string Name
-string Gucci_email
-string Team_Theme
-string Team_Theme_Description
-string Team_Stream
-string Team_Stream_Description
-string Team_Development_Manager
-string Team_Solution_Architect
-string Team_Delivery_Manager
-string Team_Security_Champion
-string Team_Scrum_Master
-string Team_Product_Manager
-string Last_Update
-string Team_Managed_Services
-}
-SERVICE {
-string Service_Name
-string Description
-string Depends_on
-string Used_by
-string Application_Performance_Monitoring
-string Type
-string Product_Theme
-string Security_Level
-string Audit_Log
-string Vendor_Management_References
-string Status
-string Business_Risk_Level
-string Technology_Risk_Level
-string Code_Repository
-string Responsible_Teams
-string Owner
-string Go_Live_Date
-string Decommission_Date
-string Jira_Service_Registry_link
-string Admin_consoles
-string Environments
-string Hosting_platform_references
-string Accounts_administered_by
-string Accounts_approved_by
-string Accessed_by
-string Admin_Panel
-string Access_type
-string Legal_Compliance_Impact
-string Financial_Objective_Impact
-string Business_Objective_Impact
-string Reputational_Damage_Impact
-string Business_Processes
-string Downtime_Targets
-string Knowledge_base
-string Contingency_and_Recovery_Planning
-string Last_Update
-}
+    STREAM {
+        string Id
+        string Name
+        string Description
+        date   Last_Update
+    }
+
+    THEME {
+        string Id
+        string Name
+        string Description
+        string Jira_Theme_Field_Value
+        date   Last_Update
+        string Stream_Id
+    }
+
+    TEAM {
+        string Id
+        string Name
+        string Description
+        string Team_Page
+        string Team_email
+        string Development_Manager_Id
+        string Architect_Id
+        string Scrum_Master_Id
+        string Product_Manager_Id
+        string Delivery_Manager_Id
+        string Security_Champion_Id
+        string Administering_accounts_for
+        string Stream_Id
+        date   Last_Update
+    }
+
+    PERSON {
+        string Id
+        string Name
+        string Company_email
+        string Photo
+        string Role
+        string Status
+        string Company
+        string Location
+        string Room
+        date   In_team_since
+        date   Last_Update
+    }
+
+    SERVICE {
+        string Id
+        string Service_Name
+        string Description
+        string Type
+        string Owner_Person_Id
+        string Owner_Team_Id
+        string Code_Repository
+        string Application_Performance_Monitoring
+        string Security_Level
+        string Audit_Log
+        string Vendor_Management_References
+        string Status
+        string Business_Risk_Level
+        string Technology_Risk_Level
+        date   Go_Live_Date
+        date   Decommission_Date
+        string Jira_Service_Registry_link
+        string Admin_consoles
+        string Environments
+        string Hosting_platform_references
+        string Access_type
+        string Legal_Compliance_Impact
+        string Financial_Objective_Impact
+        string Business_Objective_Impact
+        string Reputational_Damage_Impact
+        string Knowledge_base
+        string Contingency_and_Recovery_Planning
+        string Downtime_Targets
+        date   Last_Update
+        string Depends_on_Service_Ids
+        string Used_by_Service_Ids
+        string Responsible_Team_Ids
+        string Theme_Ids
+        string Access_Person_Ids
+        string Approved_By_Person_Ids
+        string Administered_By_Person_Ids
+    }
 
     STREAM ||--o{ THEME : contains
-    THEME ||--o{ TEAM : includes
-    TEAM ||--o{ PERSON : has
-    THEME ||--o{ SERVICE : "is related to"
-    TEAM ||--o{ SERVICE : "is responsible for"
+    STREAM ||--o{ TEAM  : groups
+
+    THEME }o--o{ TEAM  : includes
+    THEME }o--o{ SERVICE : covers
+
+    TEAM  ||--o{ PERSON : has
+
+    TEAM  }o--o{ SERVICE : responsible_for
+
+    SERVICE }o--o{ SERVICE : depends_on
+
 ```
 
 ## Contributions

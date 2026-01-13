@@ -33,19 +33,35 @@ const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
 const defaultSearchKey = "id";
 
 const serviceInfoEnhancers = [
-
-    function generateJiraLink(node) {
+    function generateIssueTrackingTool(node) {
         if (!node.id) return null;
 
-        const normalizedId = encodeURIComponent(
-            node.id
-                .toLowerCase()
-                .replace(/\s+/g, '')
-                .replace(/[^\w/]/g, '')
-        );
 
+        const rawId = (node?.id ?? '').toLowerCase().trim();
+        const noSpaces = rawId.replace(/\s+/g, '');
+        const noPunct = noSpaces.replace(/[^\w]/g, '');
+        const keepHyphen = noSpaces.replace(/[^\w-]/g, '');
+        const hyphenToUnderscore = keepHyphen
+            .replace(/-/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_+|_+$/g, '');
 
-        const jiraUrl = `https://guccidigital.atlassian.net/issues/?jql=%28project+%3D+%22Gucci+Managed+Services+Support%22+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+OR+project+%3D+GDT+AND+statusCategory+in+%28EMPTY%2C+%22To+Do%22%2C+%22In+Progress%22%29+AND+labels+in+%28bug-from-incident%2C+from_l1_portal%29+AND+issuetype+%3D+Bug%29+AND+%22Theme%5BCheckboxes%5D%22+in+%28App%2C+%22Brand+%26+Content%22%2C+Krypto%2C+Content%2C+Cross%2C+Omni%2C+%22Product+Discovery%22%2C+Purchase%2C+Loyalty%2C+%22IT+4+IT%22%29+AND+cf%5B14139%5D+%3D+%22${normalizedId}%22+ORDER+BY+created+ASC`;
+        const values = Array.from(new Set([noPunct, keepHyphen, hyphenToUnderscore].filter(Boolean)));
+        const inList = values.map(v => `"${v}"`).join(', ');
+
+        const jql = `
+  (
+    project = "ShareProject" AND statusCategory in (EMPTY, "To Do", "In Progress")
+    OR
+    project = GDT AND statusCategory in (EMPTY, "To Do", "In Progress")
+    AND labels in (bug-from-incident, from_l1_portal) AND issuetype = Bug
+  )
+  AND "Theme[Checkboxes]" in (Theme1, Theme2)
+  AND cf[14139] in (${inList})
+  ORDER BY created ASC
+`.replace(/\s+/g, ' ').trim();
+
+        const jiraUrl = `https://sharetool.sharecompany.net/issues/?jql=${encodeURIComponent(jql)}`;
 
         return {
             key: "Jira Issues",
