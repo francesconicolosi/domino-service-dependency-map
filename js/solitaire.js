@@ -909,7 +909,7 @@ function applyDraggableToggleState() {
 
 document.getElementById('act-reset-layout')?.addEventListener('click', () => {
     localStorage.removeItem(LS_KEY);
-    LOCATION_FIELD.reload();
+    window.location.reload();
 });
 
 document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
@@ -1206,27 +1206,41 @@ function extractData(csvText) {
                             .attr('stroke-dasharray', '4 2');
                     }
 
+                    function getPhotoCandidates(email, fallback = './assets/user-icon.png') {
+                        if (!email) return [fallback];
 
-                    function resolvePhoto(email, fallback = './assets/user-icon.png') {
-                        const paths = email ? getPhotoPath(email) : fallback;
-                        return new Promise((resolve) => {
-                            const img = new Image();
-                            img.src = paths[0];
-                            img.onload = () => resolve(paths[0]);
-                            img.onerror = () => {
-                                const img2 = new Image();
-                                img2.src = paths[1];
-                                img2.onload = () => resolve(paths[1]);
-                                img2.onerror = () => resolve(fallback);
-                            };
-                        });
+                        let baseName = email.split('@')[0] || '';
+                        baseName = baseName.replace('-ext', '').replace('.', '-');
+
+                        const candidates = [
+                            `./assets/photos/${baseName}.jpg`,
+                            `./assets/photos/${baseName}.png`,
+                            `./assets/photos/${baseName}.jpeg`,
+                        ];
+
+                        if (!candidates.includes(fallback)) candidates.push(fallback);
+                        return candidates;
                     }
 
-                    function getPhotoPath(email) {
-                        let baseName = email.split('@')[0];
-                        baseName = baseName.replace('-ext', '');
-                        baseName = baseName.replace('.', '-');
-                        return ['./assets/photos/' + baseName + '.jpg', './assets/photos/' + baseName + '.png'];
+                    function resolvePhoto(email, fallback = './assets/user-icon.png', timeoutMs = 4000) {
+                        const candidates = getPhotoCandidates(email, fallback);
+
+                        const tryWithTimeout = (url) => new Promise((resolve, reject) => {
+                            const img = new Image();
+                            const timer = setTimeout(() => {
+                                img.onload = img.onerror = null;
+                                reject(new Error('timeout'));
+                            }, timeoutMs);
+
+                            img.onload = () => { clearTimeout(timer); resolve(url); };
+                            img.onerror = () => { clearTimeout(timer); reject(new Error('error')); };
+                            img.src = url;
+                        });
+
+                        return candidates.reduce(
+                            (chain, url) => chain.catch(() => tryWithTimeout(url)),
+                            Promise.reject()
+                        ).catch(() => fallback);
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
