@@ -16,7 +16,9 @@ import {
     computeStreamBoxWidthWrapped,
     SECOND_LEVEL_LABEL_EXTRA,
     TEAM_MEMBER_LEGENDA_LABEL,
-    createFormattedLongTextElementsFrom
+    createFormattedLongTextElementsFrom,
+    createFormattedElementsFrom,
+    createHrefElement, truncateString, addTagToElement, createOutlookUrl
 } from './utils.js';
 
 let lastSearch = '';
@@ -386,11 +388,6 @@ function makeResizable(group, rect, opts = {}) {
 }
 
 
-function truncateString(str, maxLength = 25) {
-    if (str.length <= maxLength) return str;
-    return str.slice(0, maxLength) + '...';
-}
-
 function aggregateInfoByHeader(members, headers, headerName = 'Team Managed Services', sortElements = false) {
     const idx = findHeaderIndex(headers, headerName);
     if (idx === -1) {
@@ -504,7 +501,7 @@ Regards,
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
-function openDrawer({name, description, services}) {
+function openDrawer({name, description, services, channels, email}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
@@ -519,13 +516,32 @@ function openDrawer({name, description, services}) {
     descEl.innerHTML = '';
 
     createFormattedLongTextElementsFrom(description).forEach(element => descEl.appendChild(element));
+    if (description) {
+        addTagToElement(descEl, 1, 'hr');
+    }
+
+    if (channels && channels.length > 0) {
+        addTagToElement(descEl, 1);
+        descEl.appendChild(document.createTextNode('Channels 💬'));
+        addTagToElement(descEl, 1);
+        createFormattedElementsFrom(channels).forEach(element => {descEl.appendChild(element); descEl.appendChild(document.createElement('br'));});
+        addTagToElement(descEl, 1);
+        addTagToElement(descEl, 1, 'hr');
+        addTagToElement(descEl, 1);
+    }
+
+    if (email && email !== "") {
+        descEl.appendChild(document.createTextNode('Team Mailbox ✉️'));
+        addTagToElement(descEl, 1);
+        descEl.appendChild(createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`));
+        addTagToElement(descEl, 2);
+        addTagToElement(descEl, 1,'hr');
+    }
 
     listEl.innerHTML = '';
+
     if (services && services.items && services.items.length !== 0) {
-        if (description) listEl.appendChild(document.createElement('br'));
-        const servicesTitle = document.createElement('p');
-        servicesTitle.textContent = "Managed Services:"
-        listEl.appendChild(servicesTitle);
+        descEl.appendChild(document.createTextNode('Managed Services:'));
         services.items.forEach(s => {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -1125,6 +1141,8 @@ function extractData(csvText) {
 
                 const services = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
                 const description = aggregateInfoByHeader(originalMembers, headers, 'Team Description')?.items?.join("") ?? '';
+                const channels = aggregateInfoByHeader(originalMembers, headers, 'Team Channels')?.items;
+                const email = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
 
                 const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
                 const teamLocalY = 130;
@@ -1158,11 +1176,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, description, services }));
+                    .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
 
                 thirdLevelGroup.select('text.team-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, description, services }));
+                    .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
 
 
                 members.forEach((member, mIdx) => {

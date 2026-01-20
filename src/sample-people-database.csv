@@ -1,38 +1,80 @@
-User,Role,Team member of,Leading team(s),Status,Company,Location,Room,In team since,Name,Company email,Photo,Team Stream,Team Stream Description,Team Theme,Team Theme Description,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager,Last Update,Team Managed Services
-Skyler Vale,Business Analyst,,,Inactive,SynapseWorks,,,2024-01-09,Jamie Steel,jamie.steel@nycosoft.com,,,,,,,,,,,,
-Morgan Stone,UX Strategy,FutureForge,,Active,NexaTech,Milan,3B10,2021-04-01,Morgan Stone,morgan.stone@nycosoft.com,,,,,,,,,,,2025-10-24,
-Val Sky,Product Developer,HelpHive,,Inactive,SynapseWorks,,,,Val Sky,val.sky@nycosoft.com,,,,,,,,,,,,
-Quinn Storm,Head of Digital Delivery & Quality,StatSphere,,Active,NexaTech,Milan,3A12,,Quinn Storm,quinn.storm@nycosoft.com,,New Initiatives,,,,,,,,,,
-Jordan Brooks,Product Developer,,,Inactive,SynapseWorks,,,,Emerson Lane,emerson.lane@nycosoft.com,,,,,,,,,,,,
-Rowan Wolfe,Development Manager,DataVista,ImpactStream,Active,NexaTech,Florence,9001,,Phoenix Fox,phoenix.fox@nycosoft.com,7e8f3847-215d-4c66-bce4-e9c5d46473fa,New Initiatives,,,,Riley Hale,,,,,,
-Cameron Lane,Agile Coach/Scrum Master,MetricMind,"TrustLayer, EdgeOps",Active,NexaTech,Milan,3A15,2020-01-20,Cameron Lane,cameron.lane@nycosoft.com,7cb2c770-66e8-4bc6-976a-069c406b0ede,New Initiatives,,,,,,,,,,
-Logan Ash,,,,Inactive,SynapseWorks,,,,Harper Drake,harper.drake@nycosoft.com,,,,,,,,,,,,
-Val Frost,,,,Inactive,SynapseWorks,,,2023-10-26,Elliot Frost,elliot.frost@nycosoft.com,,,,,,,,,,,,
-Drew Brooks,Development Manager,,,Inactive,NexaTech,Milan,3A11,,Harper Moon,harper.moon@nycosoft.com,c0772295-85cb-40f7-9205-9ca908b4c97f,,,,,,,,,,,
+User,Role,Team member of,Leading team(s),Status,Company,Location,Room,In team since,Name,Company email,Photo,Team Stream,Team Stream Description,Team Theme,Team Theme Description,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager,Last Update,Team Managed Services,Team Email,Team Channels
+Skyler Vale,Business Analyst,,,Inactive,SynapseWorks,,,2024-01-09,Jamie Steel,jamie.steel@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Morgan Stone,UX Strategy,FutureForge,,Active,NexaTech,Milan,3B10,2021-04-01,Morgan Stone,morgan.stone@nycosoft.com,,,,,,,,,,,2025-10-24,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Sky,Product Developer,HelpHive,,Inactive,SynapseWorks,,,,Val Sky,val.sky@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Quinn Storm,Head of Digital Delivery & Quality,StatSphere,,Active,NexaTech,Milan,3A12,,Quinn Storm,quinn.storm@nycosoft.com,,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jordan Brooks,Product Developer,,,Inactive,SynapseWorks,,,,Emerson Lane,emerson.lane@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Rowan Wolfe,Development Manager,DataVista,ImpactStream,Active,NexaTech,Florence,9001,,Phoenix Fox,phoenix.fox@nycosoft.com,7e8f3847-215d-4c66-bce4-e9c5d46473fa,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Lane,Agile Coach/Scrum Master,MetricMind,"TrustLayer, EdgeOps",Active,NexaTech,Milan,3A15,2020-01-20,Cameron Lane,cameron.lane@nycosoft.com,7cb2c770-66e8-4bc6-976a-069c406b0ede,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Ash,,,,Inactive,SynapseWorks,,,,Harper Drake,harper.drake@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Frost,,,,Inactive,SynapseWorks,,,2023-10-26,Elliot Frost,elliot.frost@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Drew Brooks,Development Manager,,,Inactive,NexaTech,Milan,3A11,,Harper Moon,harper.moon@nycosoft.com,c0772295-85cb-40f7-9205-9ca908b4c97f,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Dakota Ash,Product Developer,CloudAxis,,Active,ZenithSoft,,,,Elliot Hunter,elliot.hunter@nycosoft.com,e8006802-df69-4fd6-a3b4-5d6e51e8dcb9,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
-Riley Flame,Development Manager,DataVista,"TrustLayer, EdgeOps",Active,NexaTech,Florence,9001,,Riley Flame,riley.flame@nycosoft.com,ccb4b0f2-4cab-45ab-9f84-b4b8827d611a,New Initiatives,,,,Riley Hale,,,,,,
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Flame,Development Manager,DataVista,"TrustLayer, EdgeOps",Active,NexaTech,Florence,9001,,Riley Flame,riley.flame@nycosoft.com,ccb4b0f2-4cab-45ab-9f84-b4b8827d611a,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Tatum Knight,Product Manager,ShieldForce,"InsightGrid, VisionWare",Active,CloudNova,,3A19A,,Tatum Knight,tatum.knight@nycosoft.com,,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
-Riley Blaze,Product Developer,,,Inactive,SynapseWorks,,,,Logan Steel,logan.steel@nycosoft.com,,,,,,,,,,,,
-Kai Shade,Platform Engineer,,,Inactive,CloudNova,Remote,,2024-03-18,Emerson Steel,emerson.steel@nycosoft.com,,,,,,,,,,,,
-Morgan Vale,L1 Support Engineer,CyberSentinel,,Inactive (temporary),SynapseWorks,Milan,,,Morgan Vale,morgan.vale@nycosoft.com,,,,,,,,,,,,
-Kai Moon,QA,VisionTrack,,Active,SynapseWorks,,,,Kai Moon,kai.moon@nycosoft.com,,,,,,,,,,,,
-Elliot Sage,UX Researcher,FutureForge,,Active,NexaTech,Florence,,,Phoenix Nova,phoenix.nova@nycosoft.com,,,,,,,,,,,,
-Jamie Hunter,Digital Campaign Designer,AssistEdge,,Active,NexaTech,Florence,,,Jamie Hunter,jamie.hunter@nycosoft.com,48c8f369-27db-4402-a167-91e65cc6f3d9,,,,,,,,,,,
-Avery Hale,Digital VP,,,Active,NexaTech,Milan,3A10,,Avery Hale,avery.hale@nycosoft.com,,,,,,,,,,,,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Blaze,Product Developer,,,Inactive,SynapseWorks,,,,Logan Steel,logan.steel@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Kai Shade,Platform Engineer,,,Inactive,CloudNova,Remote,,2024-03-18,Emerson Steel,emerson.steel@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Morgan Vale,L1 Support Engineer,CyberSentinel,,Inactive (temporary),SynapseWorks,Milan,,,Morgan Vale,morgan.vale@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Kai Moon,QA,VisionTrack,,Active,SynapseWorks,,,,Kai Moon,kai.moon@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Sage,UX Researcher,FutureForge,,Active,NexaTech,Florence,,,Phoenix Nova,phoenix.nova@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Hunter,Digital Campaign Designer,AssistEdge,,Active,NexaTech,Florence,,,Jamie Hunter,jamie.hunter@nycosoft.com,48c8f369-27db-4402-a167-91e65cc6f3d9,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Avery Hale,Digital VP,,,Active,NexaTech,Milan,3A10,,Avery Hale,avery.hale@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Morgan Ash,Product Manager,ShieldForce,,Inactive,CloudNova,,,2023-09-05,Winter Storm,winter.storm@nycosoft.com,,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Zion Rivers,Product Developer,SecureStream,,Active,SynapseWorks,Milan,3B13,,Zion Rivers,zion.rivers@nycosoft.com,b3f9dc17-0bdb-48ac-be0e-c0b482227de0,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -42,14 +84,30 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Logan Snow,Alex Snow,Phoenix Snow,"Casey Stone
 Morgan Ash",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
-Avery Dusk,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,2021-08-31,Avery Dusk,avery.dusk@nycosoft.com,2064d1a5-df52-48dd-a1b4-3531fcec8d29,,,,,,,,,,,
-Jules Sage,Product Manager,,"QueryQuest, AI Nexus",Active,NexaTech,Milan,3B14,2021-03-01,Jules Sage,jules.sage@nycosoft.com,89c3ca9f-b915-4b35-a75e-a140d4a35793,,,,,,,,,,,
-Jules Knight,Delivery Manager,StatSphere,"VisionWare, SupportSync, DevStream, FixPoint, SprintHub",Active,CloudNova,Remote,,,Jules Knight,jules.knight@nycosoft.com,,New Initiatives,,,,,,,,,,
-Taylor Storm,Sourcing and RFP Lead,BuildMatrix,,Active,CloudNova,,,,Quinn Hale,quinn.hale@nycosoft.com,,,,,,,,,,,,
-Taylor Ray,Delivery Manager,StatSphere,"TrustLayer, TechFrontier, EdgeOps, VaultOps",Active,CloudNova,Remote,,2024-08-28,Taylor Ray,taylor.ray@nycosoft.com,,New Initiatives,,,,,,,,,,
-Emerson Reed,Digital Product Designer,,,Inactive,SynapseWorks,Milan,3B10,2024-02-05,Harper Shade,harper.shade@nycosoft.com,,,,,,,,,,,,
-Emerson Fox,Product Developer,,,Inactive,SynapseWorks,Milan,3A19A,,Blake Rivers,blake.rivers@nycosoft.com,,,,,,,,,,,,
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Avery Dusk,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,2021-08-31,Avery Dusk,avery.dusk@nycosoft.com,2064d1a5-df52-48dd-a1b4-3531fcec8d29,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jules Sage,Product Manager,,"QueryQuest, AI Nexus",Active,NexaTech,Milan,3B14,2021-03-01,Jules Sage,jules.sage@nycosoft.com,89c3ca9f-b915-4b35-a75e-a140d4a35793,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jules Knight,Delivery Manager,StatSphere,"VisionWare, SupportSync, DevStream, FixPoint, SprintHub",Active,CloudNova,Remote,,,Jules Knight,jules.knight@nycosoft.com,,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Taylor Storm,Sourcing and RFP Lead,BuildMatrix,,Active,CloudNova,,,,Quinn Hale,quinn.hale@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Taylor Ray,Delivery Manager,StatSphere,"TrustLayer, TechFrontier, EdgeOps, VaultOps",Active,CloudNova,Remote,,2024-08-28,Taylor Ray,taylor.ray@nycosoft.com,,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Reed,Digital Product Designer,,,Inactive,SynapseWorks,Milan,3B10,2024-02-05,Harper Shade,harper.shade@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Fox,Product Developer,,,Inactive,SynapseWorks,Milan,3A19A,,Blake Rivers,blake.rivers@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jules Blaze,Head of Digital Design,NetPulse,,Active,NexaTech,Florence,,,Avery Nova,avery.nova@nycosoft.com,,"
 
 ",,"
@@ -64,54 +122,122 @@ Jules Blaze,Head of Digital Design,NetPulse,,Active,NexaTech,Florence,,,Avery No
 
 ","
 
-",,
-Drew Shade,Agile Coach/Scrum Master,MetricMind,,Active,NexaTech,Milan,3A15,2021-10-10,Drew Shade,drew.shade@nycosoft.com,f94bf0d4-3966-42a1-8995-e749d482988f,New Initiatives,,,,,,,,,,
-Skyler Moon,Platform Engineer,,,Inactive,CloudNova,,,,Skyler Hunter,skyler.hunter@nycosoft.com,,,,,,,,,,,,
+",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Drew Shade,Agile Coach/Scrum Master,MetricMind,,Active,NexaTech,Milan,3A15,2021-10-10,Drew Shade,drew.shade@nycosoft.com,f94bf0d4-3966-42a1-8995-e749d482988f,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Skyler Moon,Platform Engineer,,,Inactive,CloudNova,,,,Skyler Hunter,skyler.hunter@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Quinn Flame,VP Global Digital Product,CareOps,,Inactive,NexaTech,Milan,"3A15
-3A10",,Alex West,alex.west@nycosoft.com,,,,,,,,,,,,
+3A10",,Alex West,alex.west@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Blake Drake,Digital Product Lead,ShieldForce,"DataDock, ShieldForce",Active,NexaTech,Milan,3A19,,Blake Drake,blake.drake@nycosoft.com,300da2d2-1386-437d-badf-fa5d0ce490a7,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
-Hayden Reed,OMS Integration Manager,,,Active,NexaTech,Florence,,,Hayden Reed,hayden.reed@nycosoft.com,,,,,,,,,,,,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Hayden Reed,OMS Integration Manager,,,Active,NexaTech,Florence,,,Hayden Reed,hayden.reed@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Casey Summers,Product Manager,ShieldForce,CloudAxis,Active,NexaTech,Milan,3B10,,Casey Summers,casey.summers@nycosoft.com,,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
-Tatum Dusk,,,,Active,SynapseWorks,,,,Tatum Dusk,tatum.dusk@nycosoft.com,,,,,,,,,,,,
-Logan Snow,Solution Architect,EdgeOps,"SecureStream, TrustLayer",Active,NexaTech,Florence,9001,,Logan Snow,logan.snow@nycosoft.com,4c4b81ce-1edc-4dba-b3ba-f2f8617941cc,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Elliot Ash,Digital Campaign Designer,AssistEdge,,Active,NexaTech,Milan,3B10,,Val Brooks,val.brooks@nycosoft.com,a6102059-782f-461e-93a7-bf90538902ee,,,,,,,,,,,
-Jamie Vega,Product Developer,,,Inactive,SynapseWorks,,,2022-12-01,Charlie Moon,charlie.moon@nycosoft.com,,,,,,,,,,,,
-Cameron Nova,,,,Active,SynapseWorks,,,,Cameron Nova,cameron.nova@nycosoft.com,,,,,,,,,,,,
-Elliot Vega,Product Developer,TrustLayer,,Active,QuantumEdge,Milan,Unnamed entry:69edd87e-6490-4647-b192-3fe945da7393,,Elliot Vega,elliot.vega@nycosoft.com,c4f107db-caa7-4819-be53-332c40ad51d8,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine"
-Jules Frost,Agile Practice Manager,MetricMind,ImpactStream,Active,NexaTech,Milan,3A15,2020-02-18,Jules Frost,jules.frost@nycosoft.com,aa9260d3-9540-4ab5-aa27-784b8931c51c,New Initiatives,,,,,,,,,,
-Jamie Shade,Business Analyst,CareOps,,Active,SynapseWorks,,,2023-12-11,Jamie Shade,jamie.shade@nycosoft.com,,,,,,,,,,,,
-Cameron Snow,Digital Vendors and Budget Manager,AgileWorks,,Active,NexaTech,Florence,9001,,Cameron Snow,cameron.snow@nycosoft.com,,,,,,,,,,,,
-Riley Drake,,,,INACTIVE (MOVER),SynapseWorks,,,,Hayden Snow,hayden.snow@nycosoft.com,,,,,,,,,,,,
-Riley Cross,Enterprise Architect,,,Active,SynapseWorks,,,,Jordan Storm,jordan.storm@nycosoft.com,,,,,,,,,,,,
-Casey Ray,Communications,FutureStack,,Active,SynapseWorks,Remote,,,Casey Ray,casey.ray@nycosoft.com,,,,,,,,,,,,
-Jules Shade,Business Analyst,ImpactStream,,Active,QuantumEdge,Remote,,2024-04-03,Elliot West,elliot.west@nycosoft.com,,New Initiatives,,Data Science,,Rowan Wolfe,,Zion Frost,Jules Frost,,,"AlphaLayer, StreamNode, NovaLab, GammaLab, GammaForge, GammaNode, QuantumEngine, MatrixPulse"
-Hayden Drake,Product Developer,,,INACTIVE (MOVER),QuantumEdge,Remote,,2024-04-17,Avery Vega,avery.vega@nycosoft.com,,,,,,,,,,,,
-Logan Sage,Product Developer,TrustLayer,,Active,SynapseWorks,Florence,Unnamed entry:69edd87e-6490-4647-b192-3fe945da7393,,Logan Sage,logan.sage@nycosoft.com,73ac6ccc-329e-4233-90f5-258234157fff,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine"
-Blake Hunter,Product Developer,,,Inactive,QuantumEdge,Milan,3A13,2024-02-19,Skyler Steel,skyler.steel@nycosoft.com,95511aca-789b-4162-92cb-08a80a8c70cb,,,,,,,,,,,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Tatum Dusk,,,,Active,SynapseWorks,,,,Tatum Dusk,tatum.dusk@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Snow,Solution Architect,EdgeOps,"SecureStream, TrustLayer",Active,NexaTech,Florence,9001,,Logan Snow,logan.snow@nycosoft.com,4c4b81ce-1edc-4dba-b3ba-f2f8617941cc,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Ash,Digital Campaign Designer,AssistEdge,,Active,NexaTech,Milan,3B10,,Val Brooks,val.brooks@nycosoft.com,a6102059-782f-461e-93a7-bf90538902ee,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Vega,Product Developer,,,Inactive,SynapseWorks,,,2022-12-01,Charlie Moon,charlie.moon@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Nova,,,,Active,SynapseWorks,,,,Cameron Nova,cameron.nova@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Vega,Product Developer,TrustLayer,,Active,QuantumEdge,Milan,Unnamed entry:69edd87e-6490-4647-b192-3fe945da7393,,Elliot Vega,elliot.vega@nycosoft.com,c4f107db-caa7-4819-be53-332c40ad51d8,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jules Frost,Agile Practice Manager,MetricMind,ImpactStream,Active,NexaTech,Milan,3A15,2020-02-18,Jules Frost,jules.frost@nycosoft.com,aa9260d3-9540-4ab5-aa27-784b8931c51c,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Shade,Business Analyst,CareOps,,Active,SynapseWorks,,,2023-12-11,Jamie Shade,jamie.shade@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Snow,Digital Vendors and Budget Manager,AgileWorks,,Active,NexaTech,Florence,9001,,Cameron Snow,cameron.snow@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Drake,,,,INACTIVE (MOVER),SynapseWorks,,,,Hayden Snow,hayden.snow@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Cross,Enterprise Architect,,,Active,SynapseWorks,,,,Jordan Storm,jordan.storm@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Casey Ray,Communications,FutureStack,,Active,SynapseWorks,Remote,,,Casey Ray,casey.ray@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jules Shade,Business Analyst,ImpactStream,,Active,QuantumEdge,Remote,,2024-04-03,Elliot West,elliot.west@nycosoft.com,,New Initiatives,,Data Science,,Rowan Wolfe,,Zion Frost,Jules Frost,,,"AlphaLayer, StreamNode, NovaLab, GammaLab, GammaForge, GammaNode, QuantumEngine, MatrixPulse",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Hayden Drake,Product Developer,,,INACTIVE (MOVER),QuantumEdge,Remote,,2024-04-17,Avery Vega,avery.vega@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Sage,Product Developer,TrustLayer,,Active,SynapseWorks,Florence,Unnamed entry:69edd87e-6490-4647-b192-3fe945da7393,,Logan Sage,logan.sage@nycosoft.com,73ac6ccc-329e-4233-90f5-258234157fff,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Blake Hunter,Product Developer,,,Inactive,QuantumEdge,Milan,3A13,2024-02-19,Skyler Steel,skyler.steel@nycosoft.com,95511aca-789b-4162-92cb-08a80a8c70cb,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Dakota Nova,Product Developer,AI Nexus,,Active,ZenithSoft,Remote,3B13,,Jules Hunter,jules.hunter@nycosoft.com,9e5385cb-c293-4187-9f9d-758101ed3286,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
-Harper Ray,Product Developer,TrustLayer,,Active,SynapseWorks,,,,Harper Ray,harper.ray@nycosoft.com,7a5711cb-b688-454b-9623-0278a1cac1cb,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine"
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Harper Ray,Product Developer,TrustLayer,,Active,SynapseWorks,,,,Harper Ray,harper.ray@nycosoft.com,7a5711cb-b688-454b-9623-0278a1cac1cb,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Quinn Ray,Product Developer,AI Nexus,,Active,NexaTech,Florence,9001,,Morgan Steel,morgan.steel@nycosoft.com,5459721d-26f2-4ee3-99d0-6cd57d5cfc82,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
-Phoenix Flame,Product Developer,TrustLayer,,Active,SynapseWorks,Milan,,2020-01-21,Phoenix Flame,phoenix.flame@nycosoft.com,07dc1c75-80c8-4eb8-91fb-88a6054e43b9,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine"
-Kai Fox,Product Developer,DevStream,,Active,QuantumEdge,Milan,3A16,,Kai Fox,kai.fox@nycosoft.com,56bf7a00-aa51-4a68-91cb-104c681685be,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow"
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Flame,Product Developer,TrustLayer,,Active,SynapseWorks,Milan,,2020-01-21,Phoenix Flame,phoenix.flame@nycosoft.com,07dc1c75-80c8-4eb8-91fb-88a6054e43b9,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Kai Fox,Product Developer,DevStream,,Active,QuantumEdge,Milan,3A16,,Kai Fox,kai.fox@nycosoft.com,56bf7a00-aa51-4a68-91cb-104c681685be,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Drew Nova,Product Developer,AI Nexus,,Active,QuantumEdge,Milan,,,Charlie Ash,charlie.ash@nycosoft.com,c69f87fb-bc56-4f25-b72e-2d581d4d8dda,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Emerson Reed,Business Analyst,AI Nexus,,Active,QuantumEdge,Milan,,,Emerson Reed,emerson.reed@nycosoft.com,0e46764b-b01d-4101-8929-99b0db39a798,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
-Emerson Cross,Product Developer,DataDock,,Active,QuantumEdge,Remote,,,Emerson Cross,emerson.cross@nycosoft.com,56de047b-f7b8-40b9-9929-9cab25412380,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode"
-Zion Frost,Delivery Manager,StatSphere,"InsightGrid, QueryQuest, DataDock, AI Nexus, ImpactStream",Active,CloudNova,Remote,,2024-01-08,Zion Frost,zion.frost@nycosoft.com,f4a84dd3-0541-4ab2-bf49-26dd3aacbdc8,New Initiatives,,,,,,,,,,
-Zion Blaze,Development Manager,DataVista,"SecureStream, CloudAxis, LogicLab, InfraGuard",Active,NexaTech,Milan,3A11,2020-11-02,Zion Blaze,zion.blaze@nycosoft.com,e8aa8f5d-94c9-48a5-8f64-639e16fba591,New Initiatives,,,,Riley Hale,,,,,,
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Cross,Product Developer,DataDock,,Active,QuantumEdge,Remote,,,Emerson Cross,emerson.cross@nycosoft.com,56de047b-f7b8-40b9-9929-9cab25412380,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Zion Frost,Delivery Manager,StatSphere,"InsightGrid, QueryQuest, DataDock, AI Nexus, ImpactStream",Active,CloudNova,Remote,,2024-01-08,Zion Frost,zion.frost@nycosoft.com,f4a84dd3-0541-4ab2-bf49-26dd3aacbdc8,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Zion Blaze,Development Manager,DataVista,"SecureStream, CloudAxis, LogicLab, InfraGuard",Active,NexaTech,Milan,3A11,2020-11-02,Zion Blaze,zion.blaze@nycosoft.com,e8aa8f5d-94c9-48a5-8f64-639e16fba591,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Casey Hunter,"Product Developer
-Security Champion",,,INACTIVE (MOVER),NexaTech,Florence,9001,2024-04-29,Casey Hunter,casey.hunter@nycosoft.com,dd88a8a3-6195-47af-ab58-7241e136ed8f,,,,,,,,,,,
+Security Champion",,,INACTIVE (MOVER),NexaTech,Florence,9001,2024-04-29,Casey Hunter,casey.hunter@nycosoft.com,dd88a8a3-6195-47af-ab58-7241e136ed8f,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Quinn Sage,Product Developer,InfraGuard,,Active,NexaTech,Florence,9001,,Quinn Sage,quinn.sage@nycosoft.com,a07584d6-d5ae-43c8-b8de-b5c7798faa2f,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -121,7 +247,9 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Dakota Ash,Alex Snow,Phoenix Snow,"Morgan Ash
 Casey Stone",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Logan Cross,Product Developer,InfraGuard,,Active,NexaTech,Florence,9001,,Logan Cross,logan.cross@nycosoft.com,750edb37-0ceb-4763-a830-7455a604134b,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -131,8 +259,12 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Dakota Ash,Alex Snow,Phoenix Snow,"Morgan Ash
 Casey Stone",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
-Winter Brooks,Product Developer,DevStream,,Active,ZenithSoft,Milan,3B10,,Winter Brooks,winter.brooks@nycosoft.com,b1bf0b37-205b-4c3d-abd0-39432af44976,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow"
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Winter Brooks,Product Developer,DevStream,,Active,ZenithSoft,Milan,3B10,,Winter Brooks,winter.brooks@nycosoft.com,b1bf0b37-205b-4c3d-abd0-39432af44976,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jamie Fox,Product Developer,SecureStream,,Active,NexaTech,Milan,3B10,2020-08-30,Jamie Fox,jamie.fox@nycosoft.com,e09451b2-8e52-49c0-aa2e-47f36101581c,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -142,7 +274,9 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Logan Snow,Alex Snow,Phoenix Snow,"Casey Stone
 Morgan Ash",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Casey West,Product Developer,SecureStream,,Active,NexaTech,Milan,3B9,2024-02-05,Casey West,casey.west@nycosoft.com,6180c926-2ace-46ad-89d0-63f226d60b9d,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -152,7 +286,9 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Logan Snow,Alex Snow,Phoenix Snow,"Casey Stone
 Morgan Ash",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Emerson Frost,Product Developer,SecureStream,,Active,SynapseWorks,Milan,3B10,,Emerson Frost,emerson.frost@nycosoft.com,7e7530d4-5548-48bf-bfe6-abe37f387951,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -162,16 +298,28 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,Logan Snow,Alex Snow,Phoenix Snow,"Casey Stone
 Morgan Ash",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
-Phoenix Snow,Agile Coach/Scrum Master,MetricMind,"SecureStream, LogicLab, InfraGuard",Active,NexaTech,Milan,3A15,,Phoenix Snow,phoenix.snow@nycosoft.com,e8e76a70-50f5-4185-94ff-7e25d145e268,New Initiatives,,,,,,,,,,
-Cameron Ray,Agile Coach/Scrum Master,MetricMind,"QueryQuest, AI Nexus",Active,CloudNova,,,2023-05-01,Cameron Ray,cameron.ray@nycosoft.com,04772412-e0ac-423f-99fd-b239a0775582,New Initiatives,,,,,,,,,,
-Skyler Moon,,,,Inactive,SynapseWorks,Remote,,,,,521f0505-99d2-4aa0-8546-6efb1d22ee75,,,,,,,,,,,
-Alex Snow,Delivery Manager,StatSphere,"SecureStream, CloudAxis, LogicLab, InfraGuard",Active,NexaTech,Florence,9001,,Alex Snow,alex.snow@nycosoft.com,6b774ea8-0f0b-4c7e-8ff4-3475097f7fb1,New Initiatives,,,,,,,,,,
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Snow,Agile Coach/Scrum Master,MetricMind,"SecureStream, LogicLab, InfraGuard",Active,NexaTech,Milan,3A15,,Phoenix Snow,phoenix.snow@nycosoft.com,e8e76a70-50f5-4185-94ff-7e25d145e268,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Ray,Agile Coach/Scrum Master,MetricMind,"QueryQuest, AI Nexus",Active,CloudNova,,,2023-05-01,Cameron Ray,cameron.ray@nycosoft.com,04772412-e0ac-423f-99fd-b239a0775582,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Skyler Moon,,,,Inactive,SynapseWorks,Remote,,,,,521f0505-99d2-4aa0-8546-6efb1d22ee75,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Alex Snow,Delivery Manager,StatSphere,"SecureStream, CloudAxis, LogicLab, InfraGuard",Active,NexaTech,Florence,9001,,Alex Snow,alex.snow@nycosoft.com,6b774ea8-0f0b-4c7e-8ff4-3475097f7fb1,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Casey Stone,Product Manager,ShieldForce,"SecureStream, LogicLab, InfraGuard",Active,CloudNova,,,,Casey Stone,casey.stone@nycosoft.com,425daba4-5d85-47be-95c8-8a8524ab83ca,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jules Drake,Digital Product Lead,ResolveHub,"SecureStream, ShieldForce, LogicLab, InfraGuard",Active,CloudNova,,,2023-03-19,Skyler Storm,skyler.storm@nycosoft.com,cf0e0aac-acc8-4bd6-aeba-ecf2caae7527,"
 Expansion Themes
 New Initiatives
@@ -183,120 +331,196 @@ RocketScience Themes",,"
 ","
 Morgan Ash
 Jules Sage
-Tatum Knight",,
-Jamie Cross,Solution Architect,EdgeOps,CloudAxis,Active,NexaTech,Florence,,,Jamie Cross,jamie.cross@nycosoft.com,277f3e53-5871-40ee-81d8-88370c6ed485,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Cross,Solution Architect,EdgeOps,CloudAxis,Active,NexaTech,Florence,,,Jamie Cross,jamie.cross@nycosoft.com,277f3e53-5871-40ee-81d8-88370c6ed485,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Winter Nova,"Product Developer
 Security Champion",CloudAxis,,Active,NexaTech,Milan,3B9,,Winter Nova,winter.nova@nycosoft.com,2f880596-0c6c-4e59-b3b8-2235424c3af8,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Rowan Shade,Product Developer,CloudAxis,,Active,ZenithSoft,Milan,3B9,,Rowan Shade,rowan.shade@nycosoft.com,b9a7556b-5a74-4b3c-b45e-b6e27e1839fb,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Elliot Snow,Product Developer,CloudAxis,,Active,ZenithSoft,Milan,3B10,,Elliot Snow,elliot.snow@nycosoft.com,fd0a7c57-7246-4d9c-ad8a-dcfcf330c980,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jules Lane,Product Developer,CloudAxis,,Active,ZenithSoft,,,,Jules Lane,jules.lane@nycosoft.com,94298afd-f18b-4084-baec-ff4398c22173,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
-Jordan Hale,Agile Coach/Scrum Master,MetricMind,"VisionWare, CloudAxis",Active,NexaTech,Milan,3A19A,2024-02-05,Jordan Hale,jordan.hale@nycosoft.com,261ce8a9-61e9-4dc4-9483-ba0bfab50d13,New Initiatives,,,,,,,,,,
-Jordan Storm,Digital Accessibility Tester,DigitalForge,,Active,NexaTech,Milan,,,Casey Flame,casey.flame@nycosoft.com,6652211c-8160-4207-a54c-20313577685a,,,,,,,,,,,
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jordan Hale,Agile Coach/Scrum Master,MetricMind,"VisionWare, CloudAxis",Active,NexaTech,Milan,3A19A,2024-02-05,Jordan Hale,jordan.hale@nycosoft.com,261ce8a9-61e9-4dc4-9483-ba0bfab50d13,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jordan Storm,Digital Accessibility Tester,DigitalForge,,Active,NexaTech,Milan,,,Casey Flame,casey.flame@nycosoft.com,6652211c-8160-4207-a54c-20313577685a,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Logan Dusk,Product Developer,FixPoint,,Active,SynapseWorks,Milan,3A12A,,Logan Dusk,logan.dusk@nycosoft.com,410f4db2-a62e-4b45-9fb1-147f7077ebd4,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
-Avery Nova,Product Developer,,,Inactive,NexaTech,Milan,,,Sawyer Vale,sawyer.vale@nycosoft.com,cf4e9653-da0c-4063-9fff-9803ed46db3d,,,,,,,,,,,
-Elliot Cross,Solution Architect,EdgeOps,"FixPoint, SprintHub",Active,NexaTech,Milan,3A12A,,Elliot Cross,elliot.cross@nycosoft.com,46212419-55b7-437d-a77b-34940e38b72c,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Charlie Nova,Product Developer,,,INACTIVE (MOVER),ZenithSoft,Milan,,2024-04-15,Charlie Nova,charlie.nova@nycosoft.com,db734b3e-4986-48f3-98b2-92aa4ea22e33,,,,,,,,,,,
-Phoenix Snow,Agile Coach/Scrum Master,MetricMind,"FixPoint, SprintHub",Active,SynapseWorks,Milan,3A12A,2024-01-22,Phoenix Snow,phoenix.snow@nycosoft.com,967f23f2-4475-4302-a327-919871128030,New Initiatives,,,,,,,,,,
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Avery Nova,Product Developer,,,Inactive,NexaTech,Milan,,,Sawyer Vale,sawyer.vale@nycosoft.com,cf4e9653-da0c-4063-9fff-9803ed46db3d,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Cross,Solution Architect,EdgeOps,"FixPoint, SprintHub",Active,NexaTech,Milan,3A12A,,Elliot Cross,elliot.cross@nycosoft.com,46212419-55b7-437d-a77b-34940e38b72c,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Charlie Nova,Product Developer,,,INACTIVE (MOVER),ZenithSoft,Milan,,2024-04-15,Charlie Nova,charlie.nova@nycosoft.com,db734b3e-4986-48f3-98b2-92aa4ea22e33,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Snow,Agile Coach/Scrum Master,MetricMind,"FixPoint, SprintHub",Active,SynapseWorks,Milan,3A12A,2024-01-22,Phoenix Snow,phoenix.snow@nycosoft.com,967f23f2-4475-4302-a327-919871128030,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Emerson Rivers,"Product Developer
 Security Champion",SprintHub,,Active,NexaTech,Milan,3A12A,2023-01-13,Emerson Rivers,emerson.rivers@nycosoft.com,cc7e1783-addc-4462-b69c-0ce9a9398b68,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Quinn Hale,Product Developer,SprintHub,,Active,SynapseWorks,Milan,3A12A,,Quinn Hale,quinn.hale@nycosoft.com,8e0671be-3e0d-4654-9d38-bdea5bbc89c1,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Blake Fox,Product Developer,SprintHub,,Active,NexaTech,Milan,3A12A,,Blake Fox,blake.fox@nycosoft.com,623510b0-69c2-4849-8327-496f6b8aeab4,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
-Logan Ray,Development Manager,DataVista,"DevStream, FixPoint, SprintHub",Active,NexaTech,Milan,3A12A,2025-06-01,Hayden Ray,hayden.ray@nycosoft.com,842a76cb-d375-4ea3-af98-ca07d0a55624,New Initiatives,,,,Riley Hale,,,,,,
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Ray,Development Manager,DataVista,"DevStream, FixPoint, SprintHub",Active,NexaTech,Milan,3A12A,2025-06-01,Hayden Ray,hayden.ray@nycosoft.com,842a76cb-d375-4ea3-af98-ca07d0a55624,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Drew West,Product Developer,FixPoint,,Active,NexaTech,Milan,3A12A,2021-04-06,Drew West,drew.west@nycosoft.com,a984dc5a-19bb-4c7a-a699-471a6733f4e1,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
-Riley Reed,Program Manager,StatSphere,,Active,CloudNova,Remote,,,Riley Reed,riley.reed@nycosoft.com,ecd53fb1-a578-411f-9ae1-39a3d6ae112f,New Initiatives,,,,,,,,,,
-,,,,,,,,,,,,,,,,,,,,,,
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Reed,Program Manager,StatSphere,,Active,CloudNova,Remote,,,Riley Reed,riley.reed@nycosoft.com,ecd53fb1-a578-411f-9ae1-39a3d6ae112f,New Initiatives,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,,,,,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Elliot Dusk,Product Manager,ShieldForce,"FixPoint, SprintHub",Active,SynapseWorks,,,2022-10-11,Elliot Dusk,elliot.dusk@nycosoft.com,1a6dc97f-8f5b-4a05-86a1-46c3435137cb,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Logan Knight,OMS Integration Manager,QuantumOps,,Active,,,,,,,b62857c1-f6b0-4046-84ea-95175fd46b01,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Drew Brooks,Brian Cranston,Avery Ash,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
+More on https://www.google.com.",Payment Systems,,Logan Ray,Drew Brooks,Brian Cranston,Avery Ash,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Zion Flame,Product Developer,VisionWare,,Active,SynapseWorks,Milan,3A19A,2023-07-20,Zion Flame,zion.flame@nycosoft.com,34874ddd-bd4c-4ed5-b137-cbfd67c19ae7,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint"
+More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Sawyer Hunter,Product Developer,VisionWare,,Active,SynapseWorks,Milan,3A19A,2023-07-20,Sawyer Hunter,sawyer.hunter@nycosoft.com,ddcb191c-65cc-4bba-a98f-de7b1c0e16a8,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint"
+More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Harper Lane,Product Developer,FixPoint,,Active,NexaTech,Milan,3A19A,,Harper Lane,harper.lane@nycosoft.com,cd4e633c-170c-4b84-aba2-1fe6f9583328,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
-Sawyer Sky,Product Developer,,,INACTIVE (MOVER),ZenithSoft,,,,,,77317bed-1d65-4db7-9eef-edd2f9449b71,,,,,,,,,,,
-Harper Storm,Solution Architect,,,INACTIVE (MOVER),NexaTech,Milan,3A19A,,Morgan Ray,morgan.ray@nycosoft.com,038d1a06-5fb7-4893-b580-c306ad8ce0d6,,,,,,,,,,,
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Sawyer Sky,Product Developer,,,INACTIVE (MOVER),ZenithSoft,,,,,,77317bed-1d65-4db7-9eef-edd2f9449b71,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Harper Storm,Solution Architect,,,INACTIVE (MOVER),NexaTech,Milan,3A19A,,Morgan Ray,morgan.ray@nycosoft.com,038d1a06-5fb7-4893-b580-c306ad8ce0d6,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Dakota Ash,"Solution Architect
-Security Champion",EdgeOps,InfraGuard,Active,NexaTech,Milan,3A19A,2024-11-17,Dakota Ash,dakota.ash@nycosoft.com,4ae84b9e-3d03-46a7-9761-362eb3f0fa09,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Emerson Cross,Business Analyst,CareOps,,Active,SynapseWorks,,,2023-07-12,Emerson Cross,emerson.cross@nycosoft.com,817e11ef-9daa-4150-911c-1cd62de7ec1e,,,,,,,,,,,
-Blake Lane,Product Developer,,,INACTIVE (MOVER),SynapseWorks,,,,Hayden Sky,hayden.sky@nycosoft.com,b155a95c-38d0-47c0-b036-451ad2cbf7ae,,,,,,,,,,,
-Phoenix Moon,Product Developer,DevStream,,Active,ZenithSoft,Milan,3B14,,Phoenix Moon,phoenix.moon@nycosoft.com,01f76f18-f8eb-4003-a3e0-dddd34b72b83,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow"
-Tatum Flame,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3B14,,Morgan Drake,morgan.drake@nycosoft.com,88acc332-bc7f-4cf5-a65b-1b48ec6a2eb4,,,,,,,,,,,
-Phoenix Storm,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Remote,,,Phoenix Storm,phoenix.storm@nycosoft.com,,,,,,,,,,,,
-Val Shade,,HelpHive,,Active,SynapseWorks,,,,Skyler Reed,skyler.reed@nycosoft.com,,,,,,,,,,,,
-Quinn Moon,Product Developer,DevStream,,Active,SynapseWorks,Remote,,,Cameron Blaze,cameron.blaze@nycosoft.com,5c8a1d26-a9b1-426c-ab77-31b39bff092b,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow"
-Cameron Storm,Product Developer,HelpHive,,Active,SynapseWorks,,,,,,,,,,,,,,,,,
+Security Champion",EdgeOps,InfraGuard,Active,NexaTech,Milan,3A19A,2024-11-17,Dakota Ash,dakota.ash@nycosoft.com,4ae84b9e-3d03-46a7-9761-362eb3f0fa09,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Cross,Business Analyst,CareOps,,Active,SynapseWorks,,,2023-07-12,Emerson Cross,emerson.cross@nycosoft.com,817e11ef-9daa-4150-911c-1cd62de7ec1e,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Blake Lane,Product Developer,,,INACTIVE (MOVER),SynapseWorks,,,,Hayden Sky,hayden.sky@nycosoft.com,b155a95c-38d0-47c0-b036-451ad2cbf7ae,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Moon,Product Developer,DevStream,,Active,ZenithSoft,Milan,3B14,,Phoenix Moon,phoenix.moon@nycosoft.com,01f76f18-f8eb-4003-a3e0-dddd34b72b83,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Tatum Flame,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3B14,,Morgan Drake,morgan.drake@nycosoft.com,88acc332-bc7f-4cf5-a65b-1b48ec6a2eb4,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Storm,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Remote,,,Phoenix Storm,phoenix.storm@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Shade,,HelpHive,,Active,SynapseWorks,,,,Skyler Reed,skyler.reed@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Quinn Moon,Product Developer,DevStream,,Active,SynapseWorks,Remote,,,Cameron Blaze,cameron.blaze@nycosoft.com,5c8a1d26-a9b1-426c-ab77-31b39bff092b,Expansion Themes,,Back End,,Logan Ray,,Jules Knight,,Avery Blaze,,"StreamOps, QuantumCore, NovaNode, QuantumNet, ZenithOps, LogicLab, VisionForge, VisionLab, DataLab, DataStream, GammaLink, MatrixFlow, StreamForge, EdgePoint, StreamFlow, GammaWave, StreamCore, GammaGrid, MatrixWave, ZenithStream, StreamGrid, GammaNet, GammaSync, DataFlow",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Storm,Product Developer,HelpHive,,Active,SynapseWorks,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Avery Blaze,Product Manager,ShieldForce,"SupportSync, DevStream",Active,NexaTech,Milan,3A19,,Avery Blaze,avery.blaze@nycosoft.com,ea1a51ef-d6fc-4f79-a0ae-b9cdf91473cc,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
-Logan Knight,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3A16,,Taylor Hunter,taylor.hunter@nycosoft.com,c755f6f0-5e4c-4d4c-b906-0af9b03501b3,,,,,,,,,,,
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Knight,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3A16,,Taylor Hunter,taylor.hunter@nycosoft.com,c755f6f0-5e4c-4d4c-b906-0af9b03501b3,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Morgan Wolfe,Product Developer,QueryQuest,,Active,QuantumEdge,,,,Morgan Wolfe,morgan.wolfe@nycosoft.com,c714719c-bc3a-4a36-84d0-48250d476d14,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -304,7 +528,9 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Winter Blaze,Product Developer,QueryQuest,,Active,CloudNova,Remote,,,Zion Sky,zion.sky@nycosoft.com,d879aedf-653f-44b9-b70c-227bf6ea0464,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -312,7 +538,9 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Hayden Summers,Product Developer,QueryQuest,,Active,ZenithSoft,Remote,,,Hayden Summers,hayden.summers@nycosoft.com,de9e4400-1b9b-48ff-8994-b73c51ab6c15,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -320,7 +548,9 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Elliot Stone,Product Developer,QueryQuest,,Active,ZenithSoft,Remote,,2024-09-09,Elliot Stone,elliot.stone@nycosoft.com,8bda233e-0737-410f-890c-e205d906c588,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -328,7 +558,9 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Kai Wolfe,Product Developer,QueryQuest,"QueryQuest, AI Nexus",Active,NexaTech,Florence,9001,,Kai Wolfe,kai.wolfe@nycosoft.com,6cbf3ff0-8b5a-4ab3-87a1-f55939211357,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -336,38 +568,72 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jules Lane,Product Developer,CloudAxis,,Active,ZenithSoft,,,,Jules Lane,jules.lane@nycosoft.com,5670ed68-3a11-401f-8efa-b00e06c82162,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
-Jamie Rivers,Development Manager,DataVista,DataDock,Active,NexaTech,Florence,9001,2023-11-01,Jamie Rivers,jamie.rivers@nycosoft.com,7b968493-4aee-43fb-9057-95484529cf4c,New Initiatives,,,,Riley Hale,,,,,,
-Phoenix Summers,Product Developer,InsightGrid,,Active,ZenithSoft,,,,Phoenix Summers,phoenix.summers@nycosoft.com,b29901ab-f0e1-4e33-a3a9-ac2f303d1cbb,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge"
-Riley Vega,Product Developer,InsightGrid,,Active,ZenithSoft,Remote,,,Riley Vega,riley.vega@nycosoft.com,fd61919b-9c16-4b31-918f-e8bbb1e3572a,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge"
-Morgan Brooks,Product Developer,,,Inactive,ZenithSoft,,,,Sawyer Ray,sawyer.ray@nycosoft.com,01efe489-9fbf-47d4-ad4b-9e1cd74e3788,,,,,,,,,,,
-Kai Shade,Product Developer,InsightGrid,,Active,ZenithSoft,Remote,,,Kai Shade,kai.shade@nycosoft.com,bf703915-e1c1-4cec-8ef1-525f475e985d,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge"
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Rivers,Development Manager,DataVista,DataDock,Active,NexaTech,Florence,9001,2023-11-01,Jamie Rivers,jamie.rivers@nycosoft.com,7b968493-4aee-43fb-9057-95484529cf4c,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Summers,Product Developer,InsightGrid,,Active,ZenithSoft,,,,Phoenix Summers,phoenix.summers@nycosoft.com,b29901ab-f0e1-4e33-a3a9-ac2f303d1cbb,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Vega,Product Developer,InsightGrid,,Active,ZenithSoft,Remote,,,Riley Vega,riley.vega@nycosoft.com,fd61919b-9c16-4b31-918f-e8bbb1e3572a,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Morgan Brooks,Product Developer,,,Inactive,ZenithSoft,,,,Sawyer Ray,sawyer.ray@nycosoft.com,01efe489-9fbf-47d4-ad4b-9e1cd74e3788,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Kai Shade,Product Developer,InsightGrid,,Active,ZenithSoft,Remote,,,Kai Shade,kai.shade@nycosoft.com,bf703915-e1c1-4cec-8ef1-525f475e985d,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Winter Rivers,Product Developer,VisionWare,VisionWare,Active,NexaTech,Milan,"3A14
 3A16",,Winter Rivers,winter.rivers@nycosoft.com,2011c9c1-9509-4bc1-8391-b96137784642,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint"
-Winter Hunter,Product Developer,SupportSync,,Active,SynapseWorks,Milan,3A14,,Winter Hunter,winter.hunter@nycosoft.com,336ef6ee-f0b5-445a-9673-e70aa4f411db,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint"
-Charlie Knight,Product Developer,SupportSync,,Active,QuantumEdge,Remote,3A14,,Charlie Knight,charlie.knight@nycosoft.com,,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint"
-Emerson Brooks,Product Developer,SupportSync,,Active,ZenithSoft,Milan,3A14,,Phoenix Sage,phoenix.sage@nycosoft.com,b79de842-08b2-4b93-8b39-09c88fb851ed,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint"
-Cameron Wolfe,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3A14,,Cameron Wolfe,cameron.wolfe@nycosoft.com,,,,,,,,,,,,
-Jamie Blaze,Product Developer,,,Inactive,SynapseWorks,,,,Jamie Blaze,jamie.blaze@nycosoft.com,b73cfc22-a423-461d-9e93-57ada6c49e19,,,,,,,,,,,
-Jamie Summers,Product Developer,TrustLayer,,Active,NexaTech,Florence,,,Rowan Rivers,rowan.rivers@nycosoft.com,6a9ef4b8-97ab-4849-a55c-326723c9ecdf,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine"
+More on https://www.google.com.",New Markets,,Blake Fox,Winter Rivers,Jules Knight,Jordan Hale,Tatum Knight,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Winter Hunter,Product Developer,SupportSync,,Active,SynapseWorks,Milan,3A14,,Winter Hunter,winter.hunter@nycosoft.com,336ef6ee-f0b5-445a-9673-e70aa4f411db,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Charlie Knight,Product Developer,SupportSync,,Active,QuantumEdge,Remote,3A14,,Charlie Knight,charlie.knight@nycosoft.com,,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Brooks,Product Developer,SupportSync,,Active,ZenithSoft,Milan,3A14,,Phoenix Sage,phoenix.sage@nycosoft.com,b79de842-08b2-4b93-8b39-09c88fb851ed,Expansion Themes,,New Markets,,Blake Fox,,Jules Knight,,Avery Blaze,,"ZenithNode, MatrixSync, StreamPoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Wolfe,Product Developer,,,INACTIVE (MOVER),SynapseWorks,Milan,3A14,,Cameron Wolfe,cameron.wolfe@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Blaze,Product Developer,,,Inactive,SynapseWorks,,,,Jamie Blaze,jamie.blaze@nycosoft.com,b73cfc22-a423-461d-9e93-57ada6c49e19,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jamie Summers,Product Developer,TrustLayer,,Active,NexaTech,Florence,,,Rowan Rivers,rowan.rivers@nycosoft.com,6a9ef4b8-97ab-4849-a55c-326723c9ecdf,New Initiatives,,Customer Facing Foundations,,Riley Flame,Logan Snow,Taylor Ray,Cameron Lane,,,"ZenithCore, QuantumGrid, SpherePulse, BetaSync, AlphaLink, NovaPoint, BetaOps, ZenithLayer, StreamNet, CoreAxis, LogicWave, VisionGrid, SphereAxis, StreamPoint, PulseLab, NovaLink, StreamLab, AlphaNet, NovaAxis, LogicForge, VisionCore, VisionLink, AlphaCore, VisionZone, SphereEngine",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Morgan Drake,Digital Product Lead,ShieldForce,"QueryQuest, ShieldForce, AI Nexus",Active,NexaTech,Florence,,,Morgan Drake,morgan.drake@nycosoft.com,7cf1e625-d91b-45b3-8132-62006ceb8604,"Expansion Themes
 New Initiatives
 RocketScience Themes",,,,,,,,"Morgan Ash
 Jules Sage
-Tatum Knight",,
-Blake Fox,Development Manager,DataVista,"VisionWare, SupportSync",Active,NexaTech,Milan,3A11,,Blake Fox,blake.fox@nycosoft.com,eccc68bc-d444-48cc-8c01-be6543ccf8ea,New Initiatives,,,,Riley Hale,,,,,,
-Phoenix Summers,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-07-22,Kai Reed,kai.reed@nycosoft.com,020e60e2-7047-45e2-a78d-6fd9eca9075b,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
+Tatum Knight",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Blake Fox,Development Manager,DataVista,"VisionWare, SupportSync",Active,NexaTech,Milan,3A11,,Blake Fox,blake.fox@nycosoft.com,eccc68bc-d444-48cc-8c01-be6543ccf8ea,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Summers,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-07-22,Kai Reed,kai.reed@nycosoft.com,020e60e2-7047-45e2-a78d-6fd9eca9075b,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Dakota Storm,"Platform Engineer
 Security Champion",CloudNova,,Active,NexaTech,Florence,,,Dakota Storm,dakota.storm@nycosoft.com,,New Initiatives,,"Infra Pillars
 IT Support
@@ -376,38 +642,78 @@ Riley Flame","Logan Snow
 Logan Snow","Alex Snow
 Alex Snow","Cameron Lane
 Cameron Lane","
-",,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Emerson Frost,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-09-02,Emerson Frost,emerson.frost@nycosoft.com,6b1a24fe-4e79-457d-9ab2-9d6e4b38fb3e,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Avery Lane,Platform Engineer,,,Inactive,CloudNova,,,,Morgan Sage,morgan.sage@nycosoft.com,5fc3e7df-c567-4350-b4d3-ad54e16ea14a,,,,,,,,,,,
-Emerson Vale,Platform Engineer,TechFrontier,,Active,SynapseWorks,,,,Emerson Vale,emerson.vale@nycosoft.com,fb60fca1-c18e-4715-90f0-c0495bbfc558,New Initiatives,,Infra Pillars,,Cameron Shade,Logan Sage,Taylor Ray,Avery Ash,,,"FusionHub, CorePoint, StreamNode, GammaLab, BetaEngine, CloudPoint, DataNode, SphereEngine, DataFlow, OmegaLayer, DataSync"
-Elliot Dusk,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-07-01,Elliot Dusk,elliot.dusk@nycosoft.com,8957fa5f-617a-4108-a57d-037921c2510d,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
+",,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Frost,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-09-02,Emerson Frost,emerson.frost@nycosoft.com,6b1a24fe-4e79-457d-9ab2-9d6e4b38fb3e,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Avery Lane,Platform Engineer,,,Inactive,CloudNova,,,,Morgan Sage,morgan.sage@nycosoft.com,5fc3e7df-c567-4350-b4d3-ad54e16ea14a,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Vale,Platform Engineer,TechFrontier,,Active,SynapseWorks,,,,Emerson Vale,emerson.vale@nycosoft.com,fb60fca1-c18e-4715-90f0-c0495bbfc558,New Initiatives,,Infra Pillars,,Cameron Shade,Logan Sage,Taylor Ray,Avery Ash,,,"FusionHub, CorePoint, StreamNode, GammaLab, BetaEngine, CloudPoint, DataNode, SphereEngine, DataFlow, OmegaLayer, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Dusk,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,2024-07-01,Elliot Dusk,elliot.dusk@nycosoft.com,8957fa5f-617a-4108-a57d-037921c2510d,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Avery Ash,Agile Coach/Scrum Master,CorePulse,"TechFrontier, VaultOps",Active,NexaTech,Florence,9001,2022-03-03,Avery Ash,avery.ash@nycosoft.com,49db1b30-6284-43a7-a52f-c9e8ad51fdde,New Initiatives,,"
 ",,"
 ","
 ","
 ","
 ","
-",,
-Emerson Drake,Platform Engineer,TechFrontier,,Active,InfoMatrix,,,2024-02-01,Charlie Hale,charlie.hale@nycosoft.com,09b622b2-8d24-44da-ac35-833baf8bb127,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Hayden Stone,Platform Engineer,TechFrontier,,Active,InfoMatrix,,,2025-05-01,Hayden Stone,hayden.stone@nycosoft.com,,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Dakota Steel,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,2024-04-17,Quinn Shade,quinn.shade@nycosoft.com,a19accdc-7855-4100-afe0-3b5c49e6bc21,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Winter Hunter,Platform Engineer,TechFrontier,,Active,SynapseWorks,,,2024-01-25,Winter Hunter,winter.hunter@nycosoft.com,62448bd0-f086-4697-9516-afca97da571f,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Alex Reed,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,,Alex Reed,alex.reed@nycosoft.com,9cb28fd8-2ee1-4a67-8a0d-85f94dd22bb5,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Cameron Shade,Development Manager,DataVista,"InsightGrid, TechFrontier, VaultOps",Active,NexaTech,Milan,3A13,,Cameron Shade,cameron.shade@nycosoft.com,d5549ce6-3ef2-45af-9c36-fd5f0e5b666d,New Initiatives,,,,Riley Hale,,,,,,
-Logan Sage,Solution Architect,VaultOps,"TechFrontier, VaultOps",Active,CloudNova,Remote,,2024-04-01,Logan Sage,logan.sage@nycosoft.com,e518d987-84d6-4683-a11e-8600391312f1,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Taylor Hunter,Enterprise Architect,,,INACTIVE (MOVER),CloudNova,,,,Dakota Blaze,dakota.blaze@nycosoft.com,b72a61d4-3155-4a95-9a79-9ca15e172317,,,,,,,,,,,
-Riley Hale,Director of Software Engineering,,DataVista,Active,NexaTech,,,,,,92a627f6-51ee-4859-9808-da64a535e3e9,,,,,,,,,,,
+",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Emerson Drake,Platform Engineer,TechFrontier,,Active,InfoMatrix,,,2024-02-01,Charlie Hale,charlie.hale@nycosoft.com,09b622b2-8d24-44da-ac35-833baf8bb127,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Hayden Stone,Platform Engineer,TechFrontier,,Active,InfoMatrix,,,2025-05-01,Hayden Stone,hayden.stone@nycosoft.com,,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Dakota Steel,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,2024-04-17,Quinn Shade,quinn.shade@nycosoft.com,a19accdc-7855-4100-afe0-3b5c49e6bc21,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Winter Hunter,Platform Engineer,TechFrontier,,Active,SynapseWorks,,,2024-01-25,Winter Hunter,winter.hunter@nycosoft.com,62448bd0-f086-4697-9516-afca97da571f,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Alex Reed,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,,Alex Reed,alex.reed@nycosoft.com,9cb28fd8-2ee1-4a67-8a0d-85f94dd22bb5,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Shade,Development Manager,DataVista,"InsightGrid, TechFrontier, VaultOps",Active,NexaTech,Milan,3A13,,Cameron Shade,cameron.shade@nycosoft.com,d5549ce6-3ef2-45af-9c36-fd5f0e5b666d,New Initiatives,,,,Riley Hale,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Sage,Solution Architect,VaultOps,"TechFrontier, VaultOps",Active,CloudNova,Remote,,2024-04-01,Logan Sage,logan.sage@nycosoft.com,e518d987-84d6-4683-a11e-8600391312f1,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Taylor Hunter,Enterprise Architect,,,INACTIVE (MOVER),CloudNova,,,,Dakota Blaze,dakota.blaze@nycosoft.com,b72a61d4-3155-4a95-9a79-9ca15e172317,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Hale,Director of Software Engineering,,DataVista,Active,NexaTech,,,,,,92a627f6-51ee-4859-9808-da64a535e3e9,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Sawyer Ray,Service Manager,ServerSphere,,Active,NexaTech,Milan,3A13,,Sawyer Ray,sawyer.ray@nycosoft.com,b4b28fa1-313d-4449-a1ff-cdfe34acb582,New Initiatives,,Service Management,"Service Management is the discipline that ensures IT services are designed, delivered, and maintained to meet business needs effectively and efficiently. It encompasses processes such as incident management, request fulfillment, and service level monitoring, all aligned with ITIL best practices.
 
 The goal is to guarantee reliability, availability, and continuous improvement across the service lifecycle. For practical resources and tools, you can explore the ServiceNow production portal, the Service Catalog, and the ITSM customer portal.
 
 Here's our wiki https://www.google.com.
 
-These platforms serve as the main entry points for managing requests, tracking incidents, and ensuring streamlined operations.",,,,,,2025-10-15,OmegaSync
-Sawyer Summers,Digital Product Designer,PatternFlow,,Active,NexaTech,Florence,,,Sawyer Summers,sawyer.summers@nycosoft.com,da4383e1-cbc7-428e-9d6e-678ef6944eb6,,,,,,,,,,,
-Cameron Drake,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,2021-03-08,Cameron Drake,cameron.drake@nycosoft.com,b696b615-c52e-43b9-9b0e-25730e74923c,,,,,,,,,,,
-Finley Flame,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,,Finley Flame,finley.flame@nycosoft.com,5c69b772-33ab-44b6-97f9-2a5fd8eeb1fc,,,,,,,,,,,
-Phoenix Moon,Digital Product Designer,AssistEdge,,Active,NexaTech,Florence,,,Phoenix Moon,phoenix.moon@nycosoft.com,07b90371-6a7d-4709-8d25-86d67c2ed76a,,,,,,,,,,,
+These platforms serve as the main entry points for managing requests, tracking incidents, and ensuring streamlined operations.",,,,,,2025-10-15,OmegaSync,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Sawyer Summers,Digital Product Designer,PatternFlow,,Active,NexaTech,Florence,,,Sawyer Summers,sawyer.summers@nycosoft.com,da4383e1-cbc7-428e-9d6e-678ef6944eb6,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Drake,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,2021-03-08,Cameron Drake,cameron.drake@nycosoft.com,b696b615-c52e-43b9-9b0e-25730e74923c,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Finley Flame,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,,Finley Flame,finley.flame@nycosoft.com,5c69b772-33ab-44b6-97f9-2a5fd8eeb1fc,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Moon,Digital Product Designer,AssistEdge,,Active,NexaTech,Florence,,,Phoenix Moon,phoenix.moon@nycosoft.com,07b90371-6a7d-4709-8d25-86d67c2ed76a,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Val Knight,"Digital Product Designer
 Visual Design Lead",RiskRadar,,Active,NexaTech,Milan,3B10,2022-11-16,Val Knight,val.knight@nycosoft.com,dae3afef-7521-41bc-8020-60febaba0fd6,"
 ",,"
@@ -416,7 +722,9 @@ Visual Design Lead",RiskRadar,,Active,NexaTech,Milan,3B10,2022-11-16,Val Knight,
 ","
 ","
 ","
-",,
+",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Charlie Frost,Digital Design Ops,ServicePulse,,Active,NexaTech,Milan,3B10,2022-05-30,Charlie Frost,charlie.frost@nycosoft.com,df4470d3-9796-4b81-a3ca-0e7fc3cec4b8,"
 
 ",,"
@@ -431,15 +739,33 @@ Charlie Frost,Digital Design Ops,ServicePulse,,Active,NexaTech,Milan,3B10,2022-0
 
 ","
 
-",,
-Winter Sage,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,,Winter Sage,winter.sage@nycosoft.com,054286f7-4f4f-4235-94a5-a380648feb99,,,,,,,,,,,
-Rowan Fox,UX Copywriter,FutureForge,,Active,NexaTech,Milan,3B10,2024-08-27,Rowan Fox,rowan.fox@nycosoft.com,,,,,,,,,,,,
-Val Frost,Head of Portfolio,AgileWorks,,Active,NexaTech,Milan,3A12,,Val Frost,val.frost@nycosoft.com,0a6e07cb-b48a-492a-a77b-9abfc7641a18,,,,,,,,,,,
-Casey Brooks,Portfolio Manager,AgileWorks,,Active,NexaTech,Milan,3A12,,Casey Brooks,casey.brooks@nycosoft.com,30b55065-4ccf-4fcf-b1ac-333e6c536992,,,,,,,,,,,
-Logan Steel,Business Analyst,,,Inactive,NexaTech,Florence,9001,,Logan Steel,logan.steel@nycosoft.com,41e100dc-76d5-4064-bb08-058065a3695d,,,,,,,,,,,
-Val Reed,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,,Val Reed,val.reed@nycosoft.com,6d6bedfd-d4ad-40e7-8119-29b9389540f5,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Taylor Moon,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,,Taylor Moon,taylor.moon@nycosoft.com,55302390-3892-4eb8-ac8c-d5ece518316d,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
-Cameron Knight,Enterprise Architect,EdgeOps,,Active,CloudNova,Florence,9001,,Cameron Knight,cameron.knight@nycosoft.com,abbc8e5b-3dd4-4f9d-9d6d-34744093c3ee,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint"
+",,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Winter Sage,Digital Product Designer,PatternFlow,,Active,NexaTech,Milan,3B10,,Winter Sage,winter.sage@nycosoft.com,054286f7-4f4f-4235-94a5-a380648feb99,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Rowan Fox,UX Copywriter,FutureForge,,Active,NexaTech,Milan,3B10,2024-08-27,Rowan Fox,rowan.fox@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Frost,Head of Portfolio,AgileWorks,,Active,NexaTech,Milan,3A12,,Val Frost,val.frost@nycosoft.com,0a6e07cb-b48a-492a-a77b-9abfc7641a18,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Casey Brooks,Portfolio Manager,AgileWorks,,Active,NexaTech,Milan,3A12,,Casey Brooks,casey.brooks@nycosoft.com,30b55065-4ccf-4fcf-b1ac-333e6c536992,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Steel,Business Analyst,,,Inactive,NexaTech,Florence,9001,,Logan Steel,logan.steel@nycosoft.com,41e100dc-76d5-4064-bb08-058065a3695d,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Reed,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,,Val Reed,val.reed@nycosoft.com,6d6bedfd-d4ad-40e7-8119-29b9389540f5,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Taylor Moon,Platform Engineer,VaultOps,,Active,CloudNova,Remote,,,Taylor Moon,taylor.moon@nycosoft.com,55302390-3892-4eb8-ac8c-d5ece518316d,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Knight,Enterprise Architect,EdgeOps,,Active,CloudNova,Florence,9001,,Cameron Knight,cameron.knight@nycosoft.com,abbc8e5b-3dd4-4f9d-9d6d-34744093c3ee,New Initiatives,,Infra Pillars,,Riley Flame,,Taylor Ray,Cameron Lane,,,"MatrixNet, LogicSync, PulseLink, PulseStream, LogicNet, ZenithGrid, StreamPulse, OmegaPoint, CoreSync, QuantumPoint, DeltaFlow, SphereHub, CoreWave, DeltaAxis, DataHub, DeltaWave, DataNet, QuantumHub, ZenithLab, ZenithSync, CyberWave, ZenithNode, EdgeSync, LogicAxis, LogicHub, EdgeGrid, EdgeEngine, CyberLayer, EdgeNet, AlphaGrid, CyberLab, MatrixAxis, CyberNet, CyberZone, CoreStream, CorePoint",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Riley Cross,Product Developer,LogicLab,,,,Remote,,,,,,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
@@ -449,40 +775,64 @@ More on https://www.google.com.",Selling Opportunities,"Selling Opportunities re
 
 Successful execution often relies on clienteling practices—such as booking appointments with tailored preparation—to strengthen relationships and boost conversion rates. Explore more through the portal https://www.google.com/ and internal guidelines for campaign setup and client engagement.",Zion Blaze,,Alex Snow,Phoenix Snow,"Casey Stone
 Morgan Ash",,"AlphaEngine, BetaEngine, PulseFlow, AlphaOps, FusionOps, DataPulse, ZenithHub, DeltaOps, OmegaWave, MatrixOps, ZenithPoint, CoreFlow, AlphaAxis, OmegaEngine, QuantumPulse, MatrixZone, VisionPulse, MatrixTrack, OmegaForge
-"
-Finley Fox,Product Developer,InsightGrid,,Inactive (temporary),ZenithSoft,Remote,,2025-03-03,Charlie Wolfe,charlie.wolfe@nycosoft.com,79b9dbc2-568b-457a-b7b9-24f81d634c1d,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge"
-Val Brooks,Product Developer,,,Inactive,SynapseWorks,Remote,,2025-03-03,Val Brooks,val.brooks@nycosoft.com,efee2417-d4fc-452a-8bf0-44bd2b850c68,,,,,,,,,,,
-Logan Hale,Product Developer,,,Inactive,QuantumEdge,Milan,,2025-03-03,Logan Hale,logan.hale@nycosoft.com,,,,,,,,,,,,
-,,,,Active,,,,,,,,,,,,,,,,,,
+",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Finley Fox,Product Developer,InsightGrid,,Inactive (temporary),ZenithSoft,Remote,,2025-03-03,Charlie Wolfe,charlie.wolfe@nycosoft.com,79b9dbc2-568b-457a-b7b9-24f81d634c1d,Expansion Themes,,Gaming,,Cameron Shade,,Zion Frost,,Tatum Knight,,"QuantumSync, CyberEngine, CoreForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Brooks,Product Developer,,,Inactive,SynapseWorks,Remote,,2025-03-03,Val Brooks,val.brooks@nycosoft.com,efee2417-d4fc-452a-8bf0-44bd2b850c68,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Logan Hale,Product Developer,,,Inactive,QuantumEdge,Milan,,2025-03-03,Logan Hale,logan.hale@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,,,Active,,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Kai Dusk,Business Analyst,CloudAxis,,Active,ZenithSoft,Remote,,2025-03-09,Kai Dusk,kai.dusk@nycosoft.com,0f88ed75-dae2-4a73-b5d1-415a52f63262,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer
-Drew Storm,,,,Active,,Milan,,2025-03-24,Drew Storm,drew.storm@nycosoft.com,,,,,,,,,,,,
+More on https://www.google.com.",Data Entry Tools,,Zion Blaze,Jamie Cross,Alex Snow,Jordan Hale,Casey Summers,,AlphaLayer,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Drew Storm,,,,Active,,Milan,,2025-03-24,Drew Storm,drew.storm@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Jordan Steel,Product Developer,FixPoint,,Active,ZenithSoft,Milan,,2025-06-23,Jordan Steel,jordan.steel@nycosoft.com,be84c010-6667-4447-9102-d1c51326cdff,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Harper Moon,Product Developer,AI Nexus,,Active,QuantumEdge,Remote,,2025-06-05,Harper Moon,harper.moon@nycosoft.com,bef2e0e5-f043-42b1-87e3-6550f1d508de,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Skyler Vega,Product Developer,SprintHub,,Active,ZenithSoft,Milan,,2025-07-01,Skyler Vega,skyler.vega@nycosoft.com,d93d88b5-1f29-4fdc-ae09-30b674e953b7,RocketScience Themes,"Rocket Science Theme embodies innovation, precision, and advanced problem-solving, drawing inspiration from aerospace engineering principles.
 It represents a commitment to tackling complex challenges with cutting-edge technology, rigorous analysis, and bold creativity.
 
 This theme often highlights breakthrough solutions, scalability, and high-performance systems designed to push boundaries and deliver exceptional results in demanding environments.
 
-More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub"
+More on https://www.google.com.",Payment Systems,,Logan Ray,Elliot Cross,Jules Knight,Phoenix Snow,Elliot Dusk,,"FusionEngine, FusionPoint, SphereNet, GammaFlow, OmegaHub, CyberNode, DataEngine, CoreHub, FusionWave, NovaSync, AlphaNode, LogicLink, GammaTrack, FusionPulse, PulseWave, StreamHub, StreamAxis, FusionAxis, FusionSync, OmegaTrack, FusionHub",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Charlie Drake,Service Manager,ServerSphere,,Active,QuantumEdge,Milan,,2025-07-01,Quinn Frost,quinn.frost@nycosoft.com,8c39e00b-fe5e-4af8-a2c0-267df177b10d,New Initiatives,,Service Management,"Service Management is the discipline that ensures IT services are designed, delivered, and maintained to meet business needs effectively and efficiently. It encompasses processes such as incident management, request fulfillment, and service level monitoring, all aligned with ITIL best practices.
 
 The goal is to guarantee reliability, availability, and continuous improvement across the service lifecycle. For practical resources and tools, you can explore the ServiceNow production portal, the Service Catalog, and the ITSM customer portal.
 
 Here's our wiki https://www.google.com.
 
-These platforms serve as the main entry points for managing requests, tracking incidents, and ensuring streamlined operations.",,,,,,,OmegaSync
-Riley Snow,Product Developer,DataDock,,Active,QuantumEdge,Remote,,2025-07-01,Riley Snow,riley.snow@nycosoft.com,12fac04c-2561-4547-8239-3e8920b9de6b,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode"
+These platforms serve as the main entry points for managing requests, tracking incidents, and ensuring streamlined operations.",,,,,,,OmegaSync,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Riley Snow,Product Developer,DataDock,,Active,QuantumEdge,Remote,,2025-07-01,Riley Snow,riley.snow@nycosoft.com,12fac04c-2561-4547-8239-3e8920b9de6b,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 Emerson Reed,Product Developer,QueryQuest,,Active,QuantumEdge,Milan,,2025-07-14,Emerson Reed,emerson.reed@nycosoft.com,a12eed7d-2cae-4c41-a24f-7a5e18ce6fc8,Expansion Themes,,Subscription Model Domain,"The Subscription Model Domain focuses on managing recurring customer engagements through structured subscription plans, billing cycles, and entitlement tracking.
 
 It ensures seamless integration between product offerings, payment systems, and customer data, enabling businesses to deliver consistent value while maintaining compliance and operational efficiency.
@@ -490,26 +840,70 @@ It ensures seamless integration between product offerings, payment systems, and 
 This domain typically supports automated renewals, flexible pricing models, and analytics for churn prediction, making it a cornerstone for organizations adopting service-based or consumption-driven strategies.
 
 More info on https://www.google.com",Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge"
-Jordan Sage,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Jordan Sage,jordan.sage@nycosoft.com,,,,,,,,,,,,
-Casey West,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Charlie Shade,charlie.shade@nycosoft.com,,,,,,,,,,,,
-Winter Steel,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Winter Steel,winter.steel@nycosoft.com,,,,,,,,,,,,
-Dakota Lane,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Dakota Lane,dakota.lane@nycosoft.com,,,,,,,,,,,,
-Harper Hunter,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Harper Hunter,harper.hunter@nycosoft.com,,,,,,,,,,,,
-Phoenix Lane,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Phoenix Lane,phoenix.lane@nycosoft.com,,,,,,,,,,,,
-Drew Vale,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Drew Vale,drew.vale@nycosoft.com,,,,,,,,,,,,
-Cameron Nova,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Phoenix Flame,phoenix.flame@nycosoft.com,,,,,,,,,,,,
-Drew Blaze,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Drew Blaze,drew.blaze@nycosoft.com,,,,,,,,,,,,
-Rowan Dusk,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Kai Dusk,kai.dusk@nycosoft.com,,,,,,,,,,,,
-Sawyer Shade,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Sawyer Shade,sawyer.shade@nycosoft.com,,,,,,,,,,,,
-Cameron Ash,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Jordan Dusk,jordan.dusk@nycosoft.com,,,,,,,,,,,,
-Kai Steel,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Kai Steel,kai.steel@nycosoft.com,,,,,,,,,,,,
-Val Moon,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Val Moon,val.moon@nycosoft.com,,,,,,,,,,,,
-Elliot Hale,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Morgan Summers,morgan.summers@nycosoft.com,,,,,,,,,,,,
-,,,,Active,,,,,,,,,,,,,,,,,,
-Phoenix Sage,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,,Phoenix Sage,phoenix.sage@nycosoft.com,,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"FusionHub, CorePoint, StreamNode, GammaLab, BetaEngine, CloudPoint, DataNode, SphereEngine, DataFlow, OmegaLayer, DataSync"
-,,,,Active,,,,,,,,,,,,,,,,,,
-,,,,Active,,,,,,,,,,,,,,,,,,
+Casey Summers",,"EdgeTrack, CoreZone, VisionOps, CorePulse, QuantumTrack, PulseForge",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Jordan Sage,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Jordan Sage,jordan.sage@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Casey West,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Charlie Shade,charlie.shade@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Winter Steel,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Winter Steel,winter.steel@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Dakota Lane,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Dakota Lane,dakota.lane@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Harper Hunter,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Harper Hunter,harper.hunter@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Lane,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Phoenix Lane,phoenix.lane@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Drew Vale,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Drew Vale,drew.vale@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Nova,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Phoenix Flame,phoenix.flame@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Drew Blaze,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Drew Blaze,drew.blaze@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Rowan Dusk,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Kai Dusk,kai.dusk@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Sawyer Shade,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Sawyer Shade,sawyer.shade@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Cameron Ash,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Jordan Dusk,jordan.dusk@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Kai Steel,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Kai Steel,kai.steel@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Val Moon,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Val Moon,val.moon@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Elliot Hale,L1 Support Engineer,CyberSentinel,,Active,QuantumEdge,Remote,,,Morgan Summers,morgan.summers@nycosoft.com,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,,,Active,,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+Phoenix Sage,Platform Engineer,TechFrontier,,Active,InfoMatrix,Remote,,,Phoenix Sage,phoenix.sage@nycosoft.com,,New Initiatives,,Infra Pillars,,Riley Flame,Logan Sage,Taylor Ray,Avery Ash,,,"FusionHub, CorePoint, StreamNode, GammaLab, BetaEngine, CloudPoint, DataNode, SphereEngine, DataFlow, OmegaLayer, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,,,Active,,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,,,Active,,,,,,,,,,,,,,,,,,,team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
 ,,AI Nexus,,,,,,,,,,Expansion Themes,,Integration,,Kai Wolfe,,Zion Frost,Cameron Ray,"Jules Sage
-Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync"
-,,DataDock,,,,,,,,,,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode"
+Casey Summers",,"LogicEngine, GammaHub, BetaPulse, MatrixLayer, MatrixEngine, CyberFlow, OmegaLink, FusionLab, QuantumForge, MatrixSync, DeltaEngine, QuantumStream, QuantumLayer, MatrixStream, DeltaLink, DataSync",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"
+,,DataDock,,,,,,,,,,Expansion Themes,,Mobile First,,Jamie Rivers,,Zion Frost,,Blake Drake,,"EdgeWave, EdgeNode, CloudTrack, CloudCore, CloudFlow, CloudPoint, DataNode",team@email.com,"https://chat.slick.com/archives/C08LVG7H1J3
+https://chat.slick.com/archives/C08LVG7H1J2
+https://chat.slick.com/archives/C08LVG7H1J1"

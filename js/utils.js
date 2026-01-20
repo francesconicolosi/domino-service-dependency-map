@@ -1,35 +1,55 @@
 export const SECOND_LEVEL_LABEL_EXTRA = 120;
 export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
+export function truncateString(str, maxLength = 25) {
+    if (str.length <= maxLength) return str;
+    return str.slice(0, maxLength) + '...';
+}
+
+export function addTagToElement(element, number, tag = 'br') {
+    element.insertAdjacentHTML('beforeend', `<${tag}>`.repeat(number));
+}
+
 export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, bodyParam) {
     window.location.href = `mailto:${peopleDBUpdateRecipients.join(",")}?subject=${encodeURIComponent(subjectParam)}&body=${encodeURIComponent(bodyParam)}`;
 }
 
-export function createFormattedLongTextElementsFrom(description) {
-    const elementsToAppend = [];
-    if (description) {
-        const lines = description.split('\n');
-        lines.forEach((line, index) => {
-            const parts = line.split(/\s+/);
-            parts.forEach(part => {
-                if (part.startsWith('http')) {
-                    const cleanUrl = part.replace(/[.,;:]+$/, '');
-                    const a = document.createElement('a');
-                    a.href = cleanUrl;
-                    a.textContent = "🔗External Link";
-                    a.target = '_blank';
-                    a.style.color = '#0078d4';
-                    a.style.textDecoration = 'underline';
-                    elementsToAppend.push(a);
-                } else {
-                    elementsToAppend.push(document.createTextNode(part + ' '));
-                }
-            });
+export function createHrefElement(cleanUrl, textContent) {
+    const a = document.createElement('a');
+    a.href = cleanUrl;
+    a.textContent = textContent ?? "🔗External Link";
+    a.target = '_blank';
+    a.style.color = '#0078d4';
+    a.style.textDecoration = 'underline';
+    return a;
+}
 
-            if (index < lines.length - 1) {
-                elementsToAppend.push(document.createElement('br'));
+export function createFormattedElementsFrom(lines) {
+    const elementsToAppend = [];
+    lines.forEach((line, index) => {
+        const parts = line.split(/\s+/);
+        parts.forEach(part => {
+            if (part.startsWith('http')) {
+                const cleanUrl = part.replace(/[.,;:]+$/, '');
+                const a = createHrefElement(cleanUrl);
+                elementsToAppend.push(a);
+            } else {
+                elementsToAppend.push(document.createTextNode(part + ' '));
             }
         });
+
+        if (index < lines.length - 1) {
+            elementsToAppend.push(document.createElement('br'));
+        }
+    });
+    return elementsToAppend;
+}
+
+export function createFormattedLongTextElementsFrom(longText) {
+    let elementsToAppend = [];
+    if (longText) {
+        const lines = longText.split('\n');
+        elementsToAppend = createFormattedElementsFrom(lines, elementsToAppend);
     }
     return elementsToAppend;
 }
@@ -141,9 +161,9 @@ export function buildLegendaColorScale(field, items, d3param, palette, neutralCo
     return scale;
 }
 
-export function openOutlookWebCompose({to = [], cc = [], bcc = [], subject = '', body = ''}) {
-    const toParam = to.length ? encodeURIComponent(to.join(';')) : '';
-    const ccParam = cc.length ? encodeURIComponent(cc.join(';')) : '';
+export function createOutlookUrl(to, cc = [], subject = '', body = '') {
+    const toParam = to.length > 1 ? encodeURIComponent(to.join(';')) : '';
+    const ccParam = cc.length > 1 ? encodeURIComponent(cc.join(';')) : '';
 
     const subjectParam = encodeURIComponent(subject);
     const bodyParam = encodeURIComponent(body);
@@ -151,8 +171,11 @@ export function openOutlookWebCompose({to = [], cc = [], bcc = [], subject = '',
     let url = `https://outlook.office.com/mail/deeplink/compose?subject=${subjectParam}&body=${bodyParam}`;
     if (toParam) url += `&to=${toParam}`;
     if (ccParam) url += `&cc=${ccParam}`;
+    return url;
+}
 
-    window.open(url, '_blank', 'noopener');
+export function openOutlookWebCompose({to = [], cc = [], bcc = [], subject = '', body = ''}) {
+    window.open(createOutlookUrl(to, cc, subject, body), '_blank', 'noopener');
 }
 
 export function isMobileDevice() {
@@ -160,7 +183,8 @@ export function isMobileDevice() {
         if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
             return navigator.userAgentData.mobile;
         }
-    } catch (_) {}
+    } catch (_) {
+    }
 
     const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
     const uaIsMobile =
@@ -184,6 +208,7 @@ export function setQueryParam(param, value) {
     url.searchParams.set(param, value);
     window.history.pushState({}, '', url);
 }
+
 export function setSearchQuery(value) {
     setQueryParam('search', value);
 }
@@ -258,18 +283,31 @@ export function parseCSV(text) {
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
         if (char === '"') {
-            if (inQuotes && text[i + 1] === '"') { value += '"'; i++; }
-            else { inQuotes = !inQuotes; }
+            if (inQuotes && text[i + 1] === '"') {
+                value += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
         } else if (char === ',' && !inQuotes) {
-            current.push(value); value = '';
+            current.push(value);
+            value = '';
         } else if ((char === '\n' || char === '\r') && !inQuotes) {
-            if (value || current.length > 0) { current.push(value); rows.push(current); current = []; value = ''; }
+            if (value || current.length > 0) {
+                current.push(value);
+                rows.push(current);
+                current = [];
+                value = '';
+            }
             if (char === '\r' && text[i + 1] === '\n') i++;
         } else {
             value += char;
         }
     }
-    if (value || current.length > 0) { current.push(value); rows.push(current); }
+    if (value || current.length > 0) {
+        current.push(value);
+        rows.push(current);
+    }
     return rows;
 }
 
