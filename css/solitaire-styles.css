@@ -1,3 +1,13 @@
+.dimmed {
+    opacity: 0.15;
+    filter: grayscale(60%);
+    transition: opacity 200ms ease, filter 200ms ease;
+}
+
+.highlighted {
+    opacity: 1 !important;
+    filter: none !important;
+}
 
 #legend {
     position: fixed;

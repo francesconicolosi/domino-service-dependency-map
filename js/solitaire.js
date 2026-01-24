@@ -18,7 +18,13 @@ import {
     TEAM_MEMBER_LEGENDA_LABEL,
     createFormattedLongTextElementsFrom,
     createFormattedElementsFrom,
-    createHrefElement, truncateString, addTagToElement, createOutlookUrl
+    createHrefElement,
+    truncateString,
+    addTagToElement,
+    createOutlookUrl,
+    clearSearchDimming,
+    applySearchDimming,
+    applySearchDimmingForMatches
 } from './utils.js';
 
 let lastSearch = '';
@@ -428,6 +434,7 @@ function initSideDrawerEvents() {
         const searchInput = document.getElementById('drawer-search-input');
         searchInput.value = searchParam;
         setSearchQuery(searchParam);
+        clearSearchDimming();
         fitToContent(0.9);
         //closeSideDrawer();
     });
@@ -656,7 +663,7 @@ function resetVisualization() {
     logoLayer = viewport.append('g').attr('id', 'logoLayer');
 
     zoom = d3.zoom()
-        .scaleExtent([0.1, 8])
+        .scaleExtent([0.1, 1.2])
         .on('start', () => svg.attr('cursor', 'grabbing'))
         .on('end', () => svg.attr('cursor', 'grab'))
         .on('zoom', (event) => {
@@ -976,6 +983,16 @@ function extractData(csvText) {
     const organization = buildOrganization(people);
     const organizationWithManagers = addGuestManagersTo(organization);
 
+    const streamFilterParam = getQueryParam('stream');
+    const allowedStreams = streamFilterParam
+        ? new Set(
+            streamFilterParam
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+        )
+        : null;
+
     const inARow = 6;
     const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", emailField];
 
@@ -1009,6 +1026,13 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
+
+        if (allowedStreams) {
+            const firstLevelNormalized = normalizeKey(firstLevel);
+            const isAllowed =
+                allowedStreams.has(firstLevel) || allowedStreams.has(firstLevelNormalized);
+            if (!isAllowed) return;
+        }
 
         const firstLevelMembers =
             Object.values(organization[firstLevel] || {})
@@ -1350,13 +1374,19 @@ function searchByQuery(query) {
         searchInput.value = query;
     }
 
-    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .role-field, [data-services]'));
+    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .stream-title, .role-field, [data-services]'));
 
     const matches = nodes.filter(n => {
         const textMatch = n.textContent ? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
         const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
         return textMatch || attrMatch;
     });
+
+    if (matches.length === 0) {
+        clearSearchDimming();
+        showToast(`No result found for ${query}`);
+        return;
+    }
 
     if (matches.length === 0) {
         showToast(`No result found for ${query}`);
@@ -1373,7 +1403,7 @@ function searchByQuery(query) {
     const target = matches[currentIndex];
 
     zoomToElement(target, 1.1, 600);
-
+    applySearchDimmingForMatches(matches);
     showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
     setSearchQuery(query);
 }
