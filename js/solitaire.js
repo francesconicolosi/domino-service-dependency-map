@@ -728,7 +728,7 @@ function zoomToElement(element, desiredScale = 1.5, duration = 500) {
     const [cx, cy] = t.invert([centerScreenX, centerScreenY]);
 
     const k = desiredScale;
-    const offsetY = 250;
+    const offsetY = 190;
     const tx = width / 2 - cx * k;
     const ty = height / 2 - cy * k - offsetY;
 
