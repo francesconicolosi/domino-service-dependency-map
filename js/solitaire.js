@@ -424,19 +424,23 @@ function aggregateInfoByHeader(members, headers, headerName = 'Team Managed Serv
     };
 }
 
+function clearSearch() {
+    const output = document.getElementById('output');
+    output.textContent = '';
+    searchParam = '';
+    const searchInput = document.getElementById('drawer-search-input');
+    searchInput.value = searchParam;
+    setSearchQuery(searchParam);
+    clearSearchDimming();
+    fitToContent(0.9);
+    //closeSideDrawer();
+}
+
 function initSideDrawerEvents() {
     initCommonActions();
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
-        const output = document.getElementById('output');
-        output.textContent = '';
-        searchParam = '';
-        const searchInput = document.getElementById('drawer-search-input');
-        searchInput.value = searchParam;
-        setSearchQuery(searchParam);
-        clearSearchDimming();
-        fitToContent(0.9);
-        //closeSideDrawer();
+        clearSearch();
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -1361,6 +1365,8 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
         const query = e.target.value.trim().toLowerCase();
         if (query) {
             searchByQuery(query);
+        } else {
+            clearSearch();
         }
         e.preventDefault();
     }
