@@ -458,6 +458,33 @@ function initSideDrawerEvents() {
         if (e.target.checked) setColorMode(LOCATION_FIELD);
     });
 
+    document.getElementById('act-about')?.addEventListener('click', (e) => {
+        closeSideDrawer();
+        openDrawer({name: "About Solitaire ♤", description:
+        "Org charts highlight hierarchy—but not how teams actually work. Much of the real collaboration that drives Big Groups' operations happens across functions, services, and roles, yet remains invisible. This reinforces silos and hides the complexity of our shared work.\n" +
+                "\n" +
+                "Our Vision\n" +
+                "By visualizing how teams operate—the people, services, and responsibilities behind daily activities—we strengthen a culture that is collaborative, transparent, and service‑oriented. Visibility turns shared accountability into a tangible part of our operating model.\n" +
+                "\n" +
+                "What I built\n" +
+                "A custom Visual People Database that brings together data from different company tools into a single, interactive view.\n" +
+                "It provides:\n" +
+                "\n" +
+                "- A clear map of team members (internal staff and suppliers)\n" +
+                "- The services each team manages\n" +
+                "- Roles and responsibilities across the organization\n" +
+                "- Quick access to Domino Service Catalog\n" +
+                "- A built‑in “Request an update” feature to keep information fresh and accurate\n" +
+                "\n" +
+                "The Benefits\n" +
+                "\n" +
+                "- Understand who works on what across projects and services\n" +
+                "- Make hidden operational networks visible\n" +
+                "- Consolidate data not available in company systems\n" +
+                "- Strengthen transparency, alignment, and cross‑team collaboration\n" +
+                "- Provide a single source of truth for service ownership and responsibilities"});
+    });
+
 
     document.getElementById('act-report')?.addEventListener('click', () => {
 
@@ -512,7 +539,7 @@ Regards,
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
-function openDrawer({name, description, services, channels, email}) {
+function openDrawer({name: title, description, services, channels, email}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
@@ -521,7 +548,7 @@ function openDrawer({name, description, services, channels, email}) {
 
     if (!drawer || !titleEl || !listEl || !descEl) return;
 
-    titleEl.textContent = `${name}`;
+    titleEl.textContent = `${title}`;
 
 
     descEl.innerHTML = '';
