@@ -162,18 +162,82 @@ export function createHrefElement(cleanUrl, textContent) {
     return a;
 }
 
+function textNodeWithLinksToNodes(text) {
+    const nodes = [];
+    const urlRe = /(https?:\/\/[^\s<>"')\]]+)/g;
+
+    let lastIndex = 0;
+    let match;
+    while ((match = urlRe.exec(text)) !== null) {
+        const before = text.slice(lastIndex, match.index);
+        if (before) nodes.push(document.createTextNode(before));
+
+        let url = match[1];
+        const trailingPunct = /[.,;:!?)+\]]+$/;
+        let punct = '';
+        const m2 = url.match(trailingPunct);
+        if (m2) {
+            punct = m2[0];
+            url = url.slice(0, -punct.length);
+        }
+
+        nodes.push(createHrefElement(url));
+        if (punct) nodes.push(document.createTextNode(punct));
+        lastIndex = urlRe.lastIndex;
+    }
+
+    const rest = text.slice(lastIndex);
+    if (rest) nodes.push(document.createTextNode(rest));
+    return nodes;
+}
+
+function sanitizeAndTransformNode(node, allowedTags) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return textNodeWithLinksToNodes(node.nodeValue || '');
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = node.tagName.toLowerCase();
+
+        const normalizedTag = tag === 'lu' ? 'ul' : tag;
+
+        if (allowedTags.has(normalizedTag)) {
+            const clone = document.createElement(normalizedTag);
+
+            node.childNodes.forEach(child => {
+                const childParts = sanitizeAndTransformNode(child, allowedTags);
+                childParts.forEach(p => clone.appendChild(p));
+            });
+
+            return [clone];
+        }
+
+        const fragmentNodes = [];
+        node.childNodes.forEach(child => {
+            const childParts = sanitizeAndTransformNode(child, allowedTags);
+            childParts.forEach(p => fragmentNodes.push(p));
+        });
+        return fragmentNodes;
+    }
+
+    return [];
+}
+
 export function createFormattedElementsFrom(lines) {
     const elementsToAppend = [];
-    lines.forEach((line, index) => {
-        const parts = line.split(/\s+/);
-        parts.forEach(part => {
-            if (part.startsWith('http')) {
-                const cleanUrl = part.replace(/[.,;:]+$/, '');
-                const a = createHrefElement(cleanUrl);
-                elementsToAppend.push(a);
-            } else {
-                elementsToAppend.push(document.createTextNode(part + ' '));
-            }
+    const allowedTags = new Set(['b', 'i', 'ul', 'li']);
+
+    lines.forEach((rawLine, index) => {
+        const line = rawLine
+            .replaceAll(/<\s*lu(\s|>)/gi, '<ul$1')
+            .replaceAll(/<\/\s*lu\s*>/gi, '</ul>');
+
+        const template = document.createElement('template');
+        template.innerHTML = line;
+
+        Array.from(template.content.childNodes).forEach(node => {
+            const parts = sanitizeAndTransformNode(node, allowedTags);
+            parts.forEach(p => elementsToAppend.push(p));
         });
 
         if (index < lines.length - 1) {
