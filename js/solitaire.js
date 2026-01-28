@@ -1252,24 +1252,22 @@ function extractData(csvText) {
                             .attr('stroke-dasharray', '4 2');
                     }
 
-                    function getPhotoCandidates(email, fallback = './assets/user-icon.png') {
-                        if (!email) return [fallback];
+                    function getPhotoCandidates(email) {
+                        const baseName = (email.split('@')[0] || '').replace('-ext', '').replace('.', '-');
 
-                        let baseName = email.split('@')[0] || '';
-                        baseName = baseName.replace('-ext', '').replace('.', '-');
+                        const fileName = `./assets/photos/${baseName}`;
 
-                        const candidates = [
-                            `./assets/photos/${baseName}.jpg`,
-                            `./assets/photos/${baseName}.png`,
-                            `./assets/photos/${baseName}.jpeg`,
+                        return [
+                            // `${fileName}.webp`,
+                            // `${fileName}.avif`,
+                            `${fileName}.jpg`,
+                            `${fileName}.png`,
+                            `${fileName}.jpeg`,
                         ];
-
-                        if (!candidates.includes(fallback)) candidates.push(fallback);
-                        return candidates;
                     }
 
                     function resolvePhoto(email, fallback = './assets/user-icon.png', timeoutMs = 4000) {
-                        const candidates = getPhotoCandidates(email, fallback);
+                        const candidates = getPhotoCandidates(email);
 
                         const tryWithTimeout = (url) => new Promise((resolve, reject) => {
                             const img = new Image();
@@ -1280,13 +1278,18 @@ function extractData(csvText) {
 
                             img.onload = () => { clearTimeout(timer); resolve(url); };
                             img.onerror = () => { clearTimeout(timer); reject(new Error('error')); };
+
+                            // optional: cache-busting
+                            // img.src = `${url}?t=${Date.now()}`;
                             img.src = url;
                         });
 
-                        return candidates.reduce(
-                            (chain, url) => chain.catch(() => tryWithTimeout(url)),
-                            Promise.reject()
-                        ).catch(() => fallback);
+                        return candidates
+                            .reduce(
+                                (chain, url) => chain.catch(() => tryWithTimeout(url)),
+                                Promise.reject()
+                            )
+                            .catch(() => fallback);
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
