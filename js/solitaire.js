@@ -933,7 +933,7 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
             .attr('height', 100)
             .append('xhtml:div')
             .style('font-size', '10px')
-            .style('font-family', '"Sans 3", Arial, sans-serif')
+            .style('font-family', '"Montserrat"', '"Sans 3", Arial, sans-serif')
             .style('text-align', 'center')
             .style('color', '#333')
             .html('<p>Author: Francesco Nicolosi</p>' +
