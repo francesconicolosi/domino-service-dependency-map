@@ -1034,11 +1034,11 @@ function extractData(csvText) {
     const inARow = 6;
     const dateValues = ["In team since"];
     const fieldsToShow = [
-        "Role", "Company", "Location", "Room Link", "Name",
+        "Role", "Company", "Location", "Room Link",
         ...dateValues
     ];
 
-    const nFields = fieldsToShow.length;
+    const nFields = fieldsToShow.length + 1;
     const rowHeight = 11;
     const memberWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
     const thirdLevelBoxWidth = inARow * memberWidth + 100, thirdLevelBoxPadX = 24;
@@ -1383,7 +1383,7 @@ function extractData(csvText) {
                     }
 
                     Object.entries(member).forEach(([key, value]) => {
-                        if (key !== 'Name' && fieldsToShow.includes(key) && value !== undefined) {
+                        if (fieldsToShow.includes(key) && value) {
                             let finalValue = value;
                             if (dateValues.includes(key)) {
                                 const parsed = new Date(value);
