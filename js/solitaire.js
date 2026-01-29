@@ -24,7 +24,7 @@ import {
     createOutlookUrl,
     clearSearchDimming,
     applySearchDimming,
-    applySearchDimmingForMatches
+    applySearchDimmingForMatches, formatMonthYear
 } from './utils.js';
 
 let lastSearch = '';
@@ -1034,7 +1034,7 @@ function extractData(csvText) {
     const inARow = 6;
     const dateValues = ["In team since"];
     const fieldsToShow = [
-        "Role", "Company", "Location", "Room Link", "Name", emailField,
+        "Role", "Company", "Location", "Room Link", "Name",
         ...dateValues
     ];
 
@@ -1361,7 +1361,25 @@ function extractData(csvText) {
 
                     if (member[emailField]) {
                         const email = member[emailField];
-                        infoDiv.append('div').html(`<a href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}" target="_blank" style="text-decoration:none; color:inherit;">💬</a> <a href="mailto:${encodeURIComponent(email)}" target="_blank" style="text-decoration:none; color:inherit;">✉️</a>`);
+
+                        const contacts = infoDiv.append('div')
+                            .attr('class', 'contact-icons');
+
+                        contacts.append('a')
+                            .attr('class', 'contact-icon chat')
+                            .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                            .attr('target', '_blank')
+                            .attr('rel', 'noopener noreferrer')
+                            .attr('title', 'Chat')
+                            .html(`<span class="icon" aria-hidden="true">💬</span><span class="label">Chat</span>`);
+
+                        contacts.append('a')
+                            .attr('class', 'contact-icon mail')
+                            .attr('href', createOutlookUrl([encodeURIComponent(email)]))
+                            .attr('target', '_blank')
+                            .attr('rel', 'noopener noreferrer')
+                            .attr('title', 'Email')
+                            .html(`<span class="icon" aria-hidden="true">✉️</span><span class="label">Email</span>`);
                     }
 
                     Object.entries(member).forEach(([key, value]) => {

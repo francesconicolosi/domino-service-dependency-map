@@ -161,6 +161,7 @@ export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, 
 export function createHrefElement(cleanUrl, textContent) {
     const a = document.createElement('a');
 
+    a.href = cleanUrl;
     a.textContent = textContent ?? "🔗External Link";
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
