@@ -1032,7 +1032,11 @@ function extractData(csvText) {
         : null;
 
     const inARow = 6;
-    const fieldsToShow = ["Role", "Company", "Location", "Room Link", "In team since", "Name", "User", emailField];
+    const dateValues = ["In team since"];
+    const fieldsToShow = [
+        "Role", "Company", "Location", "Room Link", "Name", emailField,
+        ...dateValues
+    ];
 
     const nFields = fieldsToShow.length;
     const rowHeight = 11;
@@ -1362,9 +1366,16 @@ function extractData(csvText) {
 
                     Object.entries(member).forEach(([key, value]) => {
                         if (key !== 'Name' && fieldsToShow.includes(key) && value !== undefined) {
+                            let finalValue = value;
+                            if (dateValues.includes(key)) {
+                                const parsed = new Date(value);
+                                if (!isNaN(parsed)) {
+                                    finalValue = formatMonthYear(parsed);
+                                }
+                            }
                             infoDiv.append('div')
                                 .attr('class', key.toLowerCase() + '-field')
-                                .html(`<strong>${key}:</strong> ${value}`);
+                                .html(`<strong>${key}:</strong> ${finalValue}`);
                         }
                     });
                 });

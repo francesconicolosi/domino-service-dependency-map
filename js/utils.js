@@ -5,6 +5,12 @@ export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
 let searchActive = false;
 
+export function formatMonthYear(value) {
+    const d = new Date(value);
+    if (isNaN(d)) return value;
+    return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 export function clearSearchDimming() {
     d3.selectAll('.dimmed').classed('dimmed', false);
     d3.selectAll('.highlighted').classed('highlighted', false);
