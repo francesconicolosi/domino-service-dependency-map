@@ -1362,24 +1362,37 @@ function extractData(csvText) {
                     if (member[emailField]) {
                         const email = member[emailField];
 
-                        const contacts = infoDiv.append('div')
-                            .attr('class', 'contact-icons');
+                        const photoSize = 60;
+                        const photoX = (memberWidth - photoSize) / 2;
 
-                        contacts.append('a')
-                            .attr('class', 'contact-icon chat')
+                        const fabsX = memberWidth - 34;
+                        const fabsY = 12;
+
+                        const fabs = group.append('foreignObject')
+                            .attr('x', fabsX)
+                            .attr('y', fabsY)
+                            .attr('width', 28)
+                            .attr('height', 62)
+                            .style('overflow', 'visible')
+                            .append('xhtml:div')
+                            .attr('class', 'contact-fabs');
+
+                        fabs.append('a')
+                            .attr('class', 'contact-fab chat')
                             .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
                             .attr('target', '_blank')
                             .attr('rel', 'noopener noreferrer')
                             .attr('title', 'Chat')
-                            .html(`<span class="icon" aria-hidden="true">💬</span><span class="label">Chat</span>`);
+                            .attr('aria-label', 'Open chat in Microsoft Teams')
 
-                        contacts.append('a')
-                            .attr('class', 'contact-icon mail')
+                        fabs.append('a')
+                            .attr('class', 'contact-fab mail')
                             .attr('href', createOutlookUrl([encodeURIComponent(email)]))
                             .attr('target', '_blank')
                             .attr('rel', 'noopener noreferrer')
                             .attr('title', 'Email')
-                            .html(`<span class="icon" aria-hidden="true">✉️</span><span class="label">Email</span>`);
+                            .attr('aria-label', 'Scrivi email in Outlook')
+                            .html(`<span class="icon" aria-hidden="true">✉️</span>`);
                     }
 
                     Object.entries(member).forEach(([key, value]) => {
