@@ -154,9 +154,10 @@ export function buildFallbackMailToLink(peopleDBUpdateRecipients, subjectParam, 
 
 export function createHrefElement(cleanUrl, textContent) {
     const a = document.createElement('a');
-    a.href = cleanUrl;
+
     a.textContent = textContent ?? "🔗External Link";
     a.target = '_blank';
+    a.rel = 'noopener noreferrer';
     a.style.color = '#0078d4';
     a.style.textDecoration = 'underline';
     return a;
@@ -191,24 +192,99 @@ function textNodeWithLinksToNodes(text) {
     return nodes;
 }
 
+const allowedAttributesByTag = {
+    'a': new Set(['href', 'title', 'target', 'rel']),
+};
+
+function sanitizeUrl(url) {
+    if (typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    const lower = trimmed.toLowerCase();
+
+    const forbiddenSchemes = ['javascript:', 'vbscript:'];
+    if (forbiddenSchemes.some(s => lower.startsWith(s))) {
+        return '';
+    }
+
+    try {
+        const u = new URL(trimmed, window.location.origin);
+        const allowed = ['http:', 'https:', 'mailto:', 'tel:', 'ftp:'];
+        if (!allowed.includes(u.protocol) && !trimmed.startsWith('/')) {
+            return '';
+        }
+    } catch (_) {
+    }
+
+    return trimmed;
+}
+
+function copyAllowedAttributes(srcElem, dstElem, allowedAttributesByTag) {
+    const tag = srcElem.tagName.toLowerCase();
+    const allowedAttrs = allowedAttributesByTag[tag];
+    if (!allowedAttrs) return;
+
+    for (const attr of srcElem.attributes) {
+        const name = attr.name.toLowerCase();
+        if (!allowedAttrs.has(name)) continue;
+
+        let value = attr.value;
+
+        if (tag === 'a') {
+            if (name === 'href') {
+                value = sanitizeUrl(value);
+                if (!value) continue;
+            }
+            if (name === 'target') {
+                const allowedTargets = new Set(['_blank', '_self']);
+                if (!allowedTargets.has(value)) value = '_blank';
+            }
+            if (name === 'rel') {
+                const parts = new Set(
+                    value.split(/\s+/).filter(Boolean).map(v => v.toLowerCase())
+                );
+                parts.add('noopener');
+                parts.add('noreferrer');
+                value = Array.from(parts).join(' ');
+            }
+        }
+
+        dstElem.setAttribute(name, value);
+    }
+
+    if (tag === 'a' && dstElem.hasAttribute('href')) {
+        if (!dstElem.hasAttribute('rel')) {
+            dstElem.setAttribute('rel', 'noopener noreferrer');
+        }
+        if (!dstElem.hasAttribute('target')) {
+            dstElem.setAttribute('target', '_blank');
+        }
+    }
+}
+
+
 function sanitizeAndTransformNode(node, allowedTags) {
     if (node.nodeType === Node.TEXT_NODE) {
         return textNodeWithLinksToNodes(node.nodeValue || '');
     }
 
     if (node.nodeType === Node.ELEMENT_NODE) {
-        const tag = node.tagName.toLowerCase();
-
-        const normalizedTag = tag === 'lu' ? 'ul' : tag;
+        const normalizedTag = node.tagName.toLowerCase();
 
         if (allowedTags.has(normalizedTag)) {
             const clone = document.createElement(normalizedTag);
+
+            copyAllowedAttributes(node, clone, allowedAttributesByTag);
 
             node.childNodes.forEach(child => {
                 const childParts = sanitizeAndTransformNode(child, allowedTags);
                 childParts.forEach(p => clone.appendChild(p));
             });
 
+            if (normalizedTag === 'a' && !clone.getAttribute('href')) {
+                const fragmentNodes = [];
+                clone.childNodes.forEach(c => fragmentNodes.push(c));
+                return fragmentNodes;
+            }
             return [clone];
         }
 
@@ -225,12 +301,9 @@ function sanitizeAndTransformNode(node, allowedTags) {
 
 export function createFormattedElementsFrom(lines) {
     const elementsToAppend = [];
-    const allowedTags = new Set(['b', 'i', 'ul', 'li']);
+    const allowedTags = new Set(['b', 'i', 'ul', 'li', 'a']);
 
-    lines.forEach((rawLine, index) => {
-        const line = rawLine
-            .replaceAll(/<\s*lu(\s|>)/gi, '<ul$1')
-            .replaceAll(/<\/\s*lu\s*>/gi, '</ul>');
+    lines.forEach((line, index) => {
 
         const template = document.createElement('template');
         template.innerHTML = line;

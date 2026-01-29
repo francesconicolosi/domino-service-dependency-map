@@ -461,7 +461,7 @@ function initSideDrawerEvents() {
     document.getElementById('act-about')?.addEventListener('click', (e) => {
         closeSideDrawer();
         openDrawer({name: "About Solitaire ♤", description:
-                `Org charts highlight hierarchy—but not how teams actually work. Much of the real collaboration that drives the Company operations happens across functions, services, and roles, yet remains invisible. This reinforces silos and hides the complexity of our shared work.\n` +
+                `Org charts highlight hierarchy—but not how teams actually work. Much of the real collaboration that drives the Company operations happens across functions, services, and roles, yet remains invisible. This reinforces silos and hides the complexity of our shared work. More info on <a href="https://www.gamerdad.cloud/" target="_blank">my personal blog</a>\n` +
                 "\n" +
                 `<b><i>Our Vision</b></i>\n` +
                 "By visualizing how teams operate—the people, services, and responsibilities behind daily activities—we strengthen a culture that is collaborative, transparent, and service‑oriented. Visibility turns shared accountability into a tangible part of our operating model.\n" +
@@ -470,19 +470,19 @@ function initSideDrawerEvents() {
                 "A custom Visual People Database that brings together data from several systems into a single, interactive view.\n" +
                 "\n" +
                 `<b><i>It provides:</b></i>\n` +
-                `<lu>` +
+                `<ul>` +
                 `<li>A clear map of team members (internal staff and suppliers)</li>` +
                 `<li>The services each team manages</li>` +
                 `<li>Roles and responsibilities across the organization</li>` +
                 `<li>Quick access to Domino Service Catalog</li>` +
-                `<li>A built‑in “Request an update” feature to keep information fresh and accurate</li></lu>` +
+                `<li>A built‑in “Request an update” feature to keep information fresh and accurate</li></ul>` +
                 "\n" +
                 "<b><i>The Benefits</b></i>\n" +
-                `<lu><li>Understand who works on what across projects and services</li>` +
+                `<ul><li>Understand who works on what across projects and services</li>` +
                 `<li>Make hidden operational networks visible</li>` +
                 `<li>Consolidate data not available in systems like the one used by the HR</li>` +
                 `<li>Strengthen transparency, alignment, and cross‑team collaboration</li>` +
-                `<li>Provide a single source of truth for service ownership and responsibilities</li></lu>`});
+                `<li>Provide a single source of truth for service ownership and responsibilities</li></ul>`});
     });
 
 
