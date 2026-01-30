@@ -1,4 +1,7 @@
-@font-face { font-family: "Sans 3"; src: url('SourceSans3-VariableFont_wght.ttf'); }
+@font-face {
+    font-family: "Sans 3";
+    src: url('SourceSans3-VariableFont_wght.ttf');
+}
 
 hr {
     border: none;
@@ -26,7 +29,7 @@ hr {
     padding: 12px;
     max-width: 240px;
     font-family: Inter, sans-serif;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 #legend .legend-title {
@@ -58,11 +61,12 @@ hr {
     flex-shrink: 0;
 }
 
-    .resize-handle {
+.resize-handle {
     fill: #0078d4;
     stroke: #fff;
     stroke-width: 1.5px;
-    rx: 3; ry: 3;
+    rx: 3;
+    ry: 3;
 }
 
 .resize-hit {
@@ -70,9 +74,20 @@ hr {
     pointer-events: all;
 }
 
-.resize-handle.e,  .resize-hit.e  { cursor: ew-resize;   touch-action: none; }
-.resize-handle.s,  .resize-hit.s  { cursor: ns-resize;   touch-action: none; }
-.resize-handle.se, .resize-hit.se { cursor: nwse-resize; touch-action: none; }
+.resize-handle.e, .resize-hit.e {
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.resize-handle.s, .resize-hit.s {
+    cursor: ns-resize;
+    touch-action: none;
+}
+
+.resize-handle.se, .resize-hit.se {
+    cursor: nwse-resize;
+    touch-action: none;
+}
 
 .resize-handle:hover {
     transform: scale(1.2);
@@ -90,8 +105,6 @@ hr {
 }
 
 
-
-
 .switch-label {
     display: flex;
     align-items: center;
@@ -103,7 +116,7 @@ hr {
     border-radius: 8px;
     cursor: pointer;
     margin-top: 8px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .switch-label input {
@@ -209,7 +222,7 @@ input:checked + .slider::before {
 #side-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.18);
+    background: rgba(0, 0, 0, .18);
     opacity: 0;
     visibility: hidden;
     transition: opacity 200ms ease, visibility 200ms ease;
@@ -229,7 +242,7 @@ input:checked + .slider::before {
     max-width: 80vw;
     height: 100vh;
     background: #fff;
-    box-shadow: 4px 0 16px rgba(0,0,0,.2);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, .2);
     transform: translateX(-100%);
     transition: transform 280ms ease;
     z-index: 1000;
@@ -240,7 +253,6 @@ input:checked + .slider::before {
 #side-drawer.open {
     transform: translateX(0);
 }
-
 
 
 @media (max-width: 768px) {
@@ -303,7 +315,6 @@ input:checked + .slider::before {
 }
 
 
-
 .drawer-search input {
     flex: 1;
     padding: 8px 10px;
@@ -326,7 +337,6 @@ input:checked + .slider::before {
 }
 
 
-
 body.side-drawer-open {
     overflow: hidden;
 }
@@ -339,7 +349,7 @@ input[type="text"] {
     border: none;
     border-bottom: 2px solid black;
     font-size: 16px;
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
 }
 
 input[type="text"]::placeholder {
@@ -348,7 +358,7 @@ input[type="text"]::placeholder {
 }
 
 .hidden {
-    display: none!important;
+    display: none !important;
 }
 
 .custom-file-upload {
@@ -371,7 +381,7 @@ button {
 }
 
 h1, h3, text, label, button, a, footer {
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
 }
 
 button:hover, .custom-file-upload:hover {
@@ -389,7 +399,7 @@ html, body {
     overflow: hidden;
     width: 100%;
     height: 100%;
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
 }
 
 svg {
@@ -428,7 +438,7 @@ svg {
 .stream-title {
     font-size: 67px;
     font-weight: bold;
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     fill: #222;
     text-transform: uppercase;
 }
@@ -436,7 +446,7 @@ svg {
 .theme-title {
     font-size: 65px;
     font-weight: bold;
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     fill: #4a4a9a;
 }
 
@@ -448,7 +458,7 @@ svg {
 .team-title {
     font-size: 50px;
     font-weight: bold;
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     fill: #333;
 }
 
@@ -471,7 +481,7 @@ svg {
 }
 
 .info {
-    font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     font-size: 12px;
     color: #333;
     text-align: center;
@@ -499,7 +509,7 @@ svg {
     max-width: 90vw;
     height: 100%;
     background: #fff;
-    box-shadow: -2px 0 12px rgba(0,0,0,.15);
+    box-shadow: -2px 0 12px rgba(0, 0, 0, .15);
     transform: translateX(100%);
     transition: transform .28s ease;
     z-index: 9999;
@@ -557,7 +567,7 @@ svg {
 #drawer-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.3);
+    background: rgba(0, 0, 0, .3);
     opacity: 0;
     pointer-events: none;
     transition: opacity .28s ease;
@@ -588,15 +598,20 @@ body.drawer-open {
     border-radius: 12px;
     background: #fff;
     color: #333;
-    border: 1px solid rgba(0,0,0,0.12);
+    border: 1px solid rgba(0, 0, 0, 0.12);
     text-decoration: none;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     font-size: 10px;
     line-height: 1;
 }
 
-.contact-icon .icon { font-size: 16px; }
-.contact-icon .label { font-weight: 600; }
+.contact-icon .icon {
+    font-size: 16px;
+}
+
+.contact-icon .label {
+    font-weight: 600;
+}
 
 .contact-icon {
     transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
@@ -606,7 +621,7 @@ body.drawer-open {
     background-color: black !important;
     color: white !important;
     border-color: black !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.30) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30) !important;
 }
 
 .contact-icon:focus-visible {
@@ -614,10 +629,18 @@ body.drawer-open {
     outline-offset: 2px;
 }
 
-.contact-icon.chat  {  }
-.contact-icon.mail  {  }
+.contact-icon.chat {
+}
 
-.contact-fabs {
+.contact-icon.mail {
+}
+
+.contact-fabs.contact-fabs--right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s ease;
@@ -634,43 +657,155 @@ body.drawer-open {
     pointer-events: auto;
 }
 
-@media (hover: none) and (pointer: coarse) {
+@media (any-hover: none), (hover: none), (pointer: coarse), (max-width: 1024px) {
     .contact-fabs {
-        opacity: 1;
-        pointer-events: auto;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transition: none !important;
     }
 }
 
 .contact-fab {
+    text-decoration: none !important;
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
     background: #fff;
     color: #333;
-    border: 1px solid rgba(0,0,0,0.12);
-    text-decoration: none;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-
-    transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    position: relative;
+    display: block;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .25s, color .25s, border-color .25s, box-shadow .25s, transform .12s;
 }
 
 .contact-fab .icon {
-    font-size: 14px;
+    text-decoration: none !important;
+
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+
+    width: 100%;
+    height: 100%;
     line-height: 1;
+    font-size: 14px;
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji',
+    'Twemoji Mozilla', 'EmojiOne Color', system-ui, sans-serif;
+
+    transform: translateY(var(--emoji-nudge, 0px));
+    line-height: 1;
+}
+
+
+@media (max-width: 1024px), (pointer: coarse) {
+    .contact-fab .icon {
+        --emoji-nudge: 0.5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-fab {
+        width: 28px;
+        height: 28px;
+    }
+
+    .contact-fab .icon {
+        font-size: 16px;
+    }
 }
 
 .contact-fab:hover {
     background-color: black;
     color: white;
     border-color: black;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.30);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30);
 }
 
 .contact-fab:focus-visible {
     outline: 2px solid #0078d4;
     outline-offset: 2px;
+}
+
+.gucci-tooltip {
+    position: fixed;
+    z-index: 2147483647;
+    background: #000;
+    color: #fff;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -8px);
+    transition: opacity 120ms ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+}
+
+.gucci-tooltip.show {
+    opacity: 1;
+}
+
+.gucci-tooltip::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #000 transparent transparent transparent;
+}
+
+@media (max-width: 480px) {
+    .contact-fabs.contact-fabs--right {
+        gap: 3px !important;
+    }
+}
+
+
+@supports (-webkit-touch-callout: none) {
+    .draggable:hover .contact-fabs {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    .contact-fabs,
+    .contact-fab {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        will-change: opacity, transform;
+    }
+
+    .contact-fab {
+        cursor: pointer;
+    }
+}
+
+.contact-fabs-svg .fab-circle {
+    fill: #fff;
+    stroke: rgba(0,0,0,0.12);
+    stroke-width: 1;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.08));
+}
+
+.contact-fabs-svg a.contact-fab:hover .fab-circle {
+    fill: #000;
+    stroke: #000;
+}
+
+.contact-fabs-svg .fab-emoji {
+    font-size: 14px;
+    font-family: 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',
+    'Twemoji Mozilla','EmojiOne Color', system-ui, sans-serif;
+    pointer-events: none;
+}
+
+@media (max-width: 480px) {
+    .contact-fabs-svg .fab-emoji { font-size: 16px; }
 }

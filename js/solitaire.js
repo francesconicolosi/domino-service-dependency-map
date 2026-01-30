@@ -539,6 +539,23 @@ Regards,
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
+(function blockDesktopPinch() {
+    const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const isMac = (navigator.platform || '').toUpperCase().includes('MAC') || /Mac OS X/.test(navigator.userAgent);
+
+    if (!(isDesktop && isMac)) return; //
+
+    window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    window.addEventListener('gesturestart',  (e) => e.preventDefault(), { passive: false });
+    window.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    window.addEventListener('gestureend',    (e) => e.preventDefault(), { passive: false });
+})();
+
 function openDrawer({name: title, description, services, channels, email}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -625,7 +642,6 @@ function initDrawerEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
-``
 
 window.addEventListener('load', function () {
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample-people-database.csv')
@@ -701,7 +717,13 @@ function resetVisualization() {
     logoLayer = viewport.append('g').attr('id', 'logoLayer');
 
     zoom = d3.zoom()
-        .scaleExtent([0.1, 1.2])
+        .filter((event) => {
+            if (event.type === 'wheel') return !event.ctrlKey;          // ⬅️ ignora pinch su trackpad
+            if (event.type === 'mousedown') return event.button === 0;
+            if (event.type.startsWith('touch')) return true;
+            return !event.ctrlKey;
+        })
+        .scaleExtent([0.1, 1])
         .on('start', () => svg.attr('cursor', 'grabbing'))
         .on('end', () => svg.attr('cursor', 'grab'))
         .on('zoom', (event) => {
@@ -1038,7 +1060,7 @@ function extractData(csvText) {
         ...dateValues
     ];
 
-    const nFields = fieldsToShow.length + 1;
+    const nFields = fieldsToShow.length + 0.5;
     const rowHeight = 11;
     const memberWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
     const thirdLevelBoxWidth = inARow * memberWidth + 100, thirdLevelBoxPadX = 24;
@@ -1365,50 +1387,116 @@ function extractData(csvText) {
                         const photoSize = 60;
                         const photoX = (memberWidth - photoSize) / 2;
 
-                        const fabsX = memberWidth - 34;
-                        const fabsY = 12;
+                        const photoY = 8;
 
-                        const fabs = group.append('foreignObject')
-                            .attr('x', fabsX)
-                            .attr('y', fabsY)
-                            .attr('width', 28)
-                            .attr('height', 62)
-                            .style('overflow', 'visible')
-                            .append('xhtml:div')
-                            .attr('class', 'contact-fabs');
 
-                        fabs.append('a')
-                            .attr('class', 'contact-fab chat')
-                            .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
-                            .attr('target', '_blank')
-                            .attr('rel', 'noopener noreferrer')
-                            .attr('title', 'Chat')
-                            .attr('aria-label', 'Open chat in Microsoft Teams')
+                        const spacingX = 8;
+                        const isMobile = window.matchMedia('(max-width: 480px)').matches;
+                        const fabSize = isMobile ? 28 : 24;
+                        const gap = isMobile ? 3 : 8;                 // 👈 gap 3px su mobile
 
-                        fabs.append('a')
-                            .attr('class', 'contact-fab mail')
-                            .attr('href', createOutlookUrl([encodeURIComponent(email)]))
-                            .attr('target', '_blank')
-                            .attr('rel', 'noopener noreferrer')
-                            .attr('title', 'Email')
-                            .attr('aria-label', 'Scrivi email in Outlook')
-                            .html(`<span class="icon" aria-hidden="true">✉️</span>`);
-                    }
+                        const fabsHeight = (fabSize * 2) + gap;
+                        const fabsX = photoX + photoSize + spacingX;
+                        const fabsY = photoY + Math.round((photoSize - fabsHeight) / 2) - 4;
 
-                    Object.entries(member).forEach(([key, value]) => {
-                        if (fieldsToShow.includes(key) && value) {
-                            let finalValue = value;
-                            if (dateValues.includes(key)) {
-                                const parsed = new Date(value);
-                                if (!isNaN(parsed)) {
-                                    finalValue = formatMonthYear(parsed);
-                                }
-                            }
-                            infoDiv.append('div')
-                                .attr('class', key.toLowerCase() + '-field')
-                                .html(`<strong>${key}:</strong> ${finalValue}`);
+                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                        if (isIOS) {
+                            const cx = Math.round(fabsX + fabSize / 2);
+                            const cy = Math.round(fabsY + fabSize / 2);
+                            const dy = fabSize + gap;
+                            const r = fabSize / 2;
+
+                            const fabsG = group.append('g')
+                                .attr('class', 'contact-fabs-svg contact-fabs--right')
+                                .attr('transform', `translate(${cx},${cy})`);
+
+                            const chatA = fabsG.append('a')
+                                .attr('xlink:href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('class', 'contact-fab chat');
+
+                            const chatG = chatA.append('g').attr('transform', 'translate(0,0)');
+                            chatG.append('circle')
+                                .attr('r', r)
+                                .attr('class', 'fab-circle');
+                            chatG.append('text')
+                                .attr('class', 'fab-emoji')
+                                .attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'central')
+                                .text('💬');
+                            const mailA = fabsG.append('a')
+                                .attr('xlink:href', createOutlookUrl([email]))
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('class', 'contact-fab mail');
+
+                            const mailG = mailA.append('g').attr('transform', `translate(0, ${dy})`);
+                            mailG.append('circle')
+                                .attr('r', r)
+                                .attr('class', 'fab-circle');
+                            mailG.append('text')
+                                .attr('class', 'fab-emoji')
+                                .attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'central')
+                                .text('✉️');
+
+                            // Evita che il tap sulle icone faccia partire lo zoom/drag del canvas
+                            fabsG.selectAll('a.contact-fab')
+                                .on('pointerdown', (event) => {
+                                    event.stopPropagation();
+                                })
+                                .on('touchstart', (event) => {
+                                    event.stopPropagation();
+                                });
+                        } else {
+                            const fabs = group.append('foreignObject')
+                                .attr('x', Math.round(fabsX))         // snap anti-subpixel
+                                .attr('y', Math.round(fabsY))
+                                .attr('width', fabSize)
+                                .attr('height', fabsHeight)
+                                .attr('pointer-events', 'all')
+                                .style('overflow', 'visible')
+                                .append('xhtml:div')
+                                .attr('class', 'contact-fabs contact-fabs--right');
+
+                            fabs.append('a')
+                                .attr('class', 'contact-fab chat')
+                                .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('data-tooltip', 'Chat')
+                                .attr('aria-label', 'Chat')
+                                .html(`<span class="icon" aria-hidden="true">💬</span>`);
+
+                            fabs.append('a')
+                                .attr('class', 'contact-fab mail')
+                                .attr('href', createOutlookUrl([email]))
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('data-tooltip', 'Send email')
+                                .attr('aria-label', 'Send email')
+                                .html(`<span class="icon" aria-hidden="true">✉️</span>`);
                         }
-                    });
+                        Object.entries(member).forEach(([key, value]) => {
+                            if (fieldsToShow.includes(key) && value) {
+                                let finalValue = value;
+
+                                if (dateValues.includes(key)) {
+                                    const parsed = new Date(value);
+                                    if (!isNaN(parsed)) {
+                                        finalValue = formatMonthYear(parsed);
+                                    }
+                                }
+
+                                infoDiv.append('div')
+                                    .attr('class', key.toLowerCase() + '-field')
+                                    .html(`<strong>${key}:</strong> ${finalValue}`);
+                            }
+                        });
+                    }
                 });
             });
 
@@ -1438,6 +1526,151 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     };
     reader.readAsText(file, 'UTF-8');
 });
+
+(function injectGucciTooltipCSS() {
+    const css = `
+.gucci-tooltip {
+  position: fixed;                  
+  z-index: 2147483647;              
+  background: #000;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  border-radius: 6px;
+  pointer-events: none;             
+  opacity: 0;
+  transform: translate(-50%, -8px); 
+  transition: opacity 120ms ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+.gucci-tooltip.show { opacity: 1; }
+.gucci-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent;
+}
+`;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+})();
+
+(function setupGlobalTooltip() {
+    let tipEl = null;
+    let showTimer = null;
+    let hideTimer = null;
+    let currentAnchor = null;
+
+    const SHOW_DELAY = 90;
+    const HIDE_DELAY = 140;
+
+    const isMouseLike = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    function ensureTip() {
+        if (!tipEl) {
+            tipEl = document.createElement('div');
+            tipEl.className = 'gucci-tooltip';
+            document.body.appendChild(tipEl);
+        }
+        tipEl.style.zIndex = String(2147483647);
+        return tipEl;
+    }
+
+    function isVisible() {
+        return !!(tipEl && tipEl.classList.contains('show'));
+    }
+
+    function positionTip(anchor, placement = 'right') {
+        const el = ensureTip();
+        const rect = anchor.getBoundingClientRect();
+
+        let x = rect.right + 8;
+        let y = rect.top + rect.height / 2;
+        el.style.transform = 'translate(0, -50%)';
+
+        if (placement === 'top') {
+            x = rect.left + rect.width / 2;
+            y = rect.top - 8;
+            el.style.transform = 'translate(-50%, -8px)';
+        } else if (placement === 'bottom') {
+            x = rect.left + rect.width / 2;
+            y = rect.bottom + 8;
+            el.style.transform = 'translate(-50%, 8px)';
+        } else if (placement === 'left') {
+            x = rect.left - 8;
+            y = rect.top + rect.height / 2;
+            el.style.transform = 'translate(-100%, -50%)';
+        }
+
+        el.style.left = `${Math.round(x)}px`;
+        el.style.top  = `${Math.round(y)}px`;
+    }
+
+    function showTip(text, anchor, placement = 'right') {
+        const el = ensureTip();
+        el.textContent = text || '';
+        el.classList.add('show');
+        positionTip(anchor, placement);
+    }
+
+    function hideTipNow() {
+        if (tipEl) tipEl.classList.remove('show');
+    }
+
+    function getFabAnchor(target) {
+        return target?.closest?.('.contact-fab') || null;
+    }
+
+    if (isMouseLike) {
+        document.addEventListener('mouseover', (e) => {
+            const a = getFabAnchor(e.target);
+            if (!a) return;
+
+            const text = a.getAttribute('data-tooltip') || a.getAttribute('aria-label') || '';
+            if (!text) return;
+
+            clearTimeout(hideTimer);
+            hideTimer = null;
+
+            if (isVisible() && currentAnchor !== a) {
+                currentAnchor = a;
+                showTip(text, a, 'right');
+                return;
+            }
+
+            currentAnchor = a;
+            clearTimeout(showTimer);
+            showTimer = setTimeout(() => showTip(text, a, 'right'), SHOW_DELAY);
+        }, true);
+
+        document.addEventListener('mouseout', (e) => {
+            const a = getFabAnchor(e.target);
+            if (!a) return;
+
+            clearTimeout(showTimer);
+
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => {
+                hideTipNow();
+                currentAnchor = null;
+            }, HIDE_DELAY);
+        }, true);
+
+        window.addEventListener('scroll', () => { if (isVisible()) hideTipNow(); }, { passive: true });
+        window.addEventListener('resize', () => { if (isVisible()) hideTipNow(); });
+        window.addEventListener('dsm-canvas-zoom', () => { if (isVisible()) hideTipNow(); });
+    } else {
+        document.addEventListener('pointerdown', hideTipNow, { passive: true });
+    }
+})();
+
 
 document.getElementById('drawer-search-input')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
@@ -1487,7 +1720,7 @@ function searchByQuery(query) {
 
     const target = matches[currentIndex];
 
-    zoomToElement(target, 1.1, 600);
+    zoomToElement(target, 1, 600);
     applySearchDimmingForMatches(matches);
     showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
     setSearchQuery(query);
