@@ -71,12 +71,16 @@ const legendaRoles = Array.from(new Set([
     ...additionalRolesToHighlight
 ]));
 
+const guestRoleColumns = Array.from(guestRolesMap.keys());
+
 let colorKeyMappings = new Map();
 const emailField = "Company email"; // this will be used to resolve the photo filename
 
 const peopleDBUpdateRecipients = [
     'teams@share.software.net'
 ];
+
+const portfolioDBUpdateRecipients = ['portfolio@nycosoft.com', 'bleiz.jonas@nycosoft.com'];
 
 const NEUTRAL_COLOR = '#fcfcfc';
 
@@ -508,7 +512,7 @@ function initSideDrawerEvents() {
     });
 
 
-    document.getElementById('act-report')?.addEventListener('click', () => {
+    document.getElementById('act-report')?.addEventListener('click', async () => {
 
         const subject = 'Request for People Database Update';
 
@@ -534,11 +538,23 @@ Regards,
 `;
 
         try {
+            const decision = await askIncludePortfolioTeam();
+
+            if (decision === null) {
+                closeSideDrawer();
+                return;
+            }
+
+            const to = [...peopleDBUpdateRecipients];
+
+            if (decision === true) {
+                to.push(...portfolioDBUpdateRecipients);
+            }
             if (isMobileDevice()) {
                 buildFallbackMailToLink(peopleDBUpdateRecipients, subject, body);
             } else {
                 openOutlookWebCompose({
-                    to: peopleDBUpdateRecipients,
+                    to,
                     cc: [],
                     bcc: [],
                     subject,
@@ -551,6 +567,45 @@ Regards,
         }
         closeSideDrawer();
     });
+
+    function askIncludePortfolioTeam() {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'simple-modal__overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+
+            const modal = document.createElement('div');
+            modal.className = 'simple-modal';
+            modal.innerHTML = `
+      <h3>Include Portfolio Team?</h3>
+      <p>Do you want to include the Portfolio Team mailboxes among the recipients of this change request?</p>
+      <div class="simple-modal__buttons">
+        <button type="button" class="simple-modal__btn" data-action="cancel">Cancel</button>
+        <button type="button" class="simple-modal__btn" data-action="skip">Don't include</button>
+        <button type="button" class="simple-modal__btn simple-modal__btn--primary" data-action="include">Include</button>
+      </div>
+    `;
+
+            function closeAndResolve(val) {
+                overlay.remove();
+                resolve(val);
+            }
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeAndResolve(null);
+            });
+
+            modal.querySelector('[data-action="include"]')?.addEventListener('click', () => closeAndResolve(true));
+            modal.querySelector('[data-action="skip"]')?.addEventListener('click', () => closeAndResolve(false));
+            modal.querySelector('[data-action="cancel"]')?.addEventListener('click', () => closeAndResolve(null));
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            modal.querySelector('[data-action="include"]')?.focus();
+        });
+    }
 
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
         const q = document.getElementById('drawer-search-input')?.value?.trim().toLowerCase();
@@ -1592,9 +1647,9 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     reader.readAsText(file, 'UTF-8');
 });
 
-(function injectGucciTooltipCSS() {
+(function injectTooltipCSS() {
     const css = `
-.gucci-tooltip {
+.solitaire-tooltip {
   position: fixed;                  
   z-index: 2147483647;              
   background: #000;
@@ -1610,8 +1665,8 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0,0,0,.25);
 }
-.gucci-tooltip.show { opacity: 1; }
-.gucci-tooltip::after {
+.solitaire-tooltip.show { opacity: 1; }
+.solitaire-tooltip::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -1641,7 +1696,7 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     function ensureTip() {
         if (!tipEl) {
             tipEl = document.createElement('div');
-            tipEl.className = 'gucci-tooltip';
+            tipEl.className = 'solitaire-tooltip';
             document.body.appendChild(tipEl);
         }
         tipEl.style.zIndex = String(2147483647);
