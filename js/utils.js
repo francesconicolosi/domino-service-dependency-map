@@ -5,6 +5,67 @@ export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
 let searchActive = false;
 
+function normalizeLower(s) {
+    return (s || '').toString().trim().toLowerCase();
+}
+
+export function getAllowedStreamsSet() {
+    const streamFilterParam = getQueryParam('stream');
+    if (!streamFilterParam) return null;
+
+    const items = streamFilterParam
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+    const set = new Set();
+    items.forEach(x => {
+        set.add(x);
+        set.add(normalizeKey(x));
+    });
+    return set;
+}
+
+export function normalizeKey(s) {
+    return (s ?? '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_-]/g, '');
+}
+
+export function getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel) {
+    if (!allowedStreams || allowedStreams.size === 0) return people;
+
+    return people.filter(p => {
+        const raw = (p[firstOrgLevel] || '').toString().trim();
+        if (!raw) return false;
+
+        const items = raw.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+        if (items.length === 0) return false;
+
+        return items.some(item => {
+            const n1 = item;
+            const n2 = normalizeKey(item);
+            return allowedStreams.has(n1) || allowedStreams.has(n2);
+        });
+    });
+}
+
+export function buildCompositeKey(person, emailField = 'Email') {
+    const parts = [];
+    const email = normalizeLower(person[emailField]);
+    const user  = normalizeLower(person.User);
+    const name  = normalizeLower((person.Name ? person.Name : '').toString());
+
+    if (email) parts.push(`email=${email}`);
+    if (user)  parts.push(`user=${user}`);
+    if (name)  parts.push(`name=${name}`);
+
+    return parts.join('|'); // esempio: "email=jane@acme.com|user=jane.doe|name=jane doe"
+}
+
 export function formatMonthYear(value) {
     const d = new Date(value);
     if (isNaN(d)) return value;
@@ -406,7 +467,7 @@ export function updateLegend(scale, field, d3param) {
     });
 }
 
-export function buildLegendaColorScale(field, items, d3param, palette, neutralColor, specialMappedField, specialLegendaItemsMap) {
+export function buildLegendaColorScale(field, items, d3param, palette, neutralColor, specialMappedField, guestValues) {
     if (specialMappedField === undefined || field !== specialMappedField) {
         const domainArr = Array.from(new Set(
             items.map(m => (m?.[field] ?? '').toString().trim() || 'Unknown')
@@ -415,7 +476,6 @@ export function buildLegendaColorScale(field, items, d3param, palette, neutralCo
     }
 
 
-    const guestValues = Array.from(specialLegendaItemsMap.values()).flat().map(s => s.trim()).filter(Boolean);
     const foundGuests = new Set();
     for (const m of items) {
         const raw = (m?.[specialMappedField] ?? '').toString();

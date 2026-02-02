@@ -43,6 +43,35 @@ cd domino-service-dependency-map
 - key:ServiceName1,ServiceName2 → Performs a non-exact search for multiple services using comma-separated values.
 - key:"ServiceName1","ServiceName2" → Performs an exact search for multiple services using comma-separated values.
 
+## URL Parameters (Advanced Capabilities)
+Solitaire supports optional URL parameters that extend or refine the visualization experience.
+# stream
+- stream=<name1,name2,...> — Isolate one or more Streams
+  You can restrict the view to only the selected stream(s) by providing the stream parameter in the query string.
+- Example:
+  solitaire.html?stream=Order%20Management%20System
+- or multiple streams:
+  solitaire.html?stream=OMS,ERP,Replatforming
+
+Effect: Only the selected streams are rendered on screen.
+Themes, teams, and team members belonging to other streams are hidden.
+The color legend dynamically adapts to show only the values present in the visible streams.
+
+This is especially useful when sharing a focused view of a single functional area.
+
+- advanced=true — Enable advanced editing tools
+  By default, Solitaire runs in read‑only mode.
+  Adding advanced=true unlocks additional capabilities:
+  solitaire.html?advanced=true
+
+Enabled features:
+
+1. Upload CSV — Load a custom People Database export.
+2. Change Scenario — Turn on drag‑and‑drop and resize mode for streams, themes, and teams.
+3. Save Scenario — Store custom layout positions in the browser’s local storage.
+4. Reset Scenario — Clear the saved layout and revert to the default arrangement.
+
+This mode is intended for maintainers, editors, or users preparing custom visualizations.
 
 ## CSV Format
 The CSV file should have the following format that are necessary for the dependency mapping visualization:

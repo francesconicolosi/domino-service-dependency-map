@@ -21,10 +21,10 @@ import {
     createHrefElement,
     truncateString,
     addTagToElement,
-    createOutlookUrl,
-    clearSearchDimming,
-    applySearchDimming,
-    applySearchDimmingForMatches, formatMonthYear
+    createOutlookUrl, normalizeKey,
+    clearSearchDimming, getVisiblePeopleForLegend,
+    applySearchDimming, getAllowedStreamsSet,
+    applySearchDimmingForMatches, formatMonthYear, buildCompositeKey
 } from './utils.js';
 
 let lastSearch = '';
@@ -64,7 +64,12 @@ const guestRolesMap = new Map([
     ["Team Security Champion", ["Security Champion"]]
 ]);
 
-const guestRoleColumns = Array.from(guestRolesMap.keys());
+const additionalRolesToHighlight = ["OMS expert", "Project Manager", "Business Analyst"];
+
+const legendaRoles = Array.from(new Set([
+    ...Array.from(guestRolesMap.values()).flat(),
+    ...additionalRolesToHighlight
+]));
 
 let colorKeyMappings = new Map();
 const emailField = "Company email"; // this will be used to resolve the photo filename
@@ -78,7 +83,7 @@ const NEUTRAL_COLOR = '#fcfcfc';
 
 function initColorScale(initialField, members) {
     colorBy = initialField;
-    colorScale = buildLegendaColorScale(colorBy, members.slice(), d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, guestRolesMap);
+    colorScale = buildLegendaColorScale(colorBy, members.slice(), d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, legendaRoles);
 
     if (typeof colorScale !== 'function') {
         throw new Error('colorScale was not created as a function');
@@ -95,7 +100,7 @@ function getCardFill(g) {
 
         const guestValues = Array.from(guestRolesMap.values()).flat();
 
-        const firstIncludedGuest = guestValues.find(v =>
+        const firstIncludedGuest = legendaRoles.find(v =>
             v && dataRole.includes(v.toLowerCase())
         );
         colorKey = firstIncludedGuest ? firstIncludedGuest : TEAM_MEMBER_LEGENDA_LABEL;
@@ -111,7 +116,31 @@ function getCardFill(g) {
 
 function recolorProfileCards(field) {
     colorBy = field;
-    colorScale = buildLegendaColorScale(colorBy, people, d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, guestRolesMap);
+    const allowedStreams = getAllowedStreamsSet?.() ?? (() => {
+        const p = getQueryParam('stream');
+        if (!p) return null;
+        const set = new Set();
+        p.split(',')
+            .map(s => s.trim())
+            .filter(Boolean)
+            .forEach(x => {
+                set.add(x);
+                set.add(normalizeKey(x));
+            });
+        return set;
+    })();
+
+    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel);
+
+    colorScale = buildLegendaColorScale(
+        colorBy,
+        visiblePeopleForLegend.slice(),
+        d3,
+        PALETTE,
+        NEUTRAL_COLOR,
+        ROLE_FIELD_WITH_MAPPING,
+        legendaRoles
+    );
     updateLegend(colorScale, colorBy, d3);
 
     d3.selectAll('g[data-key^="card::"]').each(function () {
@@ -185,15 +214,6 @@ function findHeaderIndex(headers, name) {
 }
 
 let LS_KEY = 'dsm-layout-v1:default';
-
-function normalizeKey(s) {
-    return (s ?? '')
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_-]/g, '');
-}
 
 function loadLayout() {
     try {
@@ -460,7 +480,8 @@ function initSideDrawerEvents() {
 
     document.getElementById('act-about')?.addEventListener('click', (e) => {
         closeSideDrawer();
-        openDrawer({name: "About Solitaire ♤", description:
+        openDrawer({
+            name: "About Solitaire ♤", description:
                 `Org charts highlight hierarchy—but not how teams actually work. Much of the real collaboration that drives the Company operations happens across functions, services, and roles, yet remains invisible. This reinforces silos and hides the complexity of our shared work. More info on <a href="https://www.gamerdad.cloud/" target="_blank">my personal blog</a>\n` +
                 "\n" +
                 `<b><i>Our Vision</b></i>\n` +
@@ -482,7 +503,8 @@ function initSideDrawerEvents() {
                 `<li>Make hidden operational networks visible</li>` +
                 `<li>Consolidate data not available in systems like the one used by the HR</li>` +
                 `<li>Strengthen transparency, alignment, and cross‑team collaboration</li>` +
-                `<li>Provide a single source of truth for service ownership and responsibilities</li></ul>`});
+                `<li>Provide a single source of truth for service ownership and responsibilities</li></ul>`
+        });
     });
 
 
@@ -539,6 +561,24 @@ Regards,
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
+(function handleAdvancedMode() {
+    const params = new URLSearchParams(window.location.search);
+    const isAdvanced = params.get("advanced") === "true";
+
+    function show(elId, visible) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        el.style.display = visible ? "" : "none";
+    }
+
+    show("act-upload", isAdvanced);
+    show("label-file", isAdvanced);
+    show("toggle-draggable", isAdvanced);
+    show("act-save", isAdvanced);
+    show("act-reset-layout", isAdvanced);
+    show("switch-label",    isAdvanced);
+})();
+
 (function blockDesktopPinch() {
     const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const isMac = (navigator.platform || '').toUpperCase().includes('MAC') || /Mac OS X/.test(navigator.userAgent);
@@ -549,11 +589,11 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
         if (e.ctrlKey) {
             e.preventDefault();
         }
-    }, { passive: false });
+    }, {passive: false});
 
-    window.addEventListener('gesturestart',  (e) => e.preventDefault(), { passive: false });
-    window.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
-    window.addEventListener('gestureend',    (e) => e.preventDefault(), { passive: false });
+    window.addEventListener('gesturestart', (e) => e.preventDefault(), {passive: false});
+    window.addEventListener('gesturechange', (e) => e.preventDefault(), {passive: false});
+    window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
 })();
 
 function openDrawer({name: title, description, services, channels, email}) {
@@ -597,7 +637,7 @@ function openDrawer({name: title, description, services, channels, email}) {
         addTagToElement(descEl, 1);
         descEl.appendChild(createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`));
         addTagToElement(descEl, 2);
-        addTagToElement(descEl, 1,'hr');
+        addTagToElement(descEl, 1, 'hr');
     }
 
     listEl.innerHTML = '';
@@ -660,7 +700,6 @@ window.addEventListener('load', function () {
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 });
-``
 
 document.getElementById('act-save')?.addEventListener('click', () => {
     const layout = {};
@@ -829,10 +868,25 @@ function buildOrganization(people) {
                 for (const team of thirdLevelItems) {
                     if (!organization[firstLevelItem][theme][team]) organization[firstLevelItem][theme][team] = [];
                     person.Name = person.Name ? cleanName(person.Name) : person.User;
-                    const names = Object.values(organization[firstLevelItem][theme][team]).map(p => p.Name);
-                    const users = Object.values(organization[firstLevelItem][theme][team]).map(p => p.User);
-                    if (!(names.includes(person.Name) || users.includes(person.User))) {
-                        organization[firstLevelItem][theme][team].push(person);
+                    person.Name = cleanName(person.Name || '')
+                        || (person.User || '').trim()
+                        || (person[emailField] || '').trim()
+                        || 'Unknown';
+
+                    const teamArr = organization[firstLevelItem][theme][team];
+
+                    const existingKeys = new Set(
+                        teamArr.map(p => buildCompositeKey(p, emailField)).filter(Boolean)
+                    );
+
+                    let compositeKey = buildCompositeKey(person, emailField);
+
+                    const isFullyEmptyKey = !compositeKey;
+
+                    const isDuplicate = compositeKey ? existingKeys.has(compositeKey) : false;
+
+                    if (!isFullyEmptyKey && !isDuplicate) {
+                        teamArr.push(person);
                     }
                 }
             }
@@ -1016,10 +1070,6 @@ function extractData(csvText) {
         return obj;
     }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
 
-    initColorScale(ROLE_FIELD_WITH_MAPPING, people, d3, guestRolesMap, ROLE_FIELD_WITH_MAPPING);
-    updateLegend(colorScale, colorBy, d3);
-    setColorMode(ROLE_FIELD_WITH_MAPPING)
-
     let lastUpdateISO = '';
     if (headers.includes('Last Update')) {
         const idx = headers.indexOf('Last Update');
@@ -1043,15 +1093,12 @@ function extractData(csvText) {
     const organization = buildOrganization(people);
     const organizationWithManagers = addGuestManagersTo(organization);
 
-    const streamFilterParam = getQueryParam('stream');
-    const allowedStreams = streamFilterParam
-        ? new Set(
-            streamFilterParam
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean)
-        )
-        : null;
+    const allowedStreams = getAllowedStreamsSet();
+    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel);
+
+    initColorScale(ROLE_FIELD_WITH_MAPPING, visiblePeopleForLegend);
+    updateLegend(colorScale, colorBy, d3);
+    setColorMode(ROLE_FIELD_WITH_MAPPING);
 
     const inARow = 6;
     const dateValues = ["In team since"];
@@ -1090,6 +1137,19 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
+        const streamTeamSizes = Object.entries(secondLevelItems)
+            .filter(([themeName]) => !themeName.includes(secondLevelNA))
+            .flatMap(([, themeObj]) =>
+                Object.values(themeObj).map(members =>
+                    new Set(members.map(m => (m.Name || '').trim()).filter(Boolean)).size
+                )
+            );
+
+        const streamLargestThirdLevelSize = Math.max(1, ...(streamTeamSizes.length ? streamTeamSizes : [1]));
+        const streamRowCount = Math.ceil(streamLargestThirdLevelSize / inARow);
+
+        const streamThirdLevelBoxHeight = streamRowCount * cardBaseHeight * 1.2 + 80;
+        const streamSecondLevelBoxHeight = streamThirdLevelBoxHeight * 1.2 + 100;
 
         if (allowedStreams) {
             const firstLevelNormalized = normalizeKey(firstLevel);
@@ -1127,8 +1187,7 @@ function extractData(csvText) {
             .filter(([themeKey]) => !themeKey.includes(secondLevelNA)).length;
 
         const themeRows = Math.ceil(numThemesInStream / THEMES_PER_ROW);
-        const firstLevelBoxHeight =
-            themeRows * (secondLevelBoxHeight + secondLevelRowPadY) + 140;
+        const firstLevelBoxHeight = themeRows * (streamSecondLevelBoxHeight + secondLevelRowPadY) + 140;
 
         const streamRect = firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
@@ -1187,7 +1246,7 @@ function extractData(csvText) {
             }
 
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
-            const secondLevelY = streamY + 100 + themeRow * (secondLevelBoxHeight + secondLevelRowPadY);
+            const secondLevelY = streamY + 100 + themeRow * (streamSecondLevelBoxHeight + secondLevelRowPadY);
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
@@ -1200,7 +1259,7 @@ function extractData(csvText) {
             const secondLevelRect = secondLevelGroup.append('rect')
                 .attr('class', 'theme-box')
                 .attr('width', themeWidth)
-                .attr('height', secondLevelBoxHeight)
+                .attr('height', streamSecondLevelBoxHeight)
                 .attr('rx', 30)
                 .attr('ry', 30);
 
@@ -1245,7 +1304,7 @@ function extractData(csvText) {
                 const thirdLevelRect = thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
                     .attr('width', thirdLevelBoxWidth)
-                    .attr('height', thirdLevelBoxHeight)
+                    .attr('height', streamThirdLevelBoxHeight)
                     .attr('rx', 20)
                     .attr('ry', 20);
 
@@ -1264,11 +1323,11 @@ function extractData(csvText) {
 
                 thirdLevelGroup.select('rect.team-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
+                    .on('click', () => openDrawer({name: thirdLevel, description, services, channels, email}));
 
                 thirdLevelGroup.select('text.team-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
+                    .on('click', () => openDrawer({name: thirdLevel, description, services, channels, email}));
 
 
                 members.forEach((member, mIdx) => {
@@ -1336,8 +1395,14 @@ function extractData(csvText) {
                                 reject(new Error('timeout'));
                             }, timeoutMs);
 
-                            img.onload = () => { clearTimeout(timer); resolve(url); };
-                            img.onerror = () => { clearTimeout(timer); reject(new Error('error')); };
+                            img.onload = () => {
+                                clearTimeout(timer);
+                                resolve(url);
+                            };
+                            img.onerror = () => {
+                                clearTimeout(timer);
+                                reject(new Error('error'));
+                            };
 
                             // optional: cache-busting
                             // img.src = `${url}?t=${Date.now()}`;
@@ -1610,7 +1675,7 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
         }
 
         el.style.left = `${Math.round(x)}px`;
-        el.style.top  = `${Math.round(y)}px`;
+        el.style.top = `${Math.round(y)}px`;
     }
 
     function showTip(text, anchor, placement = 'right') {
@@ -1663,11 +1728,17 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
             }, HIDE_DELAY);
         }, true);
 
-        window.addEventListener('scroll', () => { if (isVisible()) hideTipNow(); }, { passive: true });
-        window.addEventListener('resize', () => { if (isVisible()) hideTipNow(); });
-        window.addEventListener('dsm-canvas-zoom', () => { if (isVisible()) hideTipNow(); });
+        window.addEventListener('scroll', () => {
+            if (isVisible()) hideTipNow();
+        }, {passive: true});
+        window.addEventListener('resize', () => {
+            if (isVisible()) hideTipNow();
+        });
+        window.addEventListener('dsm-canvas-zoom', () => {
+            if (isVisible()) hideTipNow();
+        });
     } else {
-        document.addEventListener('pointerdown', hideTipNow, { passive: true });
+        document.addEventListener('pointerdown', hideTipNow, {passive: true});
     }
 })();
 
