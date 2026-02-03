@@ -1,30 +1,34 @@
 import * as d3 from 'd3';
 
 import {
-    getQueryParam,
-    setSearchQuery,
-    parseCSV,
-    openOutlookWebCompose,
-    buildFallbackMailToLink,
-    highlightGroup as highlightGroupUtils,
-    closeSideDrawer,
-    initCommonActions,
-    getFormattedDate,
-    isMobileDevice,
-    buildLegendaColorScale,
-    updateLegend,
-    computeStreamBoxWidthWrapped,
-    SECOND_LEVEL_LABEL_EXTRA,
-    TEAM_MEMBER_LEGENDA_LABEL,
-    createFormattedLongTextElementsFrom,
-    createFormattedElementsFrom,
-    createHrefElement,
-    truncateString,
     addTagToElement,
-    createOutlookUrl, normalizeKey,
-    clearSearchDimming, getVisiblePeopleForLegend,
-    applySearchDimming, getAllowedStreamsSet,
-    applySearchDimmingForMatches, formatMonthYear, buildCompositeKey
+    applySearchDimmingForMatches, askModal,
+    buildCompositeKey,
+    buildFallbackMailToLink,
+    buildLegendaColorScale,
+    clearSearchDimming,
+    closeSideDrawer,
+    computeStreamBoxWidthWrapped,
+    createFormattedLongTextElementsFrom,
+    createHrefElement,
+    createOutlookUrl,
+    formatMonthYear,
+    getAllowedStreamsSet,
+    getFormattedDate, getNameFromTitleEl,
+    getQueryParam,
+    getVisiblePeopleForLegend,
+    highlightGroup as highlightGroupUtils,
+    initCommonActions,
+    isMobileDevice,
+    normalizeKey,
+    openOutlookWebCompose,
+    openPersonReportCompose,
+    parseCSV,
+    SECOND_LEVEL_LABEL_EXTRA,
+    setSearchQuery,
+    TEAM_MEMBER_LEGENDA_LABEL,
+    truncateString,
+    updateLegend
 } from './utils.js';
 
 let lastSearch = '';
@@ -457,6 +461,7 @@ function clearSearch() {
     setSearchQuery(searchParam);
     clearSearchDimming();
     fitToContent(0.9);
+    closeDrawer();
     //closeSideDrawer();
 }
 
@@ -465,6 +470,11 @@ function initSideDrawerEvents() {
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
         clearSearch();
+        if (getQueryParam('stream')) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('stream');
+            window.location.href = url.toString();
+        }
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -513,99 +523,13 @@ function initSideDrawerEvents() {
 
 
     document.getElementById('act-report')?.addEventListener('click', async () => {
-
-        const subject = 'Request for People Database Update';
-
-        const body = `
-Hello,
-
-I would like to report the need for an update to the People Database:
-
-FIRST NAME: 
-LAST NAME: 
-COMPANY NAME: 
-TEAM: 
-ROLE: 
-START DATE (for new Joiners or movers): 
-END DATE (for leavers): 
-ON-SITE/OFF-SITE: 
-CITY/COUNTRY: 
-ROOM: 
-LINE MANAGER: 
-PHOTO: 
-
-Regards,
-`;
-
         try {
-            const decision = await askIncludePortfolioTeam();
-
-            if (decision === null) {
-                closeSideDrawer();
-                return;
-            }
-
-            const to = [...peopleDBUpdateRecipients];
-
-            if (decision === true) {
-                to.push(...portfolioDBUpdateRecipients);
-            }
-            if (isMobileDevice()) {
-                buildFallbackMailToLink(peopleDBUpdateRecipients, subject, body);
-            } else {
-                openOutlookWebCompose({
-                    to,
-                    cc: [],
-                    bcc: [],
-                    subject,
-                    body
-                });
-            }
+            openPersonReportCompose( peopleDBUpdateRecipients, portfolioDBUpdateRecipients).then(r =>  closeSideDrawer());
         } catch (e) {
             console.log(e);
             buildFallbackMailToLink(peopleDBUpdateRecipients, subject, body);
         }
-        closeSideDrawer();
     });
-
-    function askIncludePortfolioTeam() {
-        return new Promise(resolve => {
-            const overlay = document.createElement('div');
-            overlay.className = 'simple-modal__overlay';
-            overlay.setAttribute('role', 'dialog');
-            overlay.setAttribute('aria-modal', 'true');
-
-            const modal = document.createElement('div');
-            modal.className = 'simple-modal';
-            modal.innerHTML = `
-      <h3>Include Portfolio Team?</h3>
-      <p>Do you want to include the Portfolio Team mailboxes among the recipients of this change request?</p>
-      <div class="simple-modal__buttons">
-        <button type="button" class="simple-modal__btn" data-action="cancel">Cancel</button>
-        <button type="button" class="simple-modal__btn" data-action="skip">Don't include</button>
-        <button type="button" class="simple-modal__btn simple-modal__btn--primary" data-action="include">Include</button>
-      </div>
-    `;
-
-            function closeAndResolve(val) {
-                overlay.remove();
-                resolve(val);
-            }
-
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) closeAndResolve(null);
-            });
-
-            modal.querySelector('[data-action="include"]')?.addEventListener('click', () => closeAndResolve(true));
-            modal.querySelector('[data-action="skip"]')?.addEventListener('click', () => closeAndResolve(false));
-            modal.querySelector('[data-action="cancel"]')?.addEventListener('click', () => closeAndResolve(null));
-
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-
-            modal.querySelector('[data-action="include"]')?.focus();
-        });
-    }
 
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
         const q = document.getElementById('drawer-search-input')?.value?.trim().toLowerCase();
@@ -631,7 +555,7 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
     show("toggle-draggable", isAdvanced);
     show("act-save", isAdvanced);
     show("act-reset-layout", isAdvanced);
-    show("switch-label",    isAdvanced);
+    show("switch-label", isAdvanced);
 })();
 
 (function blockDesktopPinch() {
@@ -651,7 +575,7 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
     window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
 })();
 
-function openDrawer({name: title, description, services, channels, email}) {
+function openDrawer({name: title, description, services, channels, email, highlightService, highlightQuery}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
@@ -708,6 +632,44 @@ function openDrawer({name: title, description, services, channels, email}) {
             li.appendChild(a);
             listEl.appendChild(li);
         });
+
+        (function multiHighlight() {
+            const norm = v => (v || '').toString().trim().toLowerCase();
+            const anchors = Array.from(listEl.querySelectorAll('li > a'));
+            listEl.querySelectorAll('.service-hit-highlight')
+                .forEach(el => el.classList.remove('service-hit-highlight'));
+
+            let firstHighlighted = null;
+            const q = (highlightQuery || '').trim();
+            if (q) {
+                const qn = norm(q);
+                anchors.forEach(a => {
+                    const tn = norm(a.textContent);
+                    if (tn.includes(qn)) {
+                        a.classList.add('service-hit-highlight');
+                        if (!firstHighlighted) firstHighlighted = a;
+                    }
+                });
+            }
+
+            if (highlightService) {
+                const target = norm(highlightService);
+                anchors.forEach(a => {
+                    if (norm(a.textContent) === target) {
+                        a.classList.add('service-hit-highlight');
+                        if (!firstHighlighted) firstHighlighted = a;
+                    }
+                });
+            }
+
+            if (firstHighlighted) {
+                try {
+                    firstHighlighted.scrollIntoView({block: 'center', behavior: 'smooth'});
+                } catch {
+                }
+            }
+        })();
+
     }
 
     drawer.classList.add('open');
@@ -1148,8 +1110,17 @@ function extractData(csvText) {
     const organization = buildOrganization(people);
     const organizationWithManagers = addGuestManagersTo(organization);
 
-    const allowedStreams = getAllowedStreamsSet();
-    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel);
+    const filteredStreams = getAllowedStreamsSet();
+
+    const allStreamNames = Object.keys(organizationWithManagers || {})
+        .filter(s => s && !s.includes(firstLevelNA));
+
+    const visibleStreamNames = (filteredStreams && filteredStreams.size > 0)
+        ? allStreamNames.filter(s => filteredStreams.has(s) || filteredStreams.has(normalizeKey(s)))
+        : allStreamNames;
+
+
+    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, filteredStreams, firstOrgLevel);
 
     initColorScale(ROLE_FIELD_WITH_MAPPING, visiblePeopleForLegend);
     updateLegend(colorScale, colorBy, d3);
@@ -1206,10 +1177,10 @@ function extractData(csvText) {
         const streamThirdLevelBoxHeight = streamRowCount * cardBaseHeight * 1.2 + 80;
         const streamSecondLevelBoxHeight = streamThirdLevelBoxHeight * 1.2 + 100;
 
-        if (allowedStreams) {
+        if (filteredStreams) {
             const firstLevelNormalized = normalizeKey(firstLevel);
             const isAllowed =
-                allowedStreams.has(firstLevel) || allowedStreams.has(firstLevelNormalized);
+                filteredStreams.has(firstLevel) || filteredStreams.has(firstLevelNormalized);
             if (!isAllowed) return;
         }
 
@@ -1259,12 +1230,55 @@ function extractData(csvText) {
             }
         });
 
-        firstLevelGroup.append('text')
+        const titleText = firstLevelGroup.append('text')
             .attr('x', 50)
             .attr('y', 70)
             .attr('text-anchor', 'start')
+            .attr('class', 'stream-title');
+
+        titleText.append('tspan')
             .attr('class', 'stream-title')
-            .text(`${firstLevel} ${firstLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
+            .text(firstLevel);
+
+        titleText.append('tspan')
+            .attr('dx', 10)
+            .text('');
+
+        if (firstLevelDescription !== "") {
+            titleText.append('tspan')
+                .attr('class', 'stream-icon stream-icon--desc')
+                .text(' ℹ️')
+                .on('click', (e) => {
+                    e?.stopPropagation?.();
+                    openDrawer({name: firstLevel, description: firstLevelDescription});
+                });
+
+            titleText.append('tspan')
+                .attr('dx', 10)
+                .text('');
+        }
+
+        if (visibleStreamNames.length > 1) {
+            titleText.append('tspan')
+                .attr('class', 'stream-icon stream-icon--hide')
+                .text(' 🚫')
+                .on('click', (e) => {
+                    e?.stopPropagation?.();
+
+                    const others = visibleStreamNames.filter(
+                        s => normalizeKey(s) !== normalizeKey(firstLevel)
+                    );
+
+                    const url = new URL(window.location.href);
+                    if (others.length > 0) {
+                        url.searchParams.set('stream', others.join(','));
+                    } else {
+                        url.searchParams.delete('stream');
+                    }
+                    window.location.href = url.toString();
+                });
+        }
+
 
         if (firstLevelDescription !== "") {
             firstLevelGroup.select('rect.stream-box')
@@ -1325,7 +1339,19 @@ function extractData(csvText) {
                 .attr('y', 85)
                 .attr('text-anchor', 'middle')
                 .attr('class', 'theme-title')
-                .text(`${truncateString(secondLevel)} ${secondLevelDescription !== "" ? ' ⌞ ⌝' : ''}`);
+                .text(truncateString(secondLevel));
+
+            if (secondLevelDescription !== "") {
+                secondLevelGroup.select('text.theme-title')
+                    .append('tspan')
+                    .attr('class', 'theme-icon')
+                    .attr('dx', 10)
+                    .text(' ℹ️')
+                    .on('click', (e) => {
+                        e.stopPropagation();
+                        openDrawer({name: secondLevel, description: secondLevelDescription});
+                    });
+            }
 
             if (secondLevelDescription !== "") {
                 secondLevelGroup.select('rect.theme-box')
@@ -1501,33 +1527,79 @@ function extractData(csvText) {
                         .append('xhtml:div')
                         .attr('class', 'info');
 
-                    if (member[emailField]) {
-                        const email = member[emailField];
+                    const email = member[emailField];
 
-                        const photoSize = 60;
-                        const photoX = (memberWidth - photoSize) / 2;
+                    const photoSize = 60;
+                    const photoX = (memberWidth - photoSize) / 2;
 
-                        const photoY = 8;
+                    const photoY = 8;
 
+                    const spacingX = 17;
+                    const isMobile = window.matchMedia('(max-width: 480px)').matches;
+                    const leftSpacingX = isMobile ? 1 : 3;
+                    const fabSize = isMobile ? 28 : 24;
+                    const gap = isMobile ? 3 : 8;
 
-                        const spacingX = 8;
-                        const isMobile = window.matchMedia('(max-width: 480px)').matches;
-                        const fabSize = isMobile ? 28 : 24;
-                        const gap = isMobile ? 3 : 8;                 // 👈 gap 3px su mobile
+                    const fabsHeight = (fabSize * 2) + gap;
 
-                        const fabsHeight = (fabSize * 2) + gap;
-                        const fabsX = photoX + photoSize + spacingX;
-                        const fabsY = photoY + Math.round((photoSize - fabsHeight) / 2) - 4;
+                    const rightX = Math.round(photoX + photoSize + spacingX);
 
-                        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-                            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    const leftX  = Math.round(photoX - spacingX - fabSize - leftSpacingX);
 
-                        if (isIOS) {
-                            const cx = Math.round(fabsX + fabSize / 2);
-                            const cy = Math.round(fabsY + fabSize / 2);
-                            const dy = fabSize + gap;
-                            const r = fabSize / 2;
+                    const fabsY = Math.round(photoY + Math.round((photoSize - fabsHeight) / 2) - 4);
 
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                    const r  = fabSize / 2;
+                    const cx = Math.round(rightX + fabSize / 2);
+                    const cy = Math.round(fabsY + fabSize / 2);
+                    const dy = fabSize + gap;
+
+                    const lc = {
+                        cx: Math.round(leftX + fabSize / 2),
+                        cy: Math.round(fabsY + fabSize / 2),
+                        r:  r
+                    };
+
+                    const reportClickHandler = (event) => {
+                        event?.preventDefault?.();
+                        event?.stopPropagation?.();
+                        openPersonReportCompose(
+                            peopleDBUpdateRecipients,
+                            portfolioDBUpdateRecipients,
+                            member,
+                            { firstLevel, secondLevel, thirdLevel }
+                        ).then(() => console.log('report a change started'));
+                    };
+
+                    if (isIOS) {
+                        const reportG = group.append('g')
+                            .attr('class', 'contact-fabs-svg contact-fabs--left')
+                            .attr('transform', `translate(${lc.cx},${lc.cy})`);
+
+                        const reportA = reportG.append('a')
+                            .attr('xlink:href', '#')
+                            .attr('target', '_blank')
+                            .attr('rel', 'noopener noreferrer')
+                            .attr('class', 'contact-fab report');
+
+                        const reportBtn = reportA.append('g').attr('transform', 'translate(0,0)');
+                        reportBtn.append('circle')
+                            .attr('r', lc.r)
+                            .attr('class', 'fab-circle');
+                        reportBtn.append('text')
+                            .attr('class', 'fab-emoji')
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .text('📝');
+
+                        reportA
+                            .on('pointerdown', (e) => e.stopPropagation())
+                            .on('touchstart', (e) => e.stopPropagation())
+                            .on('click', reportClickHandler);
+
+                        if (member[emailField]) {
                             const fabsG = group.append('g')
                                 .attr('class', 'contact-fabs-svg contact-fabs--right')
                                 .attr('transform', `translate(${cx},${cy})`);
@@ -1539,14 +1611,13 @@ function extractData(csvText) {
                                 .attr('class', 'contact-fab chat');
 
                             const chatG = chatA.append('g').attr('transform', 'translate(0,0)');
-                            chatG.append('circle')
-                                .attr('r', r)
-                                .attr('class', 'fab-circle');
+                            chatG.append('circle').attr('r', r).attr('class', 'fab-circle');
                             chatG.append('text')
                                 .attr('class', 'fab-emoji')
                                 .attr('text-anchor', 'middle')
                                 .attr('dominant-baseline', 'central')
                                 .text('💬');
+
                             const mailA = fabsG.append('a')
                                 .attr('xlink:href', createOutlookUrl([email]))
                                 .attr('target', '_blank')
@@ -1554,27 +1625,40 @@ function extractData(csvText) {
                                 .attr('class', 'contact-fab mail');
 
                             const mailG = mailA.append('g').attr('transform', `translate(0, ${dy})`);
-                            mailG.append('circle')
-                                .attr('r', r)
-                                .attr('class', 'fab-circle');
+                            mailG.append('circle').attr('r', r).attr('class', 'fab-circle');
                             mailG.append('text')
                                 .attr('class', 'fab-emoji')
                                 .attr('text-anchor', 'middle')
                                 .attr('dominant-baseline', 'central')
                                 .text('✉️');
 
-                            // Evita che il tap sulle icone faccia partire lo zoom/drag del canvas
                             fabsG.selectAll('a.contact-fab')
-                                .on('pointerdown', (event) => {
-                                    event.stopPropagation();
-                                })
-                                .on('touchstart', (event) => {
-                                    event.stopPropagation();
-                                });
-                        } else {
+                                .on('pointerdown', (event) => event.stopPropagation())
+                                .on('touchstart', (event) => event.stopPropagation());
+                        }
+                    } else {
+                        const fabsLeft = group.append('foreignObject')
+                            .attr('x', leftX)
+                            .attr('y', fabsY)
+                            .attr('width', fabSize)
+                            .attr('height', fabSize)
+                            .attr('pointer-events', 'all')
+                            .style('overflow', 'visible')
+                            .append('xhtml:div')
+                            .attr('class', 'contact-fabs contact-fabs--left');
+
+                        fabsLeft.append('a')
+                            .attr('class', 'contact-fab report')
+                            .attr('href', '#')
+                            .attr('data-tooltip', 'Report change')
+                            .attr('aria-label', 'Report change')
+                            .html(`<span class="icon" aria-hidden="true">📝</span>`)
+                            .on('click', reportClickHandler);
+
+                        if (member[emailField]) {
                             const fabs = group.append('foreignObject')
-                                .attr('x', Math.round(fabsX))         // snap anti-subpixel
-                                .attr('y', Math.round(fabsY))
+                                .attr('x', rightX)
+                                .attr('y', fabsY)
                                 .attr('width', fabSize)
                                 .attr('height', fabsHeight)
                                 .attr('pointer-events', 'all')
@@ -1600,23 +1684,23 @@ function extractData(csvText) {
                                 .attr('aria-label', 'Send email')
                                 .html(`<span class="icon" aria-hidden="true">✉️</span>`);
                         }
-                        Object.entries(member).forEach(([key, value]) => {
-                            if (fieldsToShow.includes(key) && value) {
-                                let finalValue = value;
-
-                                if (dateValues.includes(key)) {
-                                    const parsed = new Date(value);
-                                    if (!isNaN(parsed)) {
-                                        finalValue = formatMonthYear(parsed);
-                                    }
-                                }
-
-                                infoDiv.append('div')
-                                    .attr('class', key.toLowerCase() + '-field')
-                                    .html(`<strong>${key}:</strong> ${finalValue}`);
-                            }
-                        });
                     }
+                    Object.entries(member).forEach(([key, value]) => {
+                        if (fieldsToShow.includes(key) && value) {
+                            let finalValue = value;
+
+                            if (dateValues.includes(key)) {
+                                const parsed = new Date(value);
+                                if (!isNaN(parsed)) {
+                                    finalValue = formatMonthYear(parsed);
+                                }
+                            }
+
+                            infoDiv.append('div')
+                                .attr('class', key.toLowerCase() + '-field')
+                                .html(`<strong>${key}:</strong> ${finalValue}`);
+                        }
+                    });
                 });
             });
 
@@ -1646,41 +1730,6 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     };
     reader.readAsText(file, 'UTF-8');
 });
-
-(function injectTooltipCSS() {
-    const css = `
-.solitaire-tooltip {
-  position: fixed;                  
-  z-index: 2147483647;              
-  background: #000;
-  color: #fff;
-  padding: 6px 10px;
-  font-size: 12px;
-  line-height: 1.2;
-  border-radius: 6px;
-  pointer-events: none;             
-  opacity: 0;
-  transform: translate(-50%, -8px); 
-  transition: opacity 120ms ease;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
-}
-.solitaire-tooltip.show { opacity: 1; }
-.solitaire-tooltip::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  transform: translateX(-50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: #000 transparent transparent transparent;
-}
-`;
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
-})();
 
 (function setupGlobalTooltip() {
     let tipEl = null;
@@ -1846,8 +1895,55 @@ function searchByQuery(query) {
 
     const target = matches[currentIndex];
 
+    closeDrawer();
+
     zoomToElement(target, 1, 600);
     applySearchDimmingForMatches(matches);
     showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
     setSearchQuery(query);
+
+
+    try {
+        const group = target.closest('g');
+        const teamTitleEl = group ? group.querySelector('text.team-title') : null;
+        if (!teamTitleEl) return; // non è un risultato "team"
+
+        const rawServices = (teamTitleEl.getAttribute('data-services') || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+        if (rawServices.length === 0) return;
+
+        const norm = v => (v || '').toString().trim().toLowerCase();
+        const q = norm(query);
+        const normalized = rawServices.map(s => ({raw: s, norm: norm(s)}));
+        const hit = normalized.find(svc => svc.norm.includes(q));
+        if (!hit) return;
+
+        const teamName =
+            teamTitleEl.getAttribute('data-team-name') || getNameFromTitleEl(teamTitleEl);
+        const email = teamTitleEl.getAttribute('data-team-email') || '';
+        const channels = (() => {
+            try {
+                return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]');
+            } catch {
+                return [];
+            }
+        })();
+        const description = teamTitleEl.getAttribute('data-team-description') || '';
+
+        openDrawer({
+            name: teamName,
+            description,
+            services: {items: rawServices},
+            channels,
+            email,
+            highlightService: hit.raw,
+            highlightQuery: query
+        });
+
+    } catch (e) {
+
+        console.warn('Drawer open/highlight skipped:', e);
+
+    }
+
 }

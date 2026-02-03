@@ -5,6 +5,128 @@ export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
 let searchActive = false;
 
+
+export function getNameFromTitleEl(teamTitleEl) {
+    const raw = teamTitleEl?.textContent || '';
+    return raw.replace(/\s*-\s*⚙️.*$/, '').trim();
+}
+
+function splitFirstLast(fullName = '') {
+    const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { firstName: '', lastName: '' };
+    if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+    return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+export function buildPersonReportBody(member = {}, ctx) {
+    const { firstLevel, secondLevel, thirdLevel } = ctx || {};
+    const name = (member['Name'] || '').trim();
+    const { firstName, lastName } = splitFirstLast(name);
+
+    const company = member['Company'] || member['Company Name'] || '';
+    const role = member['Role'] || member['Role Name'] || member['Role Title'] || '';
+    const startDate = member['In team since'] || '';
+    const location = member['Location'] || '';
+    const room = member['Room Link'] || member['Room'] || '';
+    const lineManager = member['Line Manager'] || member['Manager'] || '';
+    const team = thirdLevel || member['Team member of'] || [firstLevel, secondLevel, thirdLevel].filter(Boolean).join(' / ');
+
+    return [
+        'Hello,',
+        '',
+        'I would like to report the need for an update to the People Database:',
+        '',
+        `FIRST NAME: ${firstName}`,
+        `LAST NAME: ${lastName}`,
+        `COMPANY NAME: ${company}`,
+        `TEAM: ${team}`,
+        `ROLE: ${role}`,
+        `START DATE (for new Joiners or movers): ${startDate}`,
+        `END DATE (for leavers): `,
+        `LOCATION: ${location}`,
+        `ROOM: ${room}`,
+        `LINE MANAGER: ${lineManager}`,
+        `PHOTO: `,
+        '',
+        'Regards,'
+    ].join('\n');
+}
+
+export function askModal() {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'simple-modal__overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+
+        const modal = document.createElement('div');
+        modal.className = 'simple-modal';
+        modal.innerHTML = `
+      <h3>Include Portfolio Team?</h3>
+      <p>Do you want to include the Portfolio Team mailboxes among the recipients of this change request?</p>
+      <div class="simple-modal__buttons">
+        <button type="button" class="simple-modal__btn" data-action="cancel">Cancel</button>
+        <button type="button" class="simple-modal__btn" data-action="skip">Don't include</button>
+        <button type="button" class="simple-modal__btn simple-modal__btn--primary" data-action="include">Include</button>
+      </div>
+    `;
+
+        function closeAndResolve(val) {
+            overlay.remove();
+            resolve(val);
+        }
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeAndResolve(null);
+        });
+
+        modal.querySelector('[data-action="include"]')?.addEventListener('click', () => closeAndResolve(true));
+        modal.querySelector('[data-action="skip"]')?.addEventListener('click', () => closeAndResolve(false));
+        modal.querySelector('[data-action="cancel"]')?.addEventListener('click', () => closeAndResolve(null));
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        modal.querySelector('[data-action="include"]')?.focus();
+    });
+}
+
+export async function openPersonReportCompose(peopleDBUpdateRecipients, portfolioDBUpdateRecipients, member, ctx) {
+    const to = [...(Array.isArray(peopleDBUpdateRecipients) ? peopleDBUpdateRecipients : [])];
+    const decision = await askModal();
+
+    if (decision === null) {
+        closeSideDrawer();
+        return;
+    }
+
+    if (decision === true) {
+        to.push(...portfolioDBUpdateRecipients);
+    }
+
+    const subject = `Request for People Database Update - ${member['Name'] || 'Unknown'}`;
+    const body = buildPersonReportBody(member, ctx);
+
+    try {
+
+        if (isMobileDevice()) {
+            // fallback mailto per mobile
+            buildFallbackMailToLink(to, subject, body);
+        } else {
+            openOutlookWebCompose({
+                to,
+                cc: [],
+                bcc: [],
+                subject,
+                body
+            });
+        }
+    } catch (e) {
+        console.warn('openPersonReportCompose error:', e);
+        buildFallbackMailToLink(to, subject, body);
+    }
+}
+
 function normalizeLower(s) {
     return (s || '').toString().trim().toLowerCase();
 }
@@ -550,8 +672,8 @@ export function setQueryParam(param, value) {
     window.history.pushState({}, '', url);
 }
 
-export function setSearchQuery(value) {
-    setQueryParam('search', value);
+export function setSearchQuery(search) {
+    setQueryParam('search', search);
 }
 
 export function initCommonActions() {
