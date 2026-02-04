@@ -956,3 +956,9 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
 #drawer-list li a:hover {
     text-decoration: underline;
 }
+
+.field-hit-highlight {
+    box-shadow: inset 0 0 0 2px #e10600;
+    border-radius: 6px;
+    padding: 2px 4px;
+}
