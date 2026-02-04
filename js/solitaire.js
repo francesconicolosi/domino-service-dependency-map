@@ -6,6 +6,7 @@ import {
     buildCompositeKey,
     buildFallbackMailToLink,
     buildLegendaColorScale,
+    clearFieldHighlights,
     clearSearchDimming,
     closeSideDrawer,
     computeStreamBoxWidthWrapped,
@@ -19,9 +20,7 @@ import {
     getVisiblePeopleForLegend,
     highlightGroup as highlightGroupUtils,
     initCommonActions,
-    isMobileDevice,
     normalizeKey,
-    openOutlookWebCompose,
     openPersonReportCompose,
     parseCSV,
     SECOND_LEVEL_LABEL_EXTRA,
@@ -460,6 +459,7 @@ function clearSearch() {
     searchInput.value = searchParam;
     setSearchQuery(searchParam);
     clearSearchDimming();
+    clearFieldHighlights();
     fitToContent(0.9);
     closeDrawer();
     //closeSideDrawer();
@@ -1867,7 +1867,7 @@ function searchByQuery(query) {
         searchInput.value = query;
     }
 
-    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .stream-title, .role-field, [data-services]'));
+    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]'));
 
     const matches = nodes.filter(n => {
         const textMatch = n.textContent ? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
@@ -1894,7 +1894,7 @@ function searchByQuery(query) {
     }
 
     const target = matches[currentIndex];
-
+    clearFieldHighlights();
     closeDrawer();
 
     zoomToElement(target, 1, 600);
@@ -1902,11 +1902,31 @@ function searchByQuery(query) {
     showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
     setSearchQuery(query);
 
+    const FIELD_CLASSES = ['role-field', 'company-field', 'location-field'];
+    if (target.classList) {
+        const hitClass = FIELD_CLASSES.find(c => target.classList.contains(c));
+        if (hitClass) {
+            target.classList.add('field-hit-highlight');
+        } else {
+            const group = target.closest('g[data-key^="card::"]');
+            if (group) {
+                const qn = (query || '').trim().toLowerCase();
+                FIELD_CLASSES.forEach(cls => {
+                    const el = group.querySelector('.' + cls);
+                    if (!el) return;
+                    const tn = (el.textContent || '').toLowerCase();
+                    if (qn && tn.includes(qn)) {
+                        el.classList.add('field-hit-highlight');
+                    }
+                });
+            }
+        }
+    }
 
     try {
         const group = target.closest('g');
         const teamTitleEl = group ? group.querySelector('text.team-title') : null;
-        if (!teamTitleEl) return; // non è un risultato "team"
+        if (!teamTitleEl) return;
 
         const rawServices = (teamTitleEl.getAttribute('data-services') || '')
             .split(',').map(s => s.trim()).filter(Boolean);

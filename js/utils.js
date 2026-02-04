@@ -5,6 +5,11 @@ export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
 let searchActive = false;
 
+export function clearFieldHighlights() {
+    document
+        .querySelectorAll('.field-hit-highlight, .role-hit-highlight')
+        .forEach(el => el.classList.remove('field-hit-highlight', 'role-hit-highlight'));
+}
 
 export function getNameFromTitleEl(teamTitleEl) {
     const raw = teamTitleEl?.textContent || '';
