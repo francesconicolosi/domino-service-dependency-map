@@ -1061,6 +1061,59 @@ function applyDraggableToggleState() {
     }
 }
 
+function wireFabsInteractions(cardSel) {
+    const SHOW_DELAY = 50;
+    const HIDE_DELAY = 120;
+    let showTimer = null;
+    let hideTimer = null;
+
+    const isTouchEnv = () =>
+        ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+    const show = () => {
+        clearTimeout(hideTimer);
+        showTimer = setTimeout(() => {
+            cardSel.classed('card--fabs-visible', true);
+        }, SHOW_DELAY);
+    };
+
+    const hide = () => {
+        clearTimeout(showTimer);
+        hideTimer = setTimeout(() => {
+            cardSel.classed('card--fabs-visible', false);
+        }, HIDE_DELAY);
+    };
+
+    cardSel
+        .on('pointerenter.fabs', () => { if (!isTouchEnv()) show(); })
+        .on('pointerleave.fabs', () => { if (!isTouchEnv()) hide(); });
+
+    cardSel.on('click.fabs', (event) => {
+        if (!isTouchEnv()) return;
+        event.stopPropagation();
+        const vis = cardSel.classed('card--fabs-visible');
+        d3.selectAll('g[data-key^="card::"]').classed('card--fabs-visible', false);
+        cardSel.classed('card--fabs-visible', !vis);
+    });
+
+    cardSel.selectAll('.contact-fabs, .contact-fabs-svg, .contact-fab')
+        .on('pointerenter.fabs', (e) => e.stopPropagation())
+        .on('pointerleave.fabs', (e) => e.stopPropagation())
+        .on('pointerdown.fabs',  (e) => e.stopPropagation())
+        .on('touchstart.fabs',   (e) => e.stopPropagation());
+
+    if (!window.__fabsOutsideHandlerAttached) {
+        window.__fabsOutsideHandlerAttached = true;
+        document.addEventListener('pointerdown', (e) => {
+            const svgEl = document.getElementById('canvas');
+            if (!svgEl) return;
+            if (!svgEl.contains(e.target)) {
+                d3.selectAll('g[data-key^="card::"]').classed('card--fabs-visible', false);
+            }
+        }, { passive: true });
+    }
+}
+
 document.getElementById('act-reset-layout')?.addEventListener('click', () => {
     localStorage.removeItem(LS_KEY);
     window.location.reload();
@@ -1587,7 +1640,9 @@ function extractData(csvText) {
                             .attr('href', '#')
                             .attr('target', '_blank')
                             .attr('rel', 'noopener noreferrer')
-                            .attr('class', 'contact-fab report');
+                            .attr('class', 'contact-fab report')
+                            .attr('data-tooltip', 'Report change')
+                            .attr('aria-label', 'Report change');
 
                         const reportBtn = reportA.append('g').attr('transform', 'translate(0,0)');
                         reportBtn.append('circle')
@@ -1613,7 +1668,9 @@ function extractData(csvText) {
                                 .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
                                 .attr('target', '_blank')
                                 .attr('rel', 'noopener noreferrer')
-                                .attr('class', 'contact-fab chat');
+                                .attr('class', 'contact-fab chat')
+                                .attr('data-tooltip', 'Chat')
+                                .attr('aria-label', 'Chat');
 
                             const chatG = chatA.append('g').attr('transform', 'translate(0,0)');
                             chatG.append('circle').attr('r', r).attr('class', 'fab-circle');
@@ -1627,7 +1684,9 @@ function extractData(csvText) {
                                 .attr('href', createOutlookUrl([email]))
                                 .attr('target', '_blank')
                                 .attr('rel', 'noopener noreferrer')
-                                .attr('class', 'contact-fab mail');
+                                .attr('class', 'contact-fab mail')
+                                .attr('data-tooltip', 'Send email')
+                                .attr('aria-label', 'Send email');
 
                             const mailG = mailA.append('g').attr('transform', `translate(0, ${dy})`);
                             mailG.append('circle').attr('r', r).attr('class', 'fab-circle');
@@ -1690,6 +1749,14 @@ function extractData(csvText) {
                                 .html(`<span class="icon" aria-hidden="true">✉️</span>`);
                         }
                     }
+                    group.classed('card', true);
+
+                    group.selectAll('.contact-fabs-svg, .contact-fabs').each(function () {
+                        this.parentNode.appendChild(this);
+                    });
+
+                    wireFabsInteractions(group);
+
                     Object.entries(member).forEach(([key, value]) => {
                         if (fieldsToShow.includes(key) && value) {
                             let finalValue = value;

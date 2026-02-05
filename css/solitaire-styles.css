@@ -638,23 +638,10 @@ body.drawer-open {
     transition: opacity .18s ease;
 }
 
-.draggable:hover .contact-fabs {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .contact-fab:focus-visible,
 .contact-fabs:focus-within {
     opacity: 1;
     pointer-events: auto;
-}
-
-@media (any-hover: none), (hover: none), (pointer: coarse), (max-width: 1024px) {
-    .contact-fabs {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        transition: none !important;
-    }
 }
 
 .contact-fab {
@@ -761,11 +748,6 @@ body.drawer-open {
 
 
 @supports (-webkit-touch-callout: none) {
-    .draggable:hover .contact-fabs {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-    }
-
     .contact-fabs,
     .contact-fab {
         -webkit-transform: translateZ(0);
@@ -924,20 +906,6 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
     transition: opacity .18s ease;
 }
 
-.draggable:hover .contact-fabs-svg.contact-fabs--left {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-@media (any-hover: none), (hover: none), (pointer: coarse), (max-width: 1024px) {
-    .contact-fabs.contact-fabs--left,
-    .contact-fabs-svg.contact-fabs--left {
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        transition: none !important;
-    }
-}
-
 .service-hit-highlight {
     display: inline-block;
     border: 4px solid #e10600; /* rosso, spessore 4px */
@@ -962,3 +930,17 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
     border-radius: 6px;
     padding: 2px 4px;
 }
+
+.contact-fabs-svg.contact-fabs--right {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+}
+
+.draggable:hover .contact-fabs-svg.contact-fabs--right,
+.draggable:hover .contact-fabs-svg.contact-fabs--left {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.contact-fabs-svg a { pointer-events: auto; }
