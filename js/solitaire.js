@@ -1548,7 +1548,12 @@ function extractData(csvText) {
 
                     const fabsY = Math.round(photoY + Math.round((photoSize - fabsHeight) / 2) - 4);
 
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+                    const isWebKit = /AppleWebKit/i.test(navigator.userAgent)
+                        && /Safari/i.test(navigator.userAgent)
+                        && !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
+
+                    const useSvgFabs = isWebKit
+                        || /iPad|iPhone|iPod/i.test(navigator.userAgent)
                         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
                     const r  = fabSize / 2;
@@ -1573,13 +1578,13 @@ function extractData(csvText) {
                         ).then(() => console.log('report a change started'));
                     };
 
-                    if (isIOS) {
+                    if (useSvgFabs) {
                         const reportG = group.append('g')
                             .attr('class', 'contact-fabs-svg contact-fabs--left')
                             .attr('transform', `translate(${lc.cx},${lc.cy})`);
 
                         const reportA = reportG.append('a')
-                            .attr('xlink:href', '#')
+                            .attr('href', '#')
                             .attr('target', '_blank')
                             .attr('rel', 'noopener noreferrer')
                             .attr('class', 'contact-fab report');
@@ -1605,7 +1610,7 @@ function extractData(csvText) {
                                 .attr('transform', `translate(${cx},${cy})`);
 
                             const chatA = fabsG.append('a')
-                                .attr('xlink:href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                                .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
                                 .attr('target', '_blank')
                                 .attr('rel', 'noopener noreferrer')
                                 .attr('class', 'contact-fab chat');
@@ -1619,7 +1624,7 @@ function extractData(csvText) {
                                 .text('💬');
 
                             const mailA = fabsG.append('a')
-                                .attr('xlink:href', createOutlookUrl([email]))
+                                .attr('href', createOutlookUrl([email]))
                                 .attr('target', '_blank')
                                 .attr('rel', 'noopener noreferrer')
                                 .attr('class', 'contact-fab mail');
