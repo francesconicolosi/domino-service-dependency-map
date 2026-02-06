@@ -1563,14 +1563,37 @@ function extractData(csvText) {
                             .attr('alt', 'Profile photo');
                     });
 
-                    group.append('foreignObject')
+                    const nameY = 72;
+                    const defaultNameBoxH = 24;
+
+                    const nameFO = group.append('foreignObject')
                         .attr('x', 0)
-                        .attr('y', 72)
+                        .attr('y', nameY)
                         .attr('width', memberWidth)
-                        .attr('height', 24)
-                        .append('xhtml:div')
+                        .attr('height', defaultNameBoxH);
+                    const nameDiv = nameFO.append('xhtml:div')
                         .attr('class', 'profile-name')
                         .html(member['Name']);
+
+                    function adjustNameAndInfoHeights() {
+                        const measured = nameDiv.node()?.scrollHeight || defaultNameBoxH;
+
+                        const nameBoxH = Math.max(defaultNameBoxH, Math.ceil(measured) + 2);
+
+                        nameFO.attr('height', nameBoxH);
+
+                        const infoStartY = nameY + nameBoxH + 4;
+
+                        const infoFOExisting = group.select('foreignObject .info').node()
+                            ? d3.select(group.select('foreignObject .info').node().closest('foreignObject'))
+                            : null;
+
+                        if (infoFOExisting) {
+                            infoFOExisting.attr('y', infoStartY);
+                        }
+                    }
+
+                    requestAnimationFrame(() => requestAnimationFrame(adjustNameAndInfoHeights));
 
                     const infoDiv = group.append('foreignObject')
                         .attr('x', 8)
