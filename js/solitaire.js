@@ -1587,11 +1587,19 @@ function extractData(csvText) {
 
                     const photoY = 8;
 
+                    const isWebKit = /AppleWebKit/i.test(navigator.userAgent)
+                        && /Safari/i.test(navigator.userAgent)
+                        && !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
+
+                    const useSvgFabs = isWebKit
+                        || /iPad|iPhone|iPod/i.test(navigator.userAgent)
+                        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
                     const spacingX = 17;
                     const isMobile = window.matchMedia('(max-width: 480px)').matches;
-                    const leftSpacingX = isMobile ? 1 : 3;
-                    const fabSize = isMobile ? 28 : 24;
-                    const gap = isMobile ? 3 : 8;
+                    const leftSpacingX = useSvgFabs ? 1 : 3;
+                    const fabSize = useSvgFabs ? 28 : 24;
+                    const gap = useSvgFabs ? 3 : 8;
 
                     const fabsHeight = (fabSize * 2) + gap;
 
@@ -1600,14 +1608,6 @@ function extractData(csvText) {
                     const leftX  = Math.round(photoX - spacingX - fabSize - leftSpacingX);
 
                     const fabsY = Math.round(photoY + Math.round((photoSize - fabsHeight) / 2) - 4);
-
-                    const isWebKit = /AppleWebKit/i.test(navigator.userAgent)
-                        && /Safari/i.test(navigator.userAgent)
-                        && !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
-
-                    const useSvgFabs = isWebKit
-                        || /iPad|iPhone|iPod/i.test(navigator.userAgent)
-                        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
                     const r  = fabSize / 2;
                     const cx = Math.round(rightX + fabSize / 2);

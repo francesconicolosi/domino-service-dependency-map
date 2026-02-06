@@ -944,3 +944,17 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
 }
 
 .contact-fabs-svg a { pointer-events: auto; }
+
+g.card.card--fabs-visible .contact-fabs--right,
+g.card.card--fabs-visible .contact-fabs--left,
+g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--right,
+g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.draggable:hover .contact-fabs.contact-fabs--right,
+.draggable:hover .contact-fabs.contact-fabs--left {
+    opacity: 1;
+    pointer-events: auto;
+}
