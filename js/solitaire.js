@@ -9,6 +9,8 @@ import {
     clearFieldHighlights,
     clearSearchDimming,
     closeSideDrawer,
+    collectMembersFromOrganization,
+    filterOrganizationByStreams,
     computeStreamBoxWidthWrapped,
     createFormattedLongTextElementsFrom,
     createHrefElement,
@@ -47,6 +49,8 @@ const thirdOrgLevel = 'Team member of';
 const firstLevelNA = `No ${firstOrgLevel}`;
 const secondLevelNA = `No ${secondOrgLevel}`;
 const thirdLevelNA = `No ${thirdOrgLevel}`;
+
+let visibleOrganizationWithManagers = null;
 
 const PALETTE = [
     '#a0c4ff', '#ffd6e0', '#b2f7ef', '#ffe066', '#caffbf',
@@ -123,21 +127,10 @@ function getCardFill(g) {
 
 function recolorProfileCards(field) {
     colorBy = field;
-    const allowedStreams = getAllowedStreamsSet?.() ?? (() => {
-        const p = getQueryParam('stream');
-        if (!p) return null;
-        const set = new Set();
-        p.split(',')
-            .map(s => s.trim())
-            .filter(Boolean)
-            .forEach(x => {
-                set.add(x);
-                set.add(normalizeKey(x));
-            });
-        return set;
-    })();
 
-    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel);
+    const allowedStreams = getAllowedStreamsSet?.() ?? null;
+    const orgForLegend = filterOrganizationByStreams(visibleOrganizationWithManagers, allowedStreams);
+    const visiblePeopleForLegend = collectMembersFromOrganization(orgForLegend);
 
     colorScale = buildLegendaColorScale(
         colorBy,
@@ -1173,7 +1166,8 @@ function extractData(csvText) {
         : allStreamNames;
 
 
-    const visiblePeopleForLegend = getVisiblePeopleForLegend(people, filteredStreams, firstOrgLevel);
+    visibleOrganizationWithManagers = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
+    const visiblePeopleForLegend = collectMembersFromOrganization(visibleOrganizationWithManagers);
 
     initColorScale(ROLE_FIELD_WITH_MAPPING, visiblePeopleForLegend);
     updateLegend(colorScale, colorBy, d3);

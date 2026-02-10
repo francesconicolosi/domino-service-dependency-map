@@ -11,6 +11,29 @@ export function clearFieldHighlights() {
         .forEach(el => el.classList.remove('field-hit-highlight', 'role-hit-highlight'));
 }
 
+export function filterOrganizationByStreams(org, allowed) {
+    if (!allowed || allowed.size === 0) return org;
+    const out = {};
+    for (const [stream, themes] of Object.entries(org || {})) {
+        const ok = allowed.has(stream) || allowed.has(normalizeKey(stream));
+        if (ok) out[stream] = themes;
+    }
+    return out;
+}
+
+
+export function collectMembersFromOrganization(filteredOrg) {
+    const out = [];
+    for (const themes of Object.values(filteredOrg)) {
+        for (const teams of Object.values(themes)) {
+            for (const members of Object.values(teams)) {
+                out.push(...members);
+            }
+        }
+    }
+    return out;
+}
+
 export function getNameFromTitleEl(teamTitleEl) {
     const raw = teamTitleEl?.textContent || '';
     return raw.replace(/\s*-\s*⚙️.*$/, '').trim();
