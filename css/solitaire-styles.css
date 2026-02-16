@@ -694,6 +694,8 @@ body.drawer-open {
     .contact-fab .icon {
         font-size: 16px;
     }
+
+    .contact-fabs.contact-fabs--left { gap: 3px !important; }
 }
 
 .contact-fab:hover {
@@ -893,6 +895,11 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .draggable:hover .contact-fabs.contact-fabs--left {

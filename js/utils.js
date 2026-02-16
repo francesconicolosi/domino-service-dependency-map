@@ -80,7 +80,7 @@ export function buildPersonReportBody(member = {}, ctx) {
     ].join('\n');
 }
 
-export function askModal() {
+export function createModal({ title, html, buttons }) {
     return new Promise(resolve => {
         const overlay = document.createElement('div');
         overlay.className = 'simple-modal__overlay';
@@ -89,34 +89,76 @@ export function askModal() {
 
         const modal = document.createElement('div');
         modal.className = 'simple-modal';
+        const btnHtml = buttons.map(btn =>
+            `<button type="button" class="simple-modal__btn ${btn.primary ? 'simple-modal__btn--primary' : ''}" data-action="${btn.id}">
+        ${btn.label}
+      </button>`
+        ).join('');
         modal.innerHTML = `
-      <h3>Include Portfolio Team?</h3>
-      <p>Do you want to include the Portfolio Team mailboxes among the recipients of this change request?</p>
-      <div class="simple-modal__buttons">
-        <button type="button" class="simple-modal__btn" data-action="cancel">Cancel</button>
-        <button type="button" class="simple-modal__btn" data-action="skip">Don't include</button>
-        <button type="button" class="simple-modal__btn simple-modal__btn--primary" data-action="include">Include</button>
-      </div>
+            <h3>${title}</h3>
+      <p>${html}</p>
+      <div class="simple-modal__buttons">${btnHtml}</div>
     `;
 
-        function closeAndResolve(val) {
+        function close(val) {
             overlay.remove();
             resolve(val);
         }
 
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeAndResolve(null);
+            if (e.target === overlay) close(null);
         });
 
-        modal.querySelector('[data-action="include"]')?.addEventListener('click', () => closeAndResolve(true));
-        modal.querySelector('[data-action="skip"]')?.addEventListener('click', () => closeAndResolve(false));
-        modal.querySelector('[data-action="cancel"]')?.addEventListener('click', () => closeAndResolve(null));
+        buttons.forEach(btn => {
+            modal.querySelector(`[data-action="${btn.id}"]`)
+                ?.addEventListener('click', () => close(btn.id));
+        });
+
+        const escHandler = (e) => {
+            if (e.key === "Escape") {
+                document.removeEventListener('keydown', escHandler);
+                close(null);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        modal.querySelector('[data-action="include"]')?.focus();
+        modal.querySelector(`[data-action="${buttons.find(b => b.primary)?.id}"]`)?.focus();
     });
+}
+
+export function askModal() {
+    return createModal({
+        title: 'Include Portfolio Team?',
+        html: `Notify also the Portfolio Team about changes to Team, Start Date, or End Date? If not included, only Service Management will be informed and will handle the update.`,
+        buttons: [
+            { id: 'cancel', label: 'Cancel' },
+            { id: 'skip', label: "Don't include" },
+            { id: 'include', label: 'Include', primary: true }
+        ]
+    }).then(answer => {
+        if (answer === 'include') return true;
+        if (answer === 'skip') return false;
+        return null;
+    });
+}
+
+export function askHideStreamModal(streamName) {
+    return createModal({
+        title: `Hide stream "${streamName}"?`,
+        html: `
+      This stream will be temporarily hidden.<br><br>
+      The URL in your browser bar will update and can be reused as a permalink
+      to load this filtered view.<br><br>
+      To restore the full view, click the ❌ next to the search bar.
+    `,
+        buttons: [
+            { id: 'cancel', label: 'Cancel' },
+            { id: 'confirm', label: 'Hide stream', primary: true }
+        ]
+    }).then(answer => answer === 'confirm');
 }
 
 export async function openPersonReportCompose(peopleDBUpdateRecipients, portfolioDBUpdateRecipients, member, ctx) {
@@ -132,7 +174,7 @@ export async function openPersonReportCompose(peopleDBUpdateRecipients, portfoli
         to.push(...portfolioDBUpdateRecipients);
     }
 
-    const subject = `Request for People Database Update - ${member['Name'] || 'Unknown'}`;
+    const subject = `Request for People Database Update - ${member?.Name ?? ''}`;
     const body = buildPersonReportBody(member, ctx);
 
     try {

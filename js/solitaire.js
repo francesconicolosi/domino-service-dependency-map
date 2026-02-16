@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 
 import {
     addTagToElement,
+    askHideStreamModal,
     applySearchDimmingForMatches, askModal,
     buildCompositeKey,
     buildFallbackMailToLink,
@@ -52,10 +53,7 @@ const thirdLevelNA = `No ${thirdOrgLevel}`;
 
 let visibleOrganizationWithManagers = null;
 
-const PALETTE = [
-    '#a0c4ff', '#ffd6e0', '#b2f7ef', '#ffe066', '#caffbf',
-    '#ffadad', '#fdffb6', '#bdb2ff', '#9bf6ff', '#ffc6ff'
-];
+const PALETTE = d3.schemeTableau10;
 
 const ROLE_FIELD_WITH_MAPPING = 'Role';
 const LOCATION_FIELD = 'Location';
@@ -456,6 +454,10 @@ function clearSearch() {
     fitToContent(0.9);
     closeDrawer();
     //closeSideDrawer();
+}
+
+function isInternalCompany(member) {
+    return ((member[COMPANY_FIELD] || '').trim().toLowerCase() === 'internal');
 }
 
 function initSideDrawerEvents() {
@@ -1112,6 +1114,13 @@ document.getElementById('act-reset-layout')?.addEventListener('click', () => {
     window.location.reload();
 });
 
+
+function getCompanyGroupTalentUrl(member, emailField = 'Email') {
+    const email = (member?.[emailField] ?? '').toString().trim();
+    const query = encodeURIComponent(email);
+    return `https://company.talentsoftware.ai/careerhub/search/people?query=${query}`;
+}
+
 document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
     isDraggable = e.target.checked;
     applyDraggableToggleState();
@@ -1308,9 +1317,12 @@ function extractData(csvText) {
         if (visibleStreamNames.length > 1) {
             titleText.append('tspan')
                 .attr('class', 'stream-icon stream-icon--hide')
-                .text(' 🚫')
-                .on('click', (e) => {
-                    e?.stopPropagation?.();
+                .text(' 👁️‍🗨️')
+                .on('click', async (e) => {
+                    e.stopPropagation();
+
+                    const confirmed = await askHideStreamModal(firstLevel);
+                    if (!confirmed) return;
 
                     const others = visibleStreamNames.filter(
                         s => normalizeKey(s) !== normalizeKey(firstLevel)
@@ -1614,7 +1626,7 @@ function extractData(csvText) {
 
                     const spacingX = 17;
                     const isMobile = window.matchMedia('(max-width: 480px)').matches;
-                    const leftSpacingX = useSvgFabs ? 1 : 3;
+                    const leftSpacingX = 1;
                     const fabSize = useSvgFabs ? 28 : 24;
                     const gap = useSvgFabs ? 3 : 8;
 
@@ -1648,6 +1660,9 @@ function extractData(csvText) {
                         ).then(() => console.log('report a change started'));
                     };
 
+                    const companyGroupTalentUrl = getCompanyGroupTalentUrl(member);
+                    const isInternal = isInternalCompany(member);
+
                     if (useSvgFabs) {
                         const reportG = group.append('g')
                             .attr('class', 'contact-fabs-svg contact-fabs--left')
@@ -1660,6 +1675,31 @@ function extractData(csvText) {
                             .attr('class', 'contact-fab report')
                             .attr('data-tooltip', 'Report change')
                             .attr('aria-label', 'Report change');
+
+                        if (isInternal) {
+                            const talentA_left = reportG.append('a')
+                                .attr('href', companyGroupTalentUrl)
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('class', 'contact-fab companygroup-talent')
+                                .attr('data-tooltip', 'Company Group Talent')
+                                .attr('aria-label', 'Company Group Talent');
+
+                            const talentG_left = talentA_left.append('g')
+                                .attr('transform', `translate(0, ${dy})`);
+
+                            talentG_left.append('circle').attr('r', lc.r).attr('class', 'fab-circle');
+                            talentG_left.append('text')
+                                .attr('class', 'fab-emoji')
+                                .attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'central')
+                                .text('👤');
+
+                            talentA_left
+                                .on('pointerdown', (e) => e.stopPropagation())
+                                .on('touchstart',  (e) => e.stopPropagation());
+                        }
+
 
                         const reportBtn = reportA.append('g').attr('transform', 'translate(0,0)');
                         reportBtn.append('circle')
@@ -1718,11 +1758,14 @@ function extractData(csvText) {
                                 .on('touchstart', (event) => event.stopPropagation());
                         }
                     } else {
+                        const leftColumnCount = isInternal ? 2 : 1;
+                        const leftFabsHeight = (fabSize * leftColumnCount) + (gap * (leftColumnCount - 1));
+
                         const fabsLeft = group.append('foreignObject')
                             .attr('x', leftX)
                             .attr('y', fabsY)
                             .attr('width', fabSize)
-                            .attr('height', fabSize)
+                            .attr('height', leftFabsHeight)
                             .attr('pointer-events', 'all')
                             .style('overflow', 'visible')
                             .append('xhtml:div')
@@ -1735,6 +1778,17 @@ function extractData(csvText) {
                             .attr('aria-label', 'Report change')
                             .html(`<span class="icon" aria-hidden="true">📝</span>`)
                             .on('click', reportClickHandler);
+
+                        if (isInternal) {
+                            fabsLeft.append('a')
+                                .attr('class', 'contact-fab companygroup-talent')
+                                .attr('href', companyGroupTalentUrl)
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .attr('data-tooltip', 'Company Group Talent')
+                                .attr('aria-label', 'Company Group Talent')
+                                .html(`<span class="icon" aria-hidden="true">👤</span>`);
+                        }
 
                         if (member[emailField]) {
                             const fabs = group.append('foreignObject')
