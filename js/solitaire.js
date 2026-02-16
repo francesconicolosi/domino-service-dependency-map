@@ -1230,8 +1230,10 @@ function extractData(csvText) {
         const streamLargestThirdLevelSize = Math.max(1, ...(streamTeamSizes.length ? streamTeamSizes : [1]));
         const streamRowCount = Math.ceil(streamLargestThirdLevelSize / inARow);
 
-        const streamThirdLevelBoxHeight = streamRowCount * cardBaseHeight * 1.2 + 80;
-        const streamSecondLevelBoxHeight = streamThirdLevelBoxHeight * 1.2 + 100;
+        const teamBoxPadding = streamRowCount > 1 ? 80 : 120;
+        const themeBoxPadding = 100;
+        const teamBoxHeight = streamRowCount * cardBaseHeight * 1.2 + teamBoxPadding;
+        const themeBoxHeight = teamBoxHeight * 1.2 + themeBoxPadding;
 
         if (filteredStreams) {
             const firstLevelNormalized = normalizeKey(firstLevel);
@@ -1269,7 +1271,7 @@ function extractData(csvText) {
             .filter(([themeKey]) => !themeKey.includes(secondLevelNA)).length;
 
         const themeRows = Math.ceil(numThemesInStream / THEMES_PER_ROW);
-        const firstLevelBoxHeight = themeRows * (streamSecondLevelBoxHeight + secondLevelRowPadY) + 140;
+        const firstLevelBoxHeight = themeRows * (themeBoxHeight + secondLevelRowPadY) + 140;
 
         const streamRect = firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
@@ -1374,7 +1376,7 @@ function extractData(csvText) {
             }
 
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
-            const secondLevelY = streamY + 100 + themeRow * (streamSecondLevelBoxHeight + secondLevelRowPadY);
+            const secondLevelY = streamY + 100 + themeRow * (themeBoxHeight + secondLevelRowPadY);
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
@@ -1387,7 +1389,7 @@ function extractData(csvText) {
             const secondLevelRect = secondLevelGroup.append('rect')
                 .attr('class', 'theme-box')
                 .attr('width', themeWidth)
-                .attr('height', streamSecondLevelBoxHeight)
+                .attr('height', themeBoxHeight)
                 .attr('rx', 30)
                 .attr('ry', 30);
 
@@ -1444,7 +1446,7 @@ function extractData(csvText) {
                 const thirdLevelRect = thirdLevelGroup.append('rect')
                     .attr('class', 'team-box')
                     .attr('width', thirdLevelBoxWidth)
-                    .attr('height', streamThirdLevelBoxHeight)
+                    .attr('height', teamBoxHeight)
                     .attr('rx', 20)
                     .attr('ry', 20);
 
