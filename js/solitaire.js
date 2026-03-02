@@ -30,7 +30,7 @@ import {
     setSearchQuery,
     TEAM_MEMBER_LEGENDA_LABEL,
     truncateString,
-    updateLegend
+    updateLegend, countTeamsForMemberInOrg
 } from './utils.js';
 
 let lastSearch = '';
@@ -1560,15 +1560,77 @@ function extractData(csvText) {
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
-                        group.append('foreignObject')
-                            .attr('x', (memberWidth - 60) / 2)
-                            .attr('y', 8)
-                            .attr('width', 60)
-                            .attr('height', 60)
-                            .append('xhtml:img')
+                        const photoSize = 60;
+                        const photoX = (memberWidth - photoSize) / 2;
+                        const photoY = 8;
+
+                        const photoWrapper = group.append('g')
+                            .attr('class', 'photo-wrapper')
+                            .style('cursor', 'pointer');
+
+                        const photoFO = photoWrapper.append('foreignObject')
+                            .attr('x', photoX)
+                            .attr('y', photoY)
+                            .attr('width', photoSize)
+                            .attr('height', photoSize);
+
+                        const photoImg = photoFO.append('xhtml:img')
                             .attr('class', 'profile-photo')
                             .attr('src', photoPath)
-                            .attr('alt', 'Profile photo');
+                            .attr('alt', member.Name);
+
+                        const cx = photoX + photoSize / 2;
+                        const cy = photoY + photoSize / 2;
+
+                        const lensBg = photoWrapper.append('circle')
+                            .attr('class', 'magnifier-bg')
+                            .attr('cx', cx).attr('cy', cy).attr('r', photoSize * 0.42)
+                            .style('opacity', 0);
+
+                        const lens = photoWrapper.append('text')
+                            .attr('x', cx)
+                            .attr('y', cy)
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .attr('class', 'magnifier-icon')
+                            .style('font-size', Math.round(photoSize / 3) + 'px')
+                            .style('opacity', 0)
+                            .text('🔎');
+
+                        let tooltipText = `Click to focus on ${member.Name}.`;
+
+                        try {
+                            if (member.guestRole) {
+                                const nTeams = countTeamsForMemberInOrg(member, visibleOrganizationWithManagers);
+
+                                if (nTeams > 1) {
+                                    tooltipText = `${member.Name} appears in ${nTeams} teams. Click to focus.`;
+                                }
+                            }
+                        } catch {  }
+
+                        photoWrapper
+                            .attr('data-tooltip', tooltipText)
+                            .attr('aria-label', tooltipText);
+
+
+                        photoWrapper
+                            .on('mouseover', () => {
+                                photoImg.style('opacity', 0.28);
+                                lens.style('opacity', 1);
+                                lensBg?.style?.('opacity', 0.15);
+                            })
+                            .on('mouseout', () => {
+                                photoImg.style('opacity', 1);
+                                lens.style('opacity', 0);
+                                lensBg?.style?.('opacity', 0);
+                            });
+
+                        photoWrapper.on('click', () => {
+                            const q = member.Name?.toLowerCase();
+                            if (q) searchByQuery(q);
+                        });
+
                     });
 
                     const nameY = 72;
@@ -1939,7 +2001,7 @@ document.getElementById('fileInput')?.addEventListener('change', function (e) {
     }
 
     function getFabAnchor(target) {
-        return target?.closest?.('.contact-fab') || null;
+        return target?.closest?.('[data-tooltip], .contact-fab') || null;
     }
 
     if (isMouseLike) {

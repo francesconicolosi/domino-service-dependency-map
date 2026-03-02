@@ -11,6 +11,29 @@ export function clearFieldHighlights() {
         .forEach(el => el.classList.remove('field-hit-highlight', 'role-hit-highlight'));
 }
 
+export function countTeamsForMemberInOrg(member, org, emailField = 'Email') {
+    const targetKey = buildCompositeKey(member, emailField);
+    if (!targetKey) return 0;
+
+    let count = 0;
+
+    for (const [streamName, themes] of Object.entries(org || {})) {
+
+        if (streamName.toLowerCase().includes("no team stream")) continue;
+
+        for (const teams of Object.values(themes || {})) {
+            for (const members of Object.values(teams || {})) {
+                const found = (members || []).some(
+                    m => buildCompositeKey(m, emailField) === targetKey
+                );
+                if (found) count++;
+            }
+        }
+    }
+
+    return count;
+}
+
 export function filterOrganizationByStreams(org, allowed) {
     if (!allowed || allowed.size === 0) return org;
     const out = {};

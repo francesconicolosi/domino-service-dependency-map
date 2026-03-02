@@ -965,3 +965,18 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     opacity: 1;
     pointer-events: auto;
 }
+
+
+.profile-photo,
+.magnifier-icon,
+.magnifier-bg {
+    transition: opacity 140ms ease;
+}
+
+.photo-wrapper .magnifier-icon {
+    pointer-events: none;
+}
+
+.magnifier-bg {
+    fill: #000;
+}
