@@ -980,3 +980,10 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
 .magnifier-bg {
     fill: #000;
 }
+
+.photo-wrapper {
+    pointer-events: all;
+}
+.photo-wrapper image {
+    pointer-events: none;
+}
