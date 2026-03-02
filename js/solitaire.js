@@ -1560,24 +1560,32 @@ function extractData(csvText) {
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
-                        const photoSize = 60;
-                        const photoX = (memberWidth - photoSize) / 2;
-                        const photoY = 8;
-
                         const photoWrapper = group.append('g')
                             .attr('class', 'photo-wrapper')
                             .style('cursor', 'pointer');
 
-                        const photoFO = photoWrapper.append('foreignObject')
+                        const photoSize = 60;
+                        const photoX = (memberWidth - photoSize) / 2;
+                        const photoY = 8;
+
+                        const clipId = `clip-${normalizeKey(member.Name)}-${Math.random().toString(36).slice(2)}`;
+
+                        photoWrapper.append('clipPath')
+                            .attr('id', clipId)
+                            .append('circle')
+                            .attr('cx', photoX + photoSize / 2)
+                            .attr('cy', photoY + photoSize / 2)
+                            .attr('r', photoSize / 2);
+
+                        const photoImg = photoWrapper.append('image')
+                            .attr('href', photoPath)
                             .attr('x', photoX)
                             .attr('y', photoY)
                             .attr('width', photoSize)
-                            .attr('height', photoSize);
-
-                        const photoImg = photoFO.append('xhtml:img')
+                            .attr('height', photoSize)
+                            .attr('clip-path', `url(#${clipId})`)
                             .attr('class', 'profile-photo')
-                            .attr('src', photoPath)
-                            .attr('alt', member.Name);
+                            .style('pointer-events', 'none');
 
                         const cx = photoX + photoSize / 2;
                         const cy = photoY + photoSize / 2;
@@ -1596,6 +1604,10 @@ function extractData(csvText) {
                             .style('font-size', Math.round(photoSize / 3) + 'px')
                             .style('opacity', 0)
                             .text('🔎');
+
+                        lens.raise();
+                        lensBg.raise();
+                        photoWrapper.raise();
 
                         let tooltipText = `Click to focus on ${member.Name}.`;
 
