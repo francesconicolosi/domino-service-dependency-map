@@ -30,7 +30,13 @@ import {
     setSearchQuery,
     TEAM_MEMBER_LEGENDA_LABEL,
     truncateString,
-    updateLegend, countTeamsForMemberInOrg
+    updateLegend, countTeamsForMemberInOrg,
+    firstOrgLevel,
+    secondOrgLevel,
+    thirdOrgLevel,
+    firstLevelNA,
+    secondLevelNA,
+    thirdLevelNA,
 } from './utils.js';
 
 let lastSearch = '';
@@ -43,13 +49,6 @@ let colorScale = null;
 
 const THEMES_PER_ROW = 4;
 const secondLevelRowPadY = 60;
-
-const firstOrgLevel = 'Team Stream';
-const secondOrgLevel = 'Team Theme';
-const thirdOrgLevel = 'Team member of';
-const firstLevelNA = `No ${firstOrgLevel}`;
-const secondLevelNA = `No ${secondOrgLevel}`;
-const thirdLevelNA = `No ${thirdOrgLevel}`;
 
 let visibleOrganizationWithManagers = null;
 
@@ -1576,6 +1575,13 @@ function extractData(csvText) {
                             .attr('cx', photoX + photoSize / 2)
                             .attr('cy', photoY + photoSize / 2)
                             .attr('r', photoSize / 2);
+
+                        photoWrapper.append('circle')
+                            .attr('cx', photoX + photoSize / 2)
+                            .attr('cy', photoY + photoSize / 2)
+                            .attr('r', (photoSize / 2))
+                            .attr('fill', '#fff')
+                            .style('pointer-events', 'none');
 
                         const photoImg = photoWrapper.append('image')
                             .attr('href', photoPath)

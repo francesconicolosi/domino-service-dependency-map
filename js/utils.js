@@ -3,6 +3,13 @@ import * as d3 from 'd3';
 export const SECOND_LEVEL_LABEL_EXTRA = 120;
 export const TEAM_MEMBER_LEGENDA_LABEL = 'Team Member';
 
+export const firstOrgLevel = 'Team Stream';
+export const secondOrgLevel = 'Team Theme';
+export const thirdOrgLevel = 'Team member of';
+export const firstLevelNA = `No ${firstOrgLevel}`;
+export const secondLevelNA = `No ${secondOrgLevel}`;
+export const thirdLevelNA = `No ${thirdOrgLevel}`;
+
 let searchActive = false;
 
 export function clearFieldHighlights() {
@@ -11,7 +18,7 @@ export function clearFieldHighlights() {
         .forEach(el => el.classList.remove('field-hit-highlight', 'role-hit-highlight'));
 }
 
-export function countTeamsForMemberInOrg(member, org, emailField = 'Email') {
+export function countTeamsForMemberInOrg(member, org, emailField = 'Company email') {
     const targetKey = buildCompositeKey(member, emailField);
     if (!targetKey) return 0;
 
@@ -19,9 +26,9 @@ export function countTeamsForMemberInOrg(member, org, emailField = 'Email') {
 
     for (const [streamName, themes] of Object.entries(org || {})) {
 
-        if (streamName.toLowerCase().includes("no team stream")) continue;
-
-        for (const teams of Object.values(themes || {})) {
+        if (streamName.toLowerCase().includes(firstLevelNA.toLowerCase())) continue;
+        for (const [themeName, teams] of Object.entries(themes || {})) {
+            if (themeName.toLowerCase().includes(secondLevelNA.toLowerCase())) continue;
             for (const members of Object.values(teams || {})) {
                 const found = (members || []).some(
                     m => buildCompositeKey(m, emailField) === targetKey
