@@ -987,3 +987,10 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
 .photo-wrapper image {
     pointer-events: none;
 }
+
+.multi-team-photo-badge text {
+    font-family: Segoe UI, system-ui, -apple-system, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+.multi-team-photo-badge {
+    pointer-events: none;
+}
