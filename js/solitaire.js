@@ -1079,8 +1079,12 @@ function wireFabsInteractions(cardSel) {
     };
 
     cardSel
-        .on('pointerenter.fabs', () => { if (!isTouchEnv()) show(); })
-        .on('pointerleave.fabs', () => { if (!isTouchEnv()) hide(); });
+        .on('pointerenter.fabs', () => {
+            if (!isTouchEnv()) show();
+        })
+        .on('pointerleave.fabs', () => {
+            if (!isTouchEnv()) hide();
+        });
 
     cardSel.on('click.fabs', (event) => {
         if (!isTouchEnv()) return;
@@ -1093,8 +1097,8 @@ function wireFabsInteractions(cardSel) {
     cardSel.selectAll('.contact-fabs, .contact-fabs-svg, .contact-fab')
         .on('pointerenter.fabs', (e) => e.stopPropagation())
         .on('pointerleave.fabs', (e) => e.stopPropagation())
-        .on('pointerdown.fabs',  (e) => e.stopPropagation())
-        .on('touchstart.fabs',   (e) => e.stopPropagation());
+        .on('pointerdown.fabs', (e) => e.stopPropagation())
+        .on('touchstart.fabs', (e) => e.stopPropagation());
 
     if (!window.__fabsOutsideHandlerAttached) {
         window.__fabsOutsideHandlerAttached = true;
@@ -1559,96 +1563,84 @@ function extractData(csvText) {
                     }
 
                     resolvePhoto(member[emailField]).then(photoPath => {
-                        const photoWrapper = group.append('g')
-                            .attr('class', 'photo-wrapper')
-                            .style('cursor', 'pointer');
-
                         const photoSize = 60;
                         const photoX = (memberWidth - photoSize) / 2;
                         const photoY = 8;
 
-                        const clipId = `clip-${normalizeKey(member.Name)}-${Math.random().toString(36).slice(2)}`;
+                        const photoWrapper = group.append('g')
+                            .attr('class', 'photo-wrapper');
 
-                        photoWrapper.append('clipPath')
-                            .attr('id', clipId)
-                            .append('circle')
-                            .attr('cx', photoX + photoSize / 2)
-                            .attr('cy', photoY + photoSize / 2)
-                            .attr('r', photoSize / 2);
-
-                        photoWrapper.append('circle')
-                            .attr('cx', photoX + photoSize / 2)
-                            .attr('cy', photoY + photoSize / 2)
-                            .attr('r', (photoSize / 2))
-                            .attr('fill', '#fff')
-                            .style('pointer-events', 'none');
-
-                        const photoImg = photoWrapper.append('image')
-                            .attr('href', photoPath)
+                        const photoFO = photoWrapper.append('foreignObject')
                             .attr('x', photoX)
                             .attr('y', photoY)
                             .attr('width', photoSize)
                             .attr('height', photoSize)
-                            .attr('clip-path', `url(#${clipId})`)
-                            .attr('class', 'profile-photo')
+                            .attr('requiredExtensions', 'http://www.w3.org/1999/xhtml');
+
+                        const photoDiv = photoFO.append('xhtml:div')
+                            .style('width',  `${photoSize}px`)
+                            .style('height', `${photoSize}px`)
+                            .style('border-radius', '50%')
+                            .style('overflow', 'hidden');
+
+                        const photoImg = photoDiv.append('xhtml:img')
+                            .attr('src', photoPath)
+                            .attr('alt', member.Name || 'profile photo')
+                            .style('display', 'block')
+                            .style('width',  '100%')
+                            .style('height', '100%')
+                            .style('object-fit', 'cover')
                             .style('pointer-events', 'none');
 
-                        const cx = photoX + photoSize / 2;
-                        const cy = photoY + photoSize / 2;
-
-                        const lensBg = photoWrapper.append('circle')
-                            .attr('class', 'magnifier-bg')
-                            .attr('cx', cx).attr('cy', cy).attr('r', photoSize * 0.42)
-                            .style('opacity', 0);
-
-                        const lens = photoWrapper.append('text')
-                            .attr('x', cx)
-                            .attr('y', cy)
-                            .attr('text-anchor', 'middle')
-                            .attr('dominant-baseline', 'central')
-                            .attr('class', 'magnifier-icon')
-                            .style('font-size', Math.round(photoSize / 3) + 'px')
-                            .style('opacity', 0)
-                            .text('🔎');
-
-                        lens.raise();
-                        lensBg.raise();
-                        photoWrapper.raise();
-
-                        let tooltipText = `Click to focus on ${member.Name}.`;
+                        let nTeams = 0;
 
                         try {
-                            if (member.guestRole) {
-                                const nTeams = countTeamsForMemberInOrg(member, visibleOrganizationWithManagers);
+                            nTeams = countTeamsForMemberInOrg(member, visibleOrganizationWithManagers) || 0;
+                        } catch {}
 
-                                if (nTeams > 1) {
-                                    tooltipText = `${member.Name} appears in ${nTeams} teams. Click to focus.`;
-                                }
-                            }
-                        } catch {  }
+                        if (nTeams > 1) {
+                            const badgeR = 10;
+                            const bx = photoX + photoSize - badgeR - 1;
+                            const by = photoY + photoSize - badgeR - 1;
 
-                        photoWrapper
-                            .attr('data-tooltip', tooltipText)
-                            .attr('aria-label', tooltipText);
+                            const tooltipText = `Click to browse ${member.Name}'s ${nTeams} teams`;
 
+                            const badgeG = photoWrapper.append('g')
+                                .attr('class', 'multi-team-badge')
+                                .attr('transform', `translate(${bx},${by})`)
+                                .style('cursor', 'pointer')
+                                .attr('role', 'button')
+                                .attr('tabindex', 0)
+                                .attr('aria-label', tooltipText)
+                                .attr('data-tooltip', tooltipText);
 
-                        photoWrapper
-                            .on('mouseover', () => {
-                                photoImg.style('opacity', 0.28);
-                                lens.style('opacity', 1);
-                                lensBg?.style?.('opacity', 0.15);
-                            })
-                            .on('mouseout', () => {
-                                photoImg.style('opacity', 1);
-                                lens.style('opacity', 0);
-                                lensBg?.style?.('opacity', 0);
+                            badgeG.append('circle')
+                                .attr('r', badgeR)
+                                .attr('fill', '#111')
+                                .attr('stroke', '#fff')
+                                .attr('stroke-width', 1.5);
+
+                            badgeG.append('text')
+                                .attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'central')
+                                .attr('fill', '#fff')
+                                .style('font-weight', 600)
+                                .style('font-size', `${badgeR + 2}px`)
+                                .text(nTeams);
+
+                            // Click/tastiera: vai al prossimo risultato per il nome del member
+                            const triggerSearch = (e) => {
+                                e?.stopPropagation?.();
+                                const q = member.Name?.toLowerCase();
+                                if (q) searchByQuery(q);
+                            };
+                            badgeG.on('click', triggerSearch);
+                            badgeG.on('keydown', (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') triggerSearch(e);
                             });
 
-                        photoWrapper.on('click', () => {
-                            const q = member.Name?.toLowerCase();
-                            if (q) searchByQuery(q);
-                        });
-
+                            badgeG.raise();
+                        }
                     });
 
                     const nameY = 72;
