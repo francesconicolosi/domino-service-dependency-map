@@ -6,12 +6,123 @@ import {
     closeSideDrawer,
     initCommonActions,
     getFormattedDate,
-    createFormattedLongTextElementsFrom
+    createFormattedLongTextElementsFrom, getCellValue, refreshDrawerColumnIcons, splitValues, isUrl
 } from './utils.js';
 
 
 let nodes = [];
 let links = [];
+let sortKey = null;
+let sortDir = 'asc';
+
+function parseSortParam(param) {
+    if (!param) return null;
+    const [rawLabel, rawDir] = param.split(':');
+    const key = normalizeColumnToken(decodeURIComponent(rawLabel || ''));
+    if (!key) return null;
+    const dir = (rawDir || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
+    return { key, dir };
+}
+
+function syncSortParamInUrl() {
+    const url = new URL(window.location.href);
+    const isListVisible = document.getElementById('list-view')?.style.display === 'block';
+    if (!isListVisible || !sortKey) {
+        url.searchParams.delete('sort');
+    } else {
+        // Etichetta della chiave come in header (ID per 'id', altrimenti la chiave stessa)
+        url.searchParams.set('sort', `${encodeURIComponent(labelForKey(sortKey))}:${sortDir}`);
+    }
+    window.history.replaceState({}, '', url.toString());
+}
+
+function getComparableValue(n, key) {
+    if (key === 'id') return (n.id ?? '').toString().toLowerCase();
+
+    const raw = n?.[key] ?? '';
+    if (key === 'Decommission Date') {
+        const t = Date.parse(raw);
+        return isNaN(t) ? Number.NEGATIVE_INFINITY : t; // numerico per confronti
+    }
+    return String(raw).toLowerCase();
+}
+
+function getSortIndicator(key) {
+    if (key !== sortKey) return '';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+}
+
+
+const LABEL_FOR_KEY = {
+    id: 'ID'
+};
+
+function normalizeColumnToken(token) {
+    if (!token) return null;
+    const t = token.trim();
+    if (!t) return null;
+
+    if (/^(id|ID|Service Name)$/i.test(t)) return 'id';
+
+    return t;
+}
+
+function labelForKey(key) {
+    if (key === 'id') return LABEL_FOR_KEY.id;
+    return key;
+}
+
+function serializeColumnsToParam(keys) {
+    const tokens = keys.map(k => (k === 'id' ? LABEL_FOR_KEY.id : k));
+    return tokens.join(',');
+}
+
+function parseListViewParam(param) {
+    if (!param) return null;
+    return param
+        .split(',')
+        .map(s => normalizeColumnToken(decodeURIComponent(s)))
+        .filter(Boolean);
+}
+
+const DEFAULT_COLUMN_KEYS = [
+    'id',
+    'Description',
+    'Type',
+    'Depends on',
+    'Status',
+    'Decommission Date'
+];
+
+let currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
+
+function syncListViewParamInUrl() {
+    const url = new URL(window.location.href);
+    if (!currentColumnKeys.length) {
+        url.searchParams.delete('listView');
+    } else {
+        url.searchParams.set('listView', serializeColumnsToParam(currentColumnKeys));
+    }
+    window.history.replaceState({}, '', url.toString());
+}
+
+function toggleColumn(key) {
+    const idx = currentColumnKeys.indexOf(key);
+    if (idx >= 0) {
+        if (currentColumnKeys.length === 1) return; // evita di rimanere senza colonne
+        currentColumnKeys.splice(idx, 1);
+    } else {
+        currentColumnKeys.push(key);
+    }
+    syncListViewParamInUrl();
+
+    if (document.getElementById('list-view')?.style.display === 'block') {
+        renderListFromSearch();
+    }
+    refreshDrawerColumnIcons();
+}
+
+
 let hideStoppedServices = !(document.getElementById('toggle-decommissioned').checked);
 let searchTerm = "";
 let activeServiceNodes;
@@ -19,6 +130,8 @@ let activeServiceNodeIds;
 let linkGraph;
 let nodeGraph;
 let labels;
+let currentSearchedNodes = new Set();
+let currentNodes = [];
 let simulation;
 let g;
 let zoom;
@@ -202,30 +315,61 @@ document.getElementById('fileInput').addEventListener('change', function (event)
     reader.readAsText(file);
 });
 
+function activateInitialListViewIfNeeded() {
+    const listViewParam = getQueryParam('listView');
+    const sortParam = getQueryParam('sort');
+    const parsedSort = parseSortParam(sortParam);
+    if (parsedSort && (!currentColumnKeys.length || currentColumnKeys.includes(parsedSort.key))) {
+        sortKey = parsedSort.key;
+        sortDir = parsedSort.dir;
+    }
+    if (listViewParam) {
+        toListView();
+    }
+}
+
 window.addEventListener('load', function () {
     let searchParam = null;
     const searchInput = document.getElementById('drawer-search-input');
+
+    const listViewParam = getQueryParam('listView');
+    const parsedCols = parseListViewParam(listViewParam);
+    if (parsedCols && parsedCols.length) {
+        currentColumnKeys = parsedCols;
+    } else {
+        currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
+    }
+
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
             if (searchParam) {
                 searchTerm = searchParam;
-                searchInput.value = searchParam;
+                if (searchInput) searchInput.value = searchParam;
             }
             return response.text();
         })
         .then(csvData => {
             const data = d3.csvParse(csvData);
             processData(data);
+            const afterInit = () => {
+                updateVisualization(nodeGraph, linkGraph, labels);
+
+                if (listViewParam) {
+                    toListView();
+                    syncListViewParamInUrl();
+                    syncSortParamInUrl();
+                }
+            };
             if (searchParam) {
                 simulation.on('end', () => {
                     if (!hasLoaded) {
                         hasLoaded = true;
-                        updateVisualization(nodeGraph, linkGraph, labels);
+                        afterInit();
                     }
                 });
             } else {
-                updateVisualization(nodeGraph, linkGraph, labels);
+                afterInit();
             }
         })
         .catch(error => console.error('Error loading the CSV file:', error));
@@ -279,21 +423,33 @@ function getTermToCompare(term) {
 
 function isSearchResultWithKeyValue(node) {
     if (!searchTerm.includes(":")) return false;
-    let isAccurateSearch = searchTerm.includes('"');
-    let searchTermToConsider = isAccurateSearch ? searchTerm.replaceAll('"', '') : searchTerm;
+    const isNegation = searchTerm.trim().startsWith("!");
+    const term = isNegation ? searchTerm.trim().slice(1) : searchTerm.trim();
 
-    let parts = searchTermToConsider.split(':');
-    let hasValidFormat = parts.length === 2 && Object.keys(node).includes(parts[0]);
+    const isAccurateSearch = term.includes('"');
+    const termClean = isAccurateSearch ? term.replaceAll('"', '') : term;
 
-    if (!hasValidFormat) return false;
+    const parts = termClean.split(':');
+    if (parts.length !== 2) return false;
 
-    let key = parts[0];
-    let values = parts[1].split(',').map(v => getTermToCompare(v.trim()));
-    let nodeData = getTermToCompare(node[key]);
+    const key = parts[0];
+    if (!Object.keys(node).includes(key)) return false;
 
-    return values.some(value =>
+    const rawValue = parts[1].trim();
+
+    if (isNegation && rawValue === "") {
+        return (node[key] ?? "").trim() !== "";
+    }
+
+    const expectedValues = rawValue.split(',')
+        .map(v => getTermToCompare(v.trim()));
+
+    const nodeData = getTermToCompare(node[key] ?? "");
+
+    const matches = expectedValues.some(value =>
         isAccurateSearch ? nodeData === value : nodeData.includes(value)
     );
+    return isNegation ? !matches : matches;
 }
 
 
@@ -306,6 +462,215 @@ function isSearchResultValueOnly(d) {
         typeof value === 'string' &&
         terms.some(term => value.toLowerCase().includes(term))
     );
+}
+
+const mapEl      = document.getElementById('map');
+const listViewEl = document.getElementById('list-view');
+const legendEl   = document.getElementById('legend');
+const btnList    = document.getElementById('view-list');
+const btnGraph   = document.getElementById('view-graph');
+
+function toListView() {
+    mapEl.style.display = 'none';
+    if (legendEl) legendEl.style.display = 'none';
+    listViewEl.style.display = 'block';
+
+    btnList.style.display  = 'none';
+    btnGraph.style.display = 'inline-block';
+
+    syncListViewParamInUrl();
+    syncSortParamInUrl();
+
+    renderListFromSearch();
+}
+
+function toGraphView() {
+    mapEl.style.display = 'block';
+    if (legendEl) legendEl.style.display = '';
+    listViewEl.style.display = 'none';
+
+    btnGraph.style.display = 'none';
+    btnList.style.display  = 'inline-block';
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('listView');
+    url.searchParams.delete('sort');
+    window.history.replaceState({}, '', url.toString());
+}
+
+btnList.addEventListener('click', toListView);
+btnGraph.addEventListener('click', toGraphView);
+
+function renderListFromSearch() {
+    if (!currentNodes) {
+        listViewEl.innerHTML = `<p class="empty-state">No data available.</p>`;
+        return;
+    }
+
+    let results = currentNodes.filter(n => currentSearchedNodes?.has?.(n.id));
+
+    const isListVisible = listViewEl.style.display === 'block';
+    const noSearch = (searchTerm === "" || !searchTerm);
+    if (isListVisible && noSearch && results.length === 0) {
+        results = [...currentNodes];
+    }
+
+    listViewEl.innerHTML = '';
+
+    if (sortKey) {
+        results = results.slice().sort((a, b) => {
+            const va = getComparableValue(a, sortKey);
+            const vb = getComparableValue(b, sortKey);
+            let cmp = 0;
+            if (sortKey === 'Decommission Date' && typeof va === 'number' && typeof vb === 'number') {
+                cmp = (va === vb ? 0 : (va < vb ? -1 : 1));
+            } else {
+                cmp = String(va).localeCompare(String(vb), undefined, { sensitivity: 'base', numeric: true });
+            }
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+    }
+
+    if (!results.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty-state';
+        empty.textContent = 'No results after your filtered search.';
+        listViewEl.appendChild(empty);
+        return;
+    }
+
+    //if (!currentColumnKeys.length) {
+    //    listViewEl.innerHTML = `<p class="empty-state">Nessuna colonna selezionata. Usa il drawer per aggiungerne (+).</p>`;
+    //    return;
+    //}
+
+    const table = document.createElement('table');
+    table.className = 'result-table';
+    table.style.setProperty('--cols', String(currentColumnKeys.length));
+
+    // --- HEADER con pulsanti "−" per ogni colonna visibile ---
+    const thead = document.createElement('thead');
+
+// Event delegation: intercetta click sui pulsanti - in header
+    thead.addEventListener('click', (e) => {
+        const btn = e.target.closest('.col-op');
+        if (btn) {
+            e.preventDefault(); e.stopPropagation();
+            const col = decodeURIComponent(btn.getAttribute('data-col'));
+            toggleColumn(col);
+            return;
+        }
+        const title = e.target.closest('.th-title');
+        if (title) {
+            const th = title.closest('th');
+            const col = th?.getAttribute('data-col');
+            if (!col) return;
+            if (sortKey === col) {
+                sortDir = (sortDir === 'asc' ? 'desc' : 'asc');
+            } else {
+                sortKey = col;
+                sortDir = 'asc';
+            }
+            syncSortParamInUrl();         // ⬅️ aggiorna sempre l’URL al click
+            renderListFromSearch();       // ricalcola
+        }
+    });
+
+    const trh = document.createElement('tr');
+
+    currentColumnKeys.forEach(key => {
+        const th = document.createElement('th');
+        th.setAttribute('data-col', key);
+
+        const cellWrap = document.createElement('div');
+        cellWrap.className = 'th-cell';
+
+        const title = document.createElement('button');  // focusable
+        title.className = 'th-title fade-link';
+        title.type = 'button';
+        title.textContent = `${labelForKey(key)}${getSortIndicator(key)}`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'col-op fade-link';
+        removeBtn.type = 'button';
+        removeBtn.textContent = '−';
+        removeBtn.setAttribute('data-col', encodeURIComponent(key));
+        removeBtn.setAttribute('aria-label', `Remove "${labelForKey(key)}" from list view`);
+
+        cellWrap.appendChild(title);
+        cellWrap.appendChild(removeBtn);
+        th.appendChild(cellWrap);
+        trh.appendChild(th);
+    });
+
+    thead.appendChild(trh);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    results.forEach(n => {
+        const tr = document.createElement('tr');
+        tr.setAttribute('role', 'button');
+        tr.tabIndex = 0;
+
+        const openDetails = () => {
+            clickedNode = n;
+            if (window.d3 && window.labels) {
+                labels.classed('highlight', d => d.id === n.id);
+            }
+            showNodeDetails(n, true);
+        };
+
+        tr.addEventListener('click', openDetails);
+        tr.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openDetails();
+            }
+        });
+
+        currentColumnKeys.forEach(key => {
+            const td = document.createElement('td');
+            const raw = (key === 'id') ? (n.id ?? '') : (n[key] ?? '');
+
+            if (typeof raw === 'string' && raw) {
+                const parts = splitValues(raw);
+
+                if (parts.some(p => isUrl(p))) {
+                    if (parts.length > 1) {
+                        const ul = document.createElement('ul');
+                        parts.forEach(p => {
+                            const li = document.createElement('li');
+                            li.innerHTML = isUrl(p) ? getLink(p) : p;   // getLink = stesso tronco del drawer
+                            ul.appendChild(li);
+                        });
+                        td.appendChild(ul);
+                    } else {
+                        td.innerHTML = getLink(parts[0]);
+                    }
+                } else {
+                    const uniqueParts = splitValues(raw);
+                    td.textContent = uniqueParts.join(', ');
+                }
+            } else {
+                td.textContent = getCellValue(n, key);
+            }
+
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    listViewEl.appendChild(table);
+}
+
+function focusNodeOnGraph(nodeId) {
+    if (window.d3 && window.labels) {
+        labels.classed('highlight', d => d.id === nodeId);
+        // centerOnNode(nodeId);
+    }
 }
 
 
@@ -357,7 +722,13 @@ function updateVisualization(node, link, labels, showDrawer = true) {
     link.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.source.id) && activeServiceNodeIds.has(d.target.id)) || relatedLinks.includes(d) ? 'block' : 'none');
     labels.style('display', d => (searchTerm === "" && !hideStoppedServices) || (searchTerm === "" && hideStoppedServices && activeServiceNodeIds.has(d.id)) || relatedNodes.has(d.id) && (!hideStoppedServices || activeServiceNodeIds.has(d.id)) ? 'block' : 'none');
     labels.style('text-decoration', d => searchedNodes.has(d.id) ? 'underline' : 'none');
-    if (!clickedNode && nodeToZoom && (!hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
+    currentNodes = nodes;
+    currentSearchedNodes = searchedNodes;
+
+
+    if (document.getElementById('list-view')?.style.display === 'block') {
+        renderListFromSearch();
+    } else if (!clickedNode && nodeToZoom && (!hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
         centerAndZoomOnNode(nodeToZoom);
         showNodeDetails(nodeToZoom, showDrawer);
     }
@@ -406,33 +777,73 @@ function showNodeDetails(node, openDrawer = true) {
             const tdKey = document.createElement('td');
             const tdValue = document.createElement('td');
 
-            const separator = value.includes("\n,") ? "\n," : value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
-            if (value.startsWith('http') && !value.includes(' ')) {
-                tdValue.innerHTML = `<i>
-                    ${separator !== ""
-                    ? `<ul>${[...new Set(value.split(separator).map(v => v.trim()).filter(Boolean))].map(v => `<li>${getLink(v)}</li>`).join("")}</ul>`
-                    : getLink(value)
-                }</i>`;
-            } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
-                tdValue.innerHTML = `
-                  <i>
-                    ${separator !== ""
-                    ? `<ul>${[...new Set(value.split(separator).map(v => v.trim()).filter(Boolean))].map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
-                    : getPeopleDbLink(value)
-                }</i>`;
+            if (!descriptionFields.includes(key) && value !== "") {
+                const parts = splitValues(value);
 
-            } else if (!descriptionFields.includes(key) && value !== "") {
-                if (separator !== "" && value.includes(separator)) {
+                if (parts.some(p => isUrl(p))) {
+                    tdValue.innerHTML = '';
+                    if (parts.length > 1) {
+                        const ul = document.createElement('ul');
+                        parts.forEach(p => {
+                            const li = document.createElement('li');
+                            li.innerHTML = isUrl(p) ? getLink(p) : p;
+                            ul.appendChild(li);
+                        });
+                        tdValue.appendChild(ul);
+                    } else {
+                        tdValue.innerHTML = getLink(parts[0]);
+                    }
+
+                } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
                     tdValue.innerHTML = `
-                    <i>${value.split(separator).map(v => `${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a>  `)}</i>`;
+          <i>
+            ${parts.length > 1
+                        ? `<ul>${parts.map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
+                        : getPeopleDbLink(parts[0])
+                    }
+          </i>`;
+
                 } else {
-                    tdValue.innerHTML = `<i>${value} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(value)} href="#">⌞ ⌝</a></i>`;
+                    tdValue.innerHTML = '';
+                    if (parts.length > 1) {
+                        const ul = document.createElement('ul');
+                        parts.forEach(v => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a></i>`;
+                            ul.appendChild(li);
+                        });
+                        tdValue.appendChild(ul);
+                    } else {
+                        const v = parts[0];
+                        tdValue.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#">⌞ ⌝</a></i>`;
+                    }
                 }
             } else {
                 createFormattedLongTextElementsFrom(value).forEach(element => tdValue.appendChild(element));
             }
 
-            tdKey.textContent = key;
+            const colKey = (key === 'Service Name') ? 'id' : key;
+
+            tdKey.innerHTML = '';
+            const keyLabel = document.createElement('span');
+            keyLabel.textContent = key;
+
+            const isListVisible = document.getElementById('list-view')?.style.display === 'block';
+            if (isListVisible) {
+                const isSelected = currentColumnKeys.includes(colKey);
+                const opBtn = document.createElement('button');
+                opBtn.className = 'col-op fade-link';
+                opBtn.type = 'button';
+                opBtn.setAttribute('data-col', encodeURIComponent(colKey));
+                opBtn.setAttribute('aria-label', isSelected ? `Rimuovi "${labelForKey(colKey)}" dalla vista elenco`
+                    : `Aggiungi "${labelForKey(colKey)}" alla vista elenco`);
+                opBtn.textContent = isSelected ? '−' : '+';
+                tdKey.appendChild(keyLabel);
+                tdKey.appendChild(opBtn);
+            } else {
+                tdKey.appendChild(keyLabel);
+            }
+
 
             row.appendChild(tdKey);
             row.appendChild(tdValue);
@@ -459,6 +870,12 @@ function showNodeDetails(node, openDrawer = true) {
             table.appendChild(row);
         }
     });
+    table.addEventListener('click', (e) => {
+        const btn = e.target.closest('.col-op');
+        if (!btn) return;
+        const col = decodeURIComponent(btn.getAttribute('data-col'));
+        toggleColumn(col);
+    });
 
     drawerContent.appendChild(table);
 
@@ -472,6 +889,7 @@ function showNodeDetails(node, openDrawer = true) {
 function createMap() {
 
     zoom = d3.zoom()
+        .scaleExtent([0.1, 3])
         .on("zoom", zoomed);
 
     svg = d3.select('#map').append('svg')

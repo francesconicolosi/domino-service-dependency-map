@@ -12,6 +12,50 @@ export const thirdLevelNA = `No ${thirdOrgLevel}`;
 
 let searchActive = false;
 
+const URL_RE = /^https?:\/\/\S+$/i;
+export function isUrl(v) {
+    return URL_RE.test(v);
+}
+
+export function splitValues(value) {
+    const sep = value.includes("\n,") ? "\n," : value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
+    if (!sep) return [value.trim()];
+    return [...new Set(value.split(sep).map(s => s.trim()).filter(Boolean))];
+}
+
+export function refreshDrawerColumnIcons() {
+    const drawerContent = document.getElementById('drawerContent');
+    if (!drawerContent) return;
+    const isListVisible = document.getElementById('list-view')?.style.display === 'block';
+    const buttons = drawerContent.querySelectorAll('.col-op');
+    buttons.forEach(btn => {
+        const col = decodeURIComponent(btn.getAttribute('data-col'));
+        const selected = currentColumnKeys.includes(col);
+        btn.textContent = selected ? '−' : '+';
+        btn.setAttribute('aria-label', selected
+            ? `Rimuovi "${labelForKey(col)}" dalla vista elenco`
+            : `Aggiungi "${labelForKey(col)}" alla vista elenco`
+        );
+        // se lista non visibile, nascondi le icone
+        btn.style.display = isListVisible ? '' : 'none';
+    });
+}
+
+export function getCellValue(node, key) {
+    if (key === 'id') return node?.id ?? '';
+
+    const raw = node?.[key] ?? '';
+    if (key === 'Depends on' && typeof raw === 'string') {
+        return raw.split('\n').map(s => s.trim()).filter(Boolean).join(', ');
+    }
+    if (key === 'Decommission Date' && raw) {
+        const d = new Date(raw);
+        return isNaN(d.getTime()) ? raw : getFormattedDate(d.toISOString());
+    }
+    return raw;
+}
+
+
 export function clearFieldHighlights() {
     document
         .querySelectorAll('.field-hit-highlight, .role-hit-highlight')
