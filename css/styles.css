@@ -755,3 +755,8 @@ circle {
     padding: 0;
     margin-left: 4px;
 }
+
+.result-table th:not(:last-child),
+.result-table td:not(:last-child) {
+    border-right: 1px solid rgba(0,0,0,0.04);
+}

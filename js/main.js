@@ -57,6 +57,8 @@ const LABEL_FOR_KEY = {
     id: 'ID'
 };
 
+const descriptionFields = ['Contingency and Recovery Planning', 'Description'];
+
 function normalizeColumnToken(token) {
     if (!token) return null;
     const t = token.trim();
@@ -648,6 +650,10 @@ function renderListFromSearch() {
                     } else {
                         td.innerHTML = getLink(parts[0]);
                     }
+                } else if (descriptionFields.includes(key)) {
+                    td.innerHTML = "";
+                    createFormattedLongTextElementsFrom(raw)
+                        .forEach(el => td.appendChild(el));
                 } else {
                     const uniqueParts = splitValues(raw);
                     td.textContent = uniqueParts.join(', ');
@@ -768,7 +774,6 @@ function showNodeDetails(node, openDrawer = true) {
     drawerContent.innerHTML = '';
 
     const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name'];
-    const descriptionFields = ['Contingency and Recovery Planning', 'Description'];
     const table = document.createElement('table');
 
     for (const [key, value] of Object.entries(node)) {
