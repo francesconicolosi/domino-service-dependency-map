@@ -15,6 +15,8 @@ let links = [];
 let sortKey = null;
 let sortDir = 'asc';
 
+const uniqueIds = ["id", "Name"];
+
 function parseSortParam(param) {
     if (!param) return null;
     const [rawLabel, rawDir] = param.split(':');
@@ -355,8 +357,8 @@ window.addEventListener('load', function () {
             const data = d3.csvParse(csvData);
             processData(data);
             const afterInit = () => {
-                updateVisualization(nodeGraph, linkGraph, labels);
-
+                const showDrawer =  typeof searchParam === 'string' && uniqueIds.includes(searchParam.split(':')[0]);
+                updateVisualization(nodeGraph, linkGraph, labels, showDrawer);
                 if (listViewParam) {
                     toListView();
                     syncListViewParamInUrl();
