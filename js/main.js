@@ -718,11 +718,12 @@ function updateVisualization(node, link, labels, showDrawer = true) {
     let nodeToZoom;
 
     node.each(d => {
-        if (isSearchResultWithKeyValue(d)) {
-            nodeToZoom = d;
+        const byKey   = isSearchResultWithKeyValue(d);
+        const byValue = relaxedSearchEnabled && isSearchResultValueOnly(d);
+        if (byKey || byValue) {
+            nodeToZoom = nodeToZoom || d;
             relatedNodes.add(d.id);
-        } else if (relaxedSearchEnabled && isSearchResultValueOnly(d)) {
-            relatedNodes.add(d.id);
+            searchedNodes.add(d.id);
         }
     });
 
