@@ -6,7 +6,13 @@ import {
     closeSideDrawer,
     initCommonActions,
     getFormattedDate,
-    createFormattedLongTextElementsFrom, getCellValue, refreshDrawerColumnIcons, splitValues, isUrl
+    createFormattedLongTextElementsFrom,
+    getCellValue,
+    refreshDrawerColumnIcons,
+    splitValues,
+    isUrl,
+    labelForKey,
+    LABEL_FOR_KEY, isListViewVisible
 } from './utils.js';
 
 
@@ -28,11 +34,10 @@ function parseSortParam(param) {
 
 function syncSortParamInUrl() {
     const url = new URL(window.location.href);
-    const isListVisible = document.getElementById('list-view')?.style.display === 'block';
+    const isListVisible = isListViewVisible();
     if (!isListVisible || !sortKey) {
         url.searchParams.delete('sort');
     } else {
-        // Etichetta della chiave come in header (ID per 'id', altrimenti la chiave stessa)
         url.searchParams.set('sort', `${encodeURIComponent(labelForKey(sortKey))}:${sortDir}`);
     }
     window.history.replaceState({}, '', url.toString());
@@ -54,11 +59,6 @@ function getSortIndicator(key) {
     return sortDir === 'asc' ? ' ↑' : ' ↓';
 }
 
-
-const LABEL_FOR_KEY = {
-    id: 'ID'
-};
-
 const descriptionFields = ['Contingency and Recovery Planning', 'Description'];
 
 function normalizeColumnToken(token) {
@@ -69,11 +69,6 @@ function normalizeColumnToken(token) {
     if (/^(id|ID|Service Name)$/i.test(t)) return 'id';
 
     return t;
-}
-
-function labelForKey(key) {
-    if (key === 'id') return LABEL_FOR_KEY.id;
-    return key;
 }
 
 function serializeColumnsToParam(keys) {
@@ -98,25 +93,25 @@ const DEFAULT_COLUMN_KEYS = [
     'Decommission Date'
 ];
 
-let currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
+window.currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
 
 function syncListViewParamInUrl() {
     const url = new URL(window.location.href);
-    if (!currentColumnKeys.length) {
+    if (!window.currentColumnKeys.length) {
         url.searchParams.delete('listView');
     } else {
-        url.searchParams.set('listView', serializeColumnsToParam(currentColumnKeys));
+        url.searchParams.set('listView', serializeColumnsToParam(window.currentColumnKeys));
     }
     window.history.replaceState({}, '', url.toString());
 }
 
 function toggleColumn(key) {
-    const idx = currentColumnKeys.indexOf(key);
+    const idx = window.currentColumnKeys.indexOf(key);
     if (idx >= 0) {
-        if (currentColumnKeys.length === 1) return; // evita di rimanere senza colonne
-        currentColumnKeys.splice(idx, 1);
+        if (window.currentColumnKeys.length === 1) return;
+        window.currentColumnKeys.splice(idx, 1);
     } else {
-        currentColumnKeys.push(key);
+        window.currentColumnKeys.push(key);
     }
     syncListViewParamInUrl();
 
@@ -151,39 +146,9 @@ const defaultSearchKey = "id";
 
 const serviceInfoEnhancers = [
     function generateIssueTrackingTool(node) {
-        if (!node.id) return null;
-
-
-        const rawId = (node?.id ?? '').toLowerCase().trim();
-        const noSpaces = rawId.replace(/\s+/g, '');
-        const noPunct = noSpaces.replace(/[^\w]/g, '');
-        const keepHyphen = noSpaces.replace(/[^\w-]/g, '');
-        const hyphenToUnderscore = keepHyphen
-            .replace(/-/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_+|_+$/g, '');
-
-        const values = Array.from(new Set([noPunct, keepHyphen, hyphenToUnderscore].filter(Boolean)));
-        const inList = values.map(v => `"${v}"`).join(', ');
-
-        const jql = `
-  (
-    project = "ShareProject" AND statusCategory in (EMPTY, "To Do", "In Progress")
-    OR
-    project = GDT AND statusCategory in (EMPTY, "To Do", "In Progress")
-    AND labels in (bug-from-incident, from_l1_portal) AND issuetype = Bug
-  )
-  AND "Theme[Checkboxes]" in (Theme1, Theme2)
-  AND cf[14139] in (${inList})
-  ORDER BY created ASC
-`.replace(/\s+/g, ' ').trim();
-
-        const jiraUrl = `https://sharetool.sharecompany.net/issues/?jql=${encodeURIComponent(jql)}`;
-
-        return {
-            key: "Jira Issues",
-            value: jiraUrl,
-        }
+        const url = computeTrackingSoftwareValue(node);
+        if (!url) return null;
+        return {key: "Tracking Issues", value: url};
     }
 ];
 
@@ -323,7 +288,7 @@ function activateInitialListViewIfNeeded() {
     const listViewParam = getQueryParam('listView');
     const sortParam = getQueryParam('sort');
     const parsedSort = parseSortParam(sortParam);
-    if (parsedSort && (!currentColumnKeys.length || currentColumnKeys.includes(parsedSort.key))) {
+    if (parsedSort && (!window.currentColumnKeys.length || window.urrentColumnKeys.includes(parsedSort.key))) {
         sortKey = parsedSort.key;
         sortDir = parsedSort.dir;
     }
@@ -339,9 +304,9 @@ window.addEventListener('load', function () {
     const listViewParam = getQueryParam('listView');
     const parsedCols = parseListViewParam(listViewParam);
     if (parsedCols && parsedCols.length) {
-        currentColumnKeys = parsedCols;
+        window.currentColumnKeys = parsedCols;
     } else {
-        currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
+        window.currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
     }
 
     fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
@@ -357,12 +322,19 @@ window.addEventListener('load', function () {
             const data = d3.csvParse(csvData);
             processData(data);
             const afterInit = () => {
-                const showDrawer =  typeof searchParam === 'string' && uniqueIds.includes(searchParam.split(':')[0]);
-                updateVisualization(nodeGraph, linkGraph, labels, showDrawer);
-                if (listViewParam) {
+                const wantListView = Boolean(listViewParam);
+                if (wantListView) {
                     toListView();
                     syncListViewParamInUrl();
                     syncSortParamInUrl();
+                }
+                const showDrawer = typeof searchParam === 'string' && uniqueIds.includes(searchParam.split(':')[0]);
+                updateVisualization(nodeGraph, linkGraph, labels, showDrawer);
+
+                if (wantListView && showDrawer) {
+                    const id = searchParam.split(':')[1]?.replace(/"/g, '');
+                    const node = nodes.find(n => n.id === id);
+                    if (node) showNodeDetails(node, true);
                 }
             };
             if (searchParam) {
@@ -505,6 +477,20 @@ function toGraphView() {
 btnList.addEventListener('click', toListView);
 btnGraph.addEventListener('click', toGraphView);
 
+function manageMultiPart(parts, td) {
+    if (parts.length > 1) {
+        const ul = document.createElement('ul');
+        parts.forEach(p => {
+            const li = document.createElement('li');
+            li.innerHTML = isUrl(p) ? getLink(p) : p;
+            ul.appendChild(li);
+        });
+        td.appendChild(ul);
+    } else {
+        td.innerHTML = getLink(parts[0]);
+    }
+}
+
 function renderListFromSearch() {
     if (!currentNodes) {
         listViewEl.innerHTML = `<p class="empty-state">No data available.</p>`;
@@ -513,7 +499,7 @@ function renderListFromSearch() {
 
     let results = currentNodes.filter(n => currentSearchedNodes?.has?.(n.id));
 
-    const isListVisible = listViewEl.style.display === 'block';
+    const isListVisible = isListViewVisible();
     const noSearch = (searchTerm === "" || !searchTerm);
     if (isListVisible && noSearch && results.length === 0) {
         results = [...currentNodes];
@@ -543,23 +529,17 @@ function renderListFromSearch() {
         return;
     }
 
-    //if (!currentColumnKeys.length) {
-    //    listViewEl.innerHTML = `<p class="empty-state">Nessuna colonna selezionata. Usa il drawer per aggiungerne (+).</p>`;
-    //    return;
-    //}
-
     const table = document.createElement('table');
     table.className = 'result-table';
-    table.style.setProperty('--cols', String(currentColumnKeys.length));
+    table.style.setProperty('--cols', String(window.currentColumnKeys.length));
 
-    // --- HEADER con pulsanti "−" per ogni colonna visibile ---
     const thead = document.createElement('thead');
 
-// Event delegation: intercetta click sui pulsanti - in header
     thead.addEventListener('click', (e) => {
         const btn = e.target.closest('.col-op');
         if (btn) {
-            e.preventDefault(); e.stopPropagation();
+            e.preventDefault();
+            e.stopPropagation();
             const col = decodeURIComponent(btn.getAttribute('data-col'));
             toggleColumn(col);
             return;
@@ -575,14 +555,14 @@ function renderListFromSearch() {
                 sortKey = col;
                 sortDir = 'asc';
             }
-            syncSortParamInUrl();         // ⬅️ aggiorna sempre l’URL al click
-            renderListFromSearch();       // ricalcola
+            syncSortParamInUrl();
+            renderListFromSearch();
         }
     });
 
     const trh = document.createElement('tr');
 
-    currentColumnKeys.forEach(key => {
+    window.currentColumnKeys.forEach(key => {
         const th = document.createElement('th');
         th.setAttribute('data-col', key);
 
@@ -633,25 +613,20 @@ function renderListFromSearch() {
             }
         });
 
-        currentColumnKeys.forEach(key => {
+        window.currentColumnKeys.forEach(key => {
             const td = document.createElement('td');
-            const raw = (key === 'id') ? (n.id ?? '') : (n[key] ?? '');
+
+            let raw = (key === 'id') ? (n.id ?? '') : (n[key] ?? '');
+            if (key === 'Tracked Issues' && !raw) {
+                const computed = computeTrackingSoftwareValue(n);
+                if (computed) raw = computed;
+            }
 
             if (typeof raw === 'string' && raw) {
                 const parts = splitValues(raw);
 
                 if (parts.some(p => isUrl(p))) {
-                    if (parts.length > 1) {
-                        const ul = document.createElement('ul');
-                        parts.forEach(p => {
-                            const li = document.createElement('li');
-                            li.innerHTML = isUrl(p) ? getLink(p) : p;   // getLink = stesso tronco del drawer
-                            ul.appendChild(li);
-                        });
-                        td.appendChild(ul);
-                    } else {
-                        td.innerHTML = getLink(parts[0]);
-                    }
+                    manageMultiPart(parts, td);
                 } else if (descriptionFields.includes(key)) {
                     td.innerHTML = "";
                     createFormattedLongTextElementsFrom(raw)
@@ -766,126 +741,133 @@ function getLink(value) {
     return `<a href="${value}" target="_blank">${formattedValue}</a>`;
 }
 
+function computeTrackingSoftwareValue(node) {
+    if (!node?.id) return '';
+    const rawId = (node.id ?? '').toLowerCase().trim();
+    const noSpaces = rawId.replace(/\s+/g, '');
+    const noPunct = noSpaces.replace(/[^\w]/g, '');
+    const keepHyphen = noSpaces.replace(/[^\w-]/g, '');
+    const hyphenToUnderscore = keepHyphen
+        .replace(/-/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    const values = Array.from(new Set([noPunct, keepHyphen, hyphenToUnderscore].filter(Boolean)));
+    const inList = values.map(v => `"${v}"`).join(', ');
+
+    const jql = `
+   (
+     project = "Company Managed Services Support" AND statusCategory in (EMPTY, "To Do", "In Progress")
+     OR
+     project = GDT AND statusCategory in (EMPTY, "To Do", "In Progress")
+     AND labels in (bug-from-incident, from_l1_portal) AND issuetype = Bug
+   )
+   AND "Theme[Checkboxes]" in (App, "Brand & Content", Krypto, Content, Cross, Omni, "Product Discovery", Purchase, Loyalty, "IT 4 IT")
+   AND cf[14139] in (${inList})
+   ORDER BY created ASC
+ `.replace(/\s+/g, ' ').trim();
+    return `https://nycosoft.trackingsowftare.net/issues/?jql=${encodeURIComponent(jql)}`;
+}
+
 function showNodeDetails(node, openDrawer = true) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('overlay');
     const drawerContent = document.getElementById('drawerContent');
 
-    const drawerHeaderTitle = drawer.querySelector('.drawer-header h2');
-    drawerHeaderTitle.textContent = node['Service Name'] || 'Service Information';
+    const title = drawer.querySelector('.drawer-header h2');
+    title.textContent = node['Service Name'] || 'Service Information';
 
     drawerContent.innerHTML = '';
 
-    const excludedFields = ['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name'];
+    const excluded = new Set(['index','x','y','vy','vx','fx','fy','color','Service Name']);
+    const isListVisible = isListViewVisible();
     const table = document.createElement('table');
+    const renderedKeys = new Set();
 
-    for (const [key, value] of Object.entries(node)) {
-        if (!excludedFields.includes(key) && typeof value === 'string' && value) {
-            const row = document.createElement('tr');
-            const tdKey = document.createElement('td');
-            const tdValue = document.createElement('td');
-
-            if (!descriptionFields.includes(key) && value !== "") {
-                const parts = splitValues(value);
-
-                if (parts.some(p => isUrl(p))) {
-                    tdValue.innerHTML = '';
-                    if (parts.length > 1) {
-                        const ul = document.createElement('ul');
-                        parts.forEach(p => {
-                            const li = document.createElement('li');
-                            li.innerHTML = isUrl(p) ? getLink(p) : p;
-                            ul.appendChild(li);
-                        });
-                        tdValue.appendChild(ul);
-                    } else {
-                        tdValue.innerHTML = getLink(parts[0]);
-                    }
-
-                } else if (value && searchableAttributesOnPeopleDb.includes(key)) {
-                    tdValue.innerHTML = `
-          <i>
-            ${parts.length > 1
-                        ? `<ul>${parts.map(v => `<li>${getPeopleDbLink(v)}</li>`).join("")}</ul>`
-                        : getPeopleDbLink(parts[0])
-                    }
-          </i>`;
-
-                } else {
-                    tdValue.innerHTML = '';
-                    if (parts.length > 1) {
-                        const ul = document.createElement('ul');
-                        parts.forEach(v => {
-                            const li = document.createElement('li');
-                            li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#"}>⌞ ⌝</a></i>`;
-                            ul.appendChild(li);
-                        });
-                        tdValue.appendChild(ul);
-                    } else {
-                        const v = parts[0];
-                        tdValue.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key=${encodeURIComponent(key)} data-value=${encodeURIComponent(v)} href="#">⌞ ⌝</a></i>`;
-                    }
-                }
-            } else {
-                createFormattedLongTextElementsFrom(value).forEach(element => tdValue.appendChild(element));
-            }
-
-            const colKey = (key === 'Service Name') ? 'id' : key;
-
-            tdKey.innerHTML = '';
-            const keyLabel = document.createElement('span');
-            keyLabel.textContent = key;
-
-            const isListVisible = document.getElementById('list-view')?.style.display === 'block';
-            if (isListVisible) {
-                const isSelected = currentColumnKeys.includes(colKey);
-                const opBtn = document.createElement('button');
-                opBtn.className = 'col-op fade-link';
-                opBtn.type = 'button';
-                opBtn.setAttribute('data-col', encodeURIComponent(colKey));
-                opBtn.setAttribute('aria-label', isSelected ? `Rimuovi "${labelForKey(colKey)}" dalla vista elenco`
-                    : `Aggiungi "${labelForKey(colKey)}" alla vista elenco`);
-                opBtn.textContent = isSelected ? '−' : '+';
-                tdKey.appendChild(keyLabel);
-                tdKey.appendChild(opBtn);
-            } else {
-                tdKey.appendChild(keyLabel);
-            }
-
-
-            row.appendChild(tdKey);
-            row.appendChild(tdValue);
-            table.appendChild(row);
+    const renderValueCell = (key, raw) => {
+        const td = document.createElement('td');
+        if (typeof raw !== 'string') return td;
+        if (descriptionFields.includes(key)) {
+            createFormattedLongTextElementsFrom(raw).forEach(el => td.appendChild(el));
+            return td;
         }
-    }
-
-    serviceInfoEnhancers.forEach(fn => {
-        const result = fn(node);
-        if (result && result.key && result.value) {
-            const row = document.createElement('tr');
-            const tdKey = document.createElement('td');
-            const tdValue = document.createElement('td');
-
-            tdKey.textContent = result.key;
-            if (result.value.startsWith('http') && !result.value.includes(' ')) {
-                tdValue.innerHTML = `<a href="${result.value}" target="_blank">${getLink(result.value)}</a>`;
-            } else {
-                tdValue.innerHTML = `${result.value}`;
-            }
-
-            row.appendChild(tdKey);
-            row.appendChild(tdValue);
-            table.appendChild(row);
+        const parts = splitValues(raw);
+        if (parts.some(isUrl)) {
+            manageMultiPart(parts,td);
+            return td;
         }
-    });
+        if (searchableAttributesOnPeopleDb.includes(key)) {
+            td.innerHTML = `<i>${
+                parts.length > 1
+                    ? `<ul>${parts.map(v => `<li>${getPeopleDbLink(v)}</li>`).join('')}</ul>`
+                    : getPeopleDbLink(parts[0] || '')
+            }</i>`;
+            return td;
+        }
+        if (parts.length > 1) {
+            const ul = document.createElement('ul');
+            parts.forEach(v => {
+                const li = document.createElement('li');
+                li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a></i>`;
+                ul.appendChild(li);
+            });
+            td.appendChild(ul);
+        } else {
+            const v = parts[0] || '';
+            td.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a></i>`;
+        }
+        return td;
+    };
+    const renderKeyCell = (key) => {
+        const td = document.createElement('td');
+        const colKey = key === 'Service Name' ? 'id' : key;
+        const keyLabel = document.createElement('span');
+        keyLabel.textContent = key;
+        td.innerHTML = '';
+        if (isListVisible) {
+            td.appendChild(keyLabel);
+            const selected = window.currentColumnKeys.includes(colKey);
+            const btn = document.createElement('button');
+            btn.className = 'col-op fade-link';
+            btn.type = 'button';
+            btn.setAttribute('data-col', encodeURIComponent(colKey));
+            btn.setAttribute('aria-label',
+                selected ? `Remove "${labelForKey(colKey)}" from list view`
+                    : `Add "${labelForKey(colKey)}" to list view`);
+            btn.textContent = selected ? '−' : '+';
+            td.appendChild(btn);
+        } else {
+            td.appendChild(keyLabel);
+        }
+        return td;
+    };
+
+    const renderRow = (key, value) => {
+        if (renderedKeys.has(key)) return;           // dedup
+        if (excluded.has(key)) return;
+        if (typeof value !== 'string' || !value) return;
+        const tr = document.createElement('tr');
+        tr.appendChild(renderKeyCell(key));
+        tr.appendChild(renderValueCell(key, value));
+        table.appendChild(tr);
+        renderedKeys.add(key);
+    };
+    Object.entries(node).forEach(([key, value]) => renderRow(key, value));
+    serviceInfoEnhancers
+        .map(fn => fn(node))
+        .filter(r => r && r.key && r.value && !renderedKeys.has(r.key))
+        .forEach(r => renderRow(r.key, r.value));
     table.addEventListener('click', (e) => {
-        const btn = e.target.closest('.col-op');
+        const btn = e.target.closest('button.col-op');
         if (!btn) return;
+        e.stopPropagation();
         const col = decodeURIComponent(btn.getAttribute('data-col'));
         toggleColumn(col);
+        refreshDrawerColumnIcons();
     });
 
     drawerContent.appendChild(table);
+    refreshDrawerColumnIcons();
 
     if (openDrawer) {
         drawer.classList.add('open');

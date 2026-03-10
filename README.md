@@ -11,7 +11,7 @@ I started developing this small application during a train journey and it was co
 - Search for specific services.
 - View detailed information about services by clicking on nodes.
 - Zoom and drag the map.
-- Enriched fields derived from existing attributes (e.g., automatic Jira filter URLs).
+- Enriched fields derived from existing attributes (e.g., automatic Tracking Software filter URLs).
 
 ## Repository Structure
 domino-service-dependency-map/ ├── README.md ├── index.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
@@ -172,7 +172,7 @@ erDiagram
         string Id
         string Name
         string Description
-        string Jira_Theme_Field_Value
+        string Theme_Field_Value
         date   Last_Update
         string Stream_Id
     }
@@ -225,7 +225,7 @@ erDiagram
         string Technology_Risk_Level
         date   Go_Live_Date
         date   Decommission_Date
-        string Jira_Service_Registry_link
+        string Service_Registry_link
         string Admin_consoles
         string Environments
         string Hosting_platform_references

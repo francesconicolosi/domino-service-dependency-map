@@ -10,6 +10,22 @@ export const firstLevelNA = `No ${firstOrgLevel}`;
 export const secondLevelNA = `No ${secondOrgLevel}`;
 export const thirdLevelNA = `No ${thirdOrgLevel}`;
 
+export const LABEL_FOR_KEY = {
+    id: 'ID'
+};
+
+export function labelForKey(key) {
+    if (key === 'id') return LABEL_FOR_KEY.id;
+    return key;
+}
+
+export function isListViewVisible() {
+    const el = document.getElementById('list-view');
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+}
+
 let searchActive = false;
 
 const URL_RE = /^https?:\/\/\S+$/i;
@@ -26,17 +42,16 @@ export function splitValues(value) {
 export function refreshDrawerColumnIcons() {
     const drawerContent = document.getElementById('drawerContent');
     if (!drawerContent) return;
-    const isListVisible = document.getElementById('list-view')?.style.display === 'block';
-    const buttons = drawerContent.querySelectorAll('.col-op');
+    const isListVisible = isListViewVisible();
+    const buttons = drawerContent.querySelectorAll('button.col-op');
     buttons.forEach(btn => {
         const col = decodeURIComponent(btn.getAttribute('data-col'));
-        const selected = currentColumnKeys.includes(col);
+        const selected = window.currentColumnKeys.includes(col);
         btn.textContent = selected ? '−' : '+';
         btn.setAttribute('aria-label', selected
-            ? `Rimuovi "${labelForKey(col)}" dalla vista elenco`
-            : `Aggiungi "${labelForKey(col)}" alla vista elenco`
+            ? `Remove "${labelForKey(col)}" from list view`
+            : `Add "${labelForKey(col)}" to list view`
         );
-        // se lista non visibile, nascondi le icone
         btn.style.display = isListVisible ? '' : 'none';
     });
 }
