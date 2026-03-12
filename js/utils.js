@@ -9,10 +9,180 @@ export const thirdOrgLevel = 'Team member of';
 export const firstLevelNA = `No ${firstOrgLevel}`;
 export const secondLevelNA = `No ${secondOrgLevel}`;
 export const thirdLevelNA = `No ${thirdOrgLevel}`;
+export const ROLE_FIELD_WITH_MAPPING = 'Role';
+export const LOCATION_FIELD = 'Location';
+export const COMPANY_FIELD = 'Company';
+export const MAX_TEAMS_PER_ROW = 5;
+export const emailField = "Company email"; // this will be used to resolve the photo filename
+export const NEUTRAL_COLOR = '#fcfcfc';
+
+export function countRowsByTeamCapacity(secondLevelItems, capacityPerRow) {
+    let rows = 1;
+    let used = 0;
+
+    for (const [themeName, themeObj] of Object.entries(secondLevelItems)) {
+        if (themeName.includes(secondLevelNA)) continue;
+
+        const nTeams = Object.keys(themeObj || {}).length || 0;
+
+        if (used > 0 && (used + nTeams) > capacityPerRow) {
+            rows++;
+            used = 0;
+        }
+        used += nTeams;
+    }
+    return rows;
+}
+
+export function computeStreamBoxWidthByCapacity(
+    secondLevelItems,
+    secondLevelBoxPadX,
+    secondLevelNA,
+    thirdLevelBoxPadX,
+    thirdLevelBoxWidth,
+    labelExtra = SECOND_LEVEL_LABEL_EXTRA,
+    leftPad = 60,
+    rightPad = 60
+) {
+    let used = 0;
+    let rowWidth = leftPad;
+    let maxWidth = 0;
+
+    for (const [themeName, themeObj] of Object.entries(secondLevelItems)) {
+        if (themeName.includes(secondLevelNA)) continue;
+        const nTeams = Object.keys(themeObj || {}).length || 0;
+
+        const themeInnerGaps = Math.max(0, nTeams - 1) * thirdLevelBoxPadX;
+        const themeWidth = (nTeams * thirdLevelBoxWidth) + themeInnerGaps + labelExtra;
+
+        if (used > 0 && (used + nTeams) > MAX_TEAMS_PER_ROW) {
+            maxWidth = Math.max(maxWidth, rowWidth + rightPad);
+            rowWidth = leftPad;
+            used = 0;
+        }
+
+        if (used > 0) rowWidth += secondLevelBoxPadX;
+        rowWidth += themeWidth;
+        used += nTeams;
+    }
+
+    maxWidth = Math.max(maxWidth, rowWidth + rightPad);
+    return maxWidth;
+}
+
+export function computeKeysAndCountsFromVisibleOrg(org, fieldName) {
+    const counts = new Map();
+    const seen = new Set(); // NEW: deduplica per persona
+    const allowed = getAllowedStreamsSet(); // NEW: rispetta ?stream=
+
+    const isAllowedStream = (s) => {
+        if (!allowed || allowed.size === 0) return true;
+        const n1 = (s ?? '').toString().trim();
+        const n2 = normalizeKey(n1);
+        return allowed.has(n1) || allowed.has(n2);
+    };
+
+    const pickKey = (m) => {
+        if (!m) return 'Unknown';
+        if (fieldName === ROLE_FIELD_WITH_MAPPING)   return normalizeWs(m?.[ROLE_FIELD_WITH_MAPPING]) || 'Unknown';
+        if (fieldName === COMPANY_FIELD)             return normalizeWs(m?.[COMPANY_FIELD])           || 'Unknown';
+        if (fieldName === LOCATION_FIELD)            return normalizeWs(m?.[LOCATION_FIELD])          || 'Unknown';
+        return normalizeWs(m?.[fieldName]) || 'Unknown';
+    };
+
+    Object.entries(org || {}).forEach(([first, themes]) => {
+        if ((first || '').includes(firstLevelNA)) return;
+        if (!isAllowedStream(first)) return; // NEW: esclude stream non visibili
+
+        Object.entries(themes || {}).forEach(([second, teams]) => {
+            if ((second || '').includes(secondLevelNA)) return;
+
+            Object.entries(teams || {}).forEach(([third, members]) => {
+                if ((third || '').includes(thirdLevelNA)) return;
+
+                (members || []).forEach(m => {
+                    // NEW: deduplica persona su tutta la vista
+                    const id = buildCompositeKey(m, emailField);
+                    if (id && seen.has(id)) return;
+                    if (id) seen.add(id);
+
+                    const key = pickKey(m);
+                    counts.set(key, (counts.get(key) || 0) + 1);
+                });
+            });
+        });
+    });
+
+    const keys = Array.from(counts.keys())
+        .sort((a, b) => (counts.get(b) - counts.get(a)) || a.localeCompare(b, 'en', { sensitivity: 'base' }));
+
+    let topKey = null, max = -1;
+    for (const [k, c] of counts) {
+        if (c > max) { max = c; topKey = k; }
+    }
+
+    return { keys, counts, topKey };
+}
+
+export function computeKeysAndCounts(members, fieldName) {
+    const counts = new Map();
+    for (const m of members || []) {
+        const k = normalizeWs(m?.[fieldName]);
+        const key = k || 'Unknown';
+        counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const keys = Array.from(counts.keys())
+        .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+    let topKey = null, max = -1;
+    for (const [k, c] of counts) {
+        if (c > max) { max = c; topKey = k; }
+    }
+    return { keys, counts, topKey };
+}
+
+const MOST_FREQUENT_FIXED_COLOR = '#ffffff';
+
+export function makeKeyColorScale(keys, topKey) {
+    const palette = d3.schemeTableau10;
+    const map = new Map();
+    keys.forEach((k, i) => map.set(k, palette[i % palette.length]));
+    if (topKey) map.set(topKey, MOST_FREQUENT_FIXED_COLOR);
+
+    const scale = (k) => map.get(k) || NEUTRAL_COLOR;
+    // helper opzionali
+    scale.domain = () => keys.slice();
+    scale.colorOf = (k) => map.get(k) || NEUTRAL_COLOR;
+    return scale;
+}
+
+export function getLegendTitleFor(fieldName) {
+    if (fieldName === ROLE_FIELD_WITH_MAPPING)   return 'Roles';
+    if (fieldName === COMPANY_FIELD)             return 'Companies';
+    if (fieldName === LOCATION_FIELD)            return 'Locations';
+    return 'Legend';
+}
+
 
 export const LABEL_FOR_KEY = {
     id: 'ID'
 };
+
+const fullNormalizeWs = (s) => (s ?? '')
+    .toString()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+export const FIELDS_WITH_WS_NORMALIZATION = new Set([
+    'Name',
+    'User',
+    'Email'
+]);
+
+export const normalizeWs = (value, fieldName) => {
+    const raw = (value ?? '').toString();
+    return !fieldName || FIELDS_WITH_WS_NORMALIZATION.has(fieldName) ? fullNormalizeWs(raw) : raw.trim();
+};
+
 
 export function labelForKey(key) {
     if (key === 'id') return LABEL_FOR_KEY.id;
@@ -334,17 +504,10 @@ export function getVisiblePeopleForLegend(people, allowedStreams, firstOrgLevel)
     });
 }
 
-export function buildCompositeKey(person, emailField = 'Email') {
-    const parts = [];
-    const email = normalizeLower(person[emailField]);
-    const user  = normalizeLower(person.User);
-    const name  = normalizeLower((person.Name ? person.Name : '').toString());
-
-    if (email) parts.push(`email=${email}`);
-    if (user)  parts.push(`user=${user}`);
-    if (name)  parts.push(`name=${name}`);
-
-    return parts.join('|'); // esempio: "email=jane@acme.com|user=jane.doe|name=jane doe"
+export function buildCompositeKey(person, emailField) {
+    const name = normalizeWs(person?.Name);
+    const email = normalizeWs(person?.[emailField]);
+    return (email || name) ? `${name}::${email}` : '';
 }
 
 export function formatMonthYear(value) {

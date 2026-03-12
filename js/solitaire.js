@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import {
     addTagToElement,
     askHideStreamModal,
-    applySearchDimmingForMatches, askModal,
+    applySearchDimmingForMatches,
     buildCompositeKey,
     buildFallbackMailToLink,
     buildLegendaColorScale,
@@ -12,15 +12,14 @@ import {
     closeSideDrawer,
     collectMembersFromOrganization,
     filterOrganizationByStreams,
-    computeStreamBoxWidthWrapped,
     createFormattedLongTextElementsFrom,
     createHrefElement,
     createOutlookUrl,
     formatMonthYear,
     getAllowedStreamsSet,
-    getFormattedDate, getNameFromTitleEl,
+    getFormattedDate,
+    getNameFromTitleEl,
     getQueryParam,
-    getVisiblePeopleForLegend,
     highlightGroup as highlightGroupUtils,
     initCommonActions,
     normalizeKey,
@@ -30,13 +29,22 @@ import {
     setSearchQuery,
     TEAM_MEMBER_LEGENDA_LABEL,
     truncateString,
-    updateLegend, countTeamsForMemberInOrg,
+    countTeamsForMemberInOrg,
     firstOrgLevel,
     secondOrgLevel,
     thirdOrgLevel,
     firstLevelNA,
     secondLevelNA,
     thirdLevelNA,
+    normalizeWs,
+    makeKeyColorScale,
+    getLegendTitleFor,
+    computeKeysAndCountsFromVisibleOrg,
+    countRowsByTeamCapacity,
+    computeStreamBoxWidthByCapacity,
+    MAX_TEAMS_PER_ROW,
+    ROLE_FIELD_WITH_MAPPING,
+    COMPANY_FIELD, LOCATION_FIELD, emailField, NEUTRAL_COLOR
 } from './utils.js';
 
 let lastSearch = '';
@@ -47,16 +55,18 @@ let people = [];
 let colorScale = null;
 
 
-const THEMES_PER_ROW = 4;
 const secondLevelRowPadY = 60;
+
+const UNKNOWN_MATCHER = /^(unknown|n\/?a|not\s*(set|available)|-|—|none)$/i;
+function isUnknownLegendKey(v) {
+    const s = (v ?? '').toString().trim();
+    return !s || UNKNOWN_MATCHER.test(s);
+}
 
 let visibleOrganizationWithManagers = null;
 
 const PALETTE = d3.schemeTableau10;
 
-const ROLE_FIELD_WITH_MAPPING = 'Role';
-const LOCATION_FIELD = 'Location';
-const COMPANY_FIELD = 'Company';
 let colorBy = ROLE_FIELD_WITH_MAPPING;
 
 const guestRolesMap = new Map([
@@ -78,16 +88,12 @@ const legendaRoles = Array.from(new Set([
 const guestRoleColumns = Array.from(guestRolesMap.keys());
 
 let colorKeyMappings = new Map();
-const emailField = "Company email"; // this will be used to resolve the photo filename
 
 const peopleDBUpdateRecipients = [
     'teams@share.software.net'
 ];
 
 const portfolioDBUpdateRecipients = ['portfolio@nycosoft.com', 'bleiz.jonas@nycosoft.com'];
-
-const NEUTRAL_COLOR = '#fcfcfc';
-
 
 function initColorScale(initialField, members) {
     colorBy = initialField;
@@ -102,16 +108,8 @@ function getCardFill(g) {
     if (typeof colorScale !== 'function') return NEUTRAL_COLOR;
 
     let colorKey;
-
     if (colorBy === ROLE_FIELD_WITH_MAPPING) {
-        const dataRole = (g.attr('data-role') || '').toString().toLowerCase();
-
-        const guestValues = Array.from(guestRolesMap.values()).flat();
-
-        const firstIncludedGuest = legendaRoles.find(v =>
-            v && dataRole.includes(v.toLowerCase())
-        );
-        colorKey = firstIncludedGuest ? firstIncludedGuest : TEAM_MEMBER_LEGENDA_LABEL;
+        colorKey = normalizeWs(g.attr('data-role')) || TEAM_MEMBER_LEGENDA_LABEL;
     } else if (colorBy === COMPANY_FIELD) {
         colorKey = (g.attr('data-company') || 'Unknown');
     } else {
@@ -122,29 +120,111 @@ function getCardFill(g) {
     return (typeof finalColor === 'string' && finalColor) ? finalColor : NEUTRAL_COLOR;
 }
 
+function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topKey, colorOf, maxVisible = 11 }) {
+    let root = document.getElementById('legend-root');
+    if (!root) {
+        root = document.createElement('div');
+        root.id = 'legend-root';
+        document.body.appendChild(root);
+    }
+    root.className = 'legend legend--generic';
+    root.innerHTML = `
+    <div class="legend__title"></div>
+    <div class="legend__list" aria-label="Legend list"></div>
+  `;
+    root.querySelector('.legend__title').textContent = title;
+    const list = root.querySelector('.legend__list');
+
+    keys.forEach((key) => {
+        const item = document.createElement('div');
+        item.className = 'legend__item';
+        item.setAttribute('data-value', key);
+        item.setAttribute('data-field', fieldName);
+
+        const disabled = isUnknownLegendKey(key);
+        if (disabled) {
+            item.classList.add('legend__item--disabled');
+            item.setAttribute('aria-disabled', 'true');
+        } else {
+            item.setAttribute('role', 'button');
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('aria-label', `Filter by ${key}`);
+        }
+
+        const sw = document.createElement('span');
+        sw.className = 'legend__swatch';
+        const color = colorOf.colorOf(key);
+        sw.style.backgroundColor = color;
+        if ((color || '').toLowerCase() === '#ffffff' || color === 'white') {
+            sw.classList.add('legend__swatch--white');
+        }
+
+        const label = document.createElement('span');
+        label.className = 'legend__label';
+        label.textContent = key;
+
+        const count = document.createElement('span');
+        count.className = 'legend__count';
+        count.textContent = counts.get(key) ?? '';
+
+        item.append(sw, label, count);
+        list.appendChild(item);
+    });
+
+    const activate = (el) => {
+        const value = el.getAttribute('data-value') ?? '';
+        const searchInput = document.getElementById('drawer-search-input');
+        if (searchInput) searchInput.value = value;
+        searchByQuery(value);
+    };
+
+    list.addEventListener('click', (e) => {
+        const el = e.target.closest('.legend__item');
+        if (!el || el.classList.contains('legend__item--disabled')) return;
+        activate(el);
+    });
+
+    list.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const el = e.target.closest('.legend__item');
+        if (!el || el.classList.contains('legend__item--disabled')) return;
+        e.preventDefault();
+        activate(el);
+    });
+
+    list.style.setProperty('--legend-row', '24px');
+    list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
+    enableLegendDrag({ handleSelector: '.legend__title' });
+}
+
 function recolorProfileCards(field) {
     colorBy = field;
 
     const allowedStreams = getAllowedStreamsSet?.() ?? null;
     const orgForLegend = filterOrganizationByStreams(visibleOrganizationWithManagers, allowedStreams);
-    const visiblePeopleForLegend = collectMembersFromOrganization(orgForLegend);
+    const fieldName = colorBy;
+    const { keys, counts, topKey } = computeKeysAndCountsFromVisibleOrg(orgForLegend, fieldName);
 
-    colorScale = buildLegendaColorScale(
-        colorBy,
-        visiblePeopleForLegend.slice(),
-        d3,
-        PALETTE,
-        NEUTRAL_COLOR,
-        ROLE_FIELD_WITH_MAPPING,
-        legendaRoles
-    );
-    updateLegend(colorScale, colorBy, d3);
+    colorScale = makeKeyColorScale(keys, topKey);
+    renderLegendAll({
+        title: getLegendTitleFor(fieldName),
+        keys,
+        counts,
+        topKey,
+        colorOf: colorScale,
+        maxVisible: 11
+    });
 
     d3.selectAll('g[data-key^="card::"]').each(function () {
         const g = d3.select(this);
-        g.select('rect.profile-box')
-            .transition().duration(200)
-            .attr('fill', getCardFill(g));
+        const fill = getCardFill(g) || NEUTRAL_COLOR;
+        const rect = g.select('rect.profile-box');
+        rect.transition().duration(200).attr('fill', fill);
+        if ((fill || '').toLowerCase() === '#ffffff' || fill === 'white') {
+            rect.attr('stroke', '#b8b8b8').attr('stroke-width', 1);
+        } else {
+            rect.attr('stroke', null).attr('stroke-width', null);
+        }
     });
 
 }
@@ -636,9 +716,9 @@ function openDrawer({name: title, description, services, channels, email, highli
             let firstHighlighted = null;
             const q = (highlightQuery || '').trim();
             if (q) {
-                const qn = norm(q);
+                const qn = normalizeWs(query).toLowerCase();
                 anchors.forEach(a => {
-                    const tn = norm(a.textContent);
+                    const tn = normalizeWs(n.textContent).toLowerCase();
                     if (tn.includes(qn)) {
                         a.classList.add('service-hit-highlight');
                         if (!firstHighlighted) firstHighlighted = a;
@@ -849,16 +929,20 @@ function zoomToElement(element, desiredScale = 1.5, duration = 500) {
     if (group) highlightGroupUtils(d3.select(group));
 }
 
-const cleanName = name => name.replace(/[\s\t\r\n]+/g, ' ').trim();
+const cleanName = (name) => normalizeWs(name);
 
-const findPersonByName = (targetName, result) =>
-    Object.values(result).flatMap(stream =>
+const findPersonByName = (targetName, result) => {
+    const target = normalizeWs(targetName).toLowerCase();
+
+    return Object.values(result).flatMap(stream =>
         Object.values(stream).flatMap(theme =>
             Object.values(theme).flatMap(team => team)
         )
-    ).find(person =>
-        person.Name && person.Name.trim().toLowerCase() === targetName.trim().toLowerCase()
-    ) || null;
+    ).find(person => {
+        const pn = normalizeWs(person?.Name).toLowerCase();
+        return pn === target;
+    }) || null;
+};
 
 function buildOrganization(people) {
     const organization = {};
@@ -1141,9 +1225,11 @@ function extractData(csvText) {
     const headers = rows[0].map(h => h.trim());
     people = rows.slice(1).map(row => {
         const obj = {};
-        headers.forEach((h, i) => obj[h] = (row[i] || '').trim());
+        headers.forEach((h, i) => {
+            obj[h] = normalizeWs(row[i] || '', h);
+        });
         return obj;
-    }).filter(p => p.Status && p.Status.toLowerCase() !== 'inactive');
+    }).filter(p => (p.Status || '').toLowerCase() !== 'inactive');
 
     let lastUpdateISO = '';
     if (headers.includes('Last Update')) {
@@ -1181,9 +1267,6 @@ function extractData(csvText) {
     visibleOrganizationWithManagers = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
     const visiblePeopleForLegend = collectMembersFromOrganization(visibleOrganizationWithManagers);
 
-    initColorScale(ROLE_FIELD_WITH_MAPPING, visiblePeopleForLegend);
-    updateLegend(colorScale, colorBy, d3);
-    setColorMode(ROLE_FIELD_WITH_MAPPING);
 
     const inARow = 6;
     const dateValues = ["In team since"];
@@ -1252,12 +1335,13 @@ function extractData(csvText) {
 
         const firstLevelDescription = aggregateInfoByHeader(firstLevelMembers, headers, "Team Stream Description")?.items?.join("") ?? '';
 
-        const firstLevelBoxWidth = computeStreamBoxWidthWrapped(
+        const firstLevelBoxWidth = computeStreamBoxWidthByCapacity(
             secondLevelItems,
             secondLevelBoxPadX,
             secondLevelNA,
             thirdLevelBoxPadX,
             thirdLevelBoxWidth,
+            SECOND_LEVEL_LABEL_EXTRA
         );
 
 
@@ -1270,10 +1354,8 @@ function extractData(csvText) {
 
         restoreGroupPosition(firstLevelGroup);
 
-        const numThemesInStream = Object.entries(secondLevelItems)
-            .filter(([themeKey]) => !themeKey.includes(secondLevelNA)).length;
+        const themeRows = countRowsByTeamCapacity(secondLevelItems, MAX_TEAMS_PER_ROW);
 
-        const themeRows = Math.ceil(numThemesInStream / THEMES_PER_ROW);
         const firstLevelBoxHeight = themeRows * (themeBoxHeight + secondLevelRowPadY) + 140;
 
         const streamRect = firstLevelGroup.append('rect')
@@ -1361,25 +1443,27 @@ function extractData(csvText) {
         }
 
 
-        let visibleIdx = 0;
+        let rowIndex = 0;
+        let usedTeamsInRow = 0;
 
         Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems]) => {
             if (secondLevel.includes(secondLevelNA)) return;
 
-            const themeRow = Math.floor(visibleIdx / THEMES_PER_ROW);
-            const themeCol = visibleIdx % THEMES_PER_ROW;
+            const nTeamsInTheme = Object.keys(thirdLevelItems || {}).length || 0;
+
+            if (usedTeamsInRow > 0 && (usedTeamsInRow + nTeamsInTheme) > MAX_TEAMS_PER_ROW) {
+                rowIndex++;
+                usedTeamsInRow = 0;
+                secondLevelX = 60;
+            }
+
+            const secondLevelY = streamY + 100 + rowIndex * (themeBoxHeight + secondLevelRowPadY);
 
             const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {})
                 .flat()
             const secondLevelDescription = aggregateInfoByHeader(originalThemeMembers, headers, 'Team Theme Description')?.items?.join("") ?? '';
 
-
-            if (themeCol === 0) {
-                secondLevelX = 60;
-            }
-
             const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
-            const secondLevelY = streamY + 100 + themeRow * (themeBoxHeight + secondLevelRowPadY);
 
             const secondLevelGroup = themeLayer.append('g')
                 .attr('class', 'draggable')
@@ -1509,6 +1593,11 @@ function extractData(csvText) {
                         .attr('rx', 14)
                         .attr('ry', 14)
                         .attr('fill', getCardFill(group) ? getCardFill(group) : NEUTRAL_COLOR);
+
+                    const f = getCardFill(group) || NEUTRAL_COLOR;
+                    if ((f || '').toLowerCase() === '#ffffff' || f === 'white') {
+                        memberRect.attr('stroke', '#b8b8b8').attr('stroke-width', 1);
+                    }
 
                     if (member.guestRole) {
                         memberRect.attr('stroke', '#333')
@@ -1922,7 +2011,7 @@ function extractData(csvText) {
             });
 
             secondLevelX += themeWidth + secondLevelBoxPadX;
-            visibleIdx++
+            usedTeamsInRow += nTeamsInTheme;
         });
 
         streamY += firstLevelBoxHeight + firstLevelBoxPadY;
@@ -1935,6 +2024,9 @@ function extractData(csvText) {
     fitToContent(0.9);
 
     applyDraggableToggleState();
+    requestAnimationFrame(() => {
+        setColorMode(ROLE_FIELD_WITH_MAPPING);
+    });
 }
 
 document.getElementById('fileInput')?.addEventListener('change', function (e) {
@@ -2079,34 +2171,37 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
 function searchByQuery(query) {
     if (!query) return;
 
+    const q = (query ?? '').toString().trim().toLowerCase();
+    if (!q) {
+        clearSearch();
+        return;
+    }
     const searchInput = document.getElementById('drawer-search-input');
-    if (!searchInput.value) {
-        searchInput.value = query;
+    if (searchInput && searchInput.value.trim().toLowerCase() !== q) {
+        searchInput.value = q;
     }
 
-    const nodes = Array.from(document.querySelectorAll('.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]'));
+    const nodes = Array.from(document.querySelectorAll(
+        '.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]'
+    ));
 
     const matches = nodes.filter(n => {
-        const textMatch = n.textContent ? n.textContent.toLowerCase().includes(query) || n.textContent.toLowerCase().includes(truncateString(query)) : false;
-        const attrMatch = n.getAttribute('data-services')?.toLowerCase().includes(query);
+        const txt = (n.textContent || '').toLowerCase();
+        const textMatch = txt.includes(q);
+        const attrMatch = (n.getAttribute('data-services') || '').toLowerCase().includes(q);
         return textMatch || attrMatch;
     });
 
     if (matches.length === 0) {
         clearSearchDimming();
-        showToast(`No result found for ${query}`);
+        showToast(`No result found for ${q}`);
         return;
     }
 
-    if (matches.length === 0) {
-        showToast(`No result found for ${query}`);
-        return;
-    }
-
-    if (query === lastSearch) {
+    if (q === lastSearch) {
         currentIndex = (currentIndex + 1) % matches.length;
     } else {
-        lastSearch = query;
+        lastSearch = q;
         currentIndex = 0;
     }
 
@@ -2117,7 +2212,7 @@ function searchByQuery(query) {
     zoomToElement(target, 1, 600);
     applySearchDimmingForMatches(matches);
     showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
-    setSearchQuery(query);
+    setSearchQuery(q);
 
     const FIELD_CLASSES = ['role-field', 'company-field', 'location-field'];
     if (target.classList) {
@@ -2127,14 +2222,11 @@ function searchByQuery(query) {
         } else {
             const group = target.closest('g[data-key^="card::"]');
             if (group) {
-                const qn = (query || '').trim().toLowerCase();
                 FIELD_CLASSES.forEach(cls => {
                     const el = group.querySelector('.' + cls);
                     if (!el) return;
                     const tn = (el.textContent || '').toLowerCase();
-                    if (qn && tn.includes(qn)) {
-                        el.classList.add('field-hit-highlight');
-                    }
+                    if (tn.includes(q)) el.classList.add('field-hit-highlight');
                 });
             }
         }
@@ -2150,8 +2242,7 @@ function searchByQuery(query) {
         if (rawServices.length === 0) return;
 
         const norm = v => (v || '').toString().trim().toLowerCase();
-        const q = norm(query);
-        const normalized = rawServices.map(s => ({raw: s, norm: norm(s)}));
+        const normalized = rawServices.map(s => ({ raw: s, norm: norm(s) }));
         const hit = normalized.find(svc => svc.norm.includes(q));
         if (!hit) return;
 
@@ -2159,11 +2250,8 @@ function searchByQuery(query) {
             teamTitleEl.getAttribute('data-team-name') || getNameFromTitleEl(teamTitleEl);
         const email = teamTitleEl.getAttribute('data-team-email') || '';
         const channels = (() => {
-            try {
-                return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]');
-            } catch {
-                return [];
-            }
+            try { return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]'); }
+            catch { return []; }
         })();
         const description = teamTitleEl.getAttribute('data-team-description') || '';
 
@@ -2174,7 +2262,7 @@ function searchByQuery(query) {
             channels,
             email,
             highlightService: hit.raw,
-            highlightQuery: query
+            highlightQuery: q
         });
 
     } catch (e) {
@@ -2184,3 +2272,159 @@ function searchByQuery(query) {
     }
 
 }
+
+(function enableLegendDragOnce() {
+    let attached = false;
+
+    window.enableLegendDrag = function enableLegendDrag({ handleSelector = null } = {}) {
+        const root = document.getElementById('legend-root');
+        if (!root || attached) return;
+
+        const LS_KEY = 'legend-pos-v1';
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+        function getRootRect() { return root.getBoundingClientRect(); }
+        function getViewportSize() { return { w: document.documentElement.clientWidth, h: document.documentElement.clientHeight }; }
+
+        // ⬇️ RITORNA true/false: ha ripristinato?
+        function restore() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+                if (typeof saved.x === 'number' && typeof saved.y === 'number') {
+                    root.style.left = `${saved.x}px`;
+                    root.style.top  = `${saved.y}px`;
+                    // ora sì: usiamo anchor left/top
+                    root.style.right = 'auto';
+                    root.style.bottom = 'auto';
+                    return true;
+                }
+            } catch {}
+            return false;
+        }
+
+        function save(x, y) {
+            localStorage.setItem(LS_KEY, JSON.stringify({ x, y }));
+        }
+
+        // ⚠️ NON forzare subito bottom/right a 'auto':
+        // mantieni gli anchor del CSS se non hai una posizione salvata
+        const restored = restore();
+        if (!restored) {
+            // assicura ancoraggio di default se non presente in linea
+            const cs = getComputedStyle(root);
+            const hasAnyInlineAnchor =
+                root.style.left || root.style.top || root.style.right || root.style.bottom;
+            if (!hasAnyInlineAnchor) {
+                // lasciamo lavorare il CSS: left: max(16px, env(...)); bottom: 16px;
+                // non tocchiamo right/bottom qui
+            }
+        }
+
+        // Reclamp SUBITO per evitare posizioni off‑screen al primo paint
+        function reclamp() {
+            const rect = getRootRect();
+            const { w, h } = getViewportSize();
+            let nx = rect.left;
+            let ny = rect.top;
+
+            // Se l'ancoraggio è bottom/right (CSS), converti a left/top una volta sola
+            const usingBottom = root.style.bottom && !root.style.top;
+            const usingRight  = root.style.right  && !root.style.left;
+
+            if (usingBottom || usingRight) {
+                // conversione semplice: posiziona dove sei ora ma con left/top
+                nx = clamp(rect.left, 0, w - rect.width);
+                ny = clamp(rect.top,  0, h - rect.height);
+                root.style.left = `${nx}px`;
+                root.style.top  = `${ny}px`;
+                root.style.right = 'auto';
+                root.style.bottom = 'auto';
+            } else {
+                nx = clamp(rect.left, 0, w - rect.width);
+                ny = clamp(rect.top,  0, h - rect.height);
+                root.style.left = `${nx}px`;
+                root.style.top  = `${ny}px`;
+            }
+            save(nx, ny);
+        }
+        // Esegui reclamp una volta all’inizio
+        requestAnimationFrame(reclamp);
+
+        // —— Drag con soglia (per non rubare i click) ——
+        const THRESHOLD = 4;
+        let startX = 0, startY = 0;
+        let startLeft = 0, startTop = 0;
+        let dragging = false;
+        let pointerId = null;
+
+        const handle = handleSelector ? root.querySelector(handleSelector) : root;
+        const dragClassEl = handleSelector ? handle : root;
+
+        function onPointerDown(e) {
+            if (e.button !== 0) return;
+            pointerId = e.pointerId;
+
+            const rect = getRootRect();
+            const cs = window.getComputedStyle(root);
+            startLeft = parseFloat(cs.left) || rect.left;
+            startTop  = parseFloat(cs.top)  || rect.top;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // aspetta la soglia prima di "entrare in drag"
+            window.addEventListener('pointermove', onPointerMove, { passive: true });
+            window.addEventListener('pointerup', onPointerUp, { passive: true });
+        }
+
+        function onPointerMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            if (!dragging) {
+                if (Math.abs(dx) <= THRESHOLD && Math.abs(dy) <= THRESHOLD) return;
+                dragging = true;
+                dragClassEl.classList.add('is-dragging');
+                try { dragClassEl.setPointerCapture?.(pointerId); } catch {}
+            }
+
+            let nextLeft = startLeft + dx;
+            let nextTop  = startTop  + dy;
+
+            const { w, h } = getViewportSize();
+            const r = getRootRect();
+            const bw = r.width, bh = r.height;
+
+            nextLeft = clamp(nextLeft, 0, w - bw);
+            nextTop  = clamp(nextTop,  0, h - bh);
+
+            root.style.left = `${nextLeft}px`;
+            root.style.top  = `${nextTop}px`;
+            root.style.right = 'auto';
+            root.style.bottom = 'auto';
+        }
+
+        function onPointerUp() {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+
+            if (!dragging) return; // click semplice → non sporcare posizione
+
+            dragClassEl.classList.remove('is-dragging');
+            const rect = getRootRect();
+            const { w, h } = getViewportSize();
+            const nx = clamp(rect.left, 0, w - rect.width);
+            const ny = clamp(rect.top,  0, h - rect.height);
+            save(nx, ny);
+            dragging = false;
+            pointerId = null;
+        }
+
+        function reclampOnResize() { reclamp(); }
+
+        handle.style.touchAction = 'none';
+        handle.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('resize', reclampOnResize);
+
+        attached = true;
+    };
+})();
