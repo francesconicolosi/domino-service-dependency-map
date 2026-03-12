@@ -2305,11 +2305,12 @@ function searchByQuery(query) {
 }
 
 (function enableLegendDragOnce() {
-    let attached = false;
+    // evita di aggiungere infiniti listener di resize
+    let resizeAttached = false;
 
     window.enableLegendDrag = function enableLegendDrag({ handleSelector = null } = {}) {
         const root = document.getElementById('legend-root');
-        if (!root || attached) return;
+        if (!root) return;                    // ✅ rimuovi il guard su "attached" per permettere il rebind
 
         const LS_KEY = 'legend-pos-v1';
         const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -2317,14 +2318,13 @@ function searchByQuery(query) {
         function getRootRect() { return root.getBoundingClientRect(); }
         function getViewportSize() { return { w: document.documentElement.clientWidth, h: document.documentElement.clientHeight }; }
 
-        // ⬇️ RITORNA true/false: ha ripristinato?
+        // restore() e save() rimangono invariati, tieni il tuo codice qui
         function restore() {
             try {
                 const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
                 if (typeof saved.x === 'number' && typeof saved.y === 'number') {
                     root.style.left = `${saved.x}px`;
                     root.style.top  = `${saved.y}px`;
-                    // ora sì: usiamo anchor left/top
                     root.style.right = 'auto';
                     root.style.bottom = 'auto';
                     return true;
@@ -2337,33 +2337,25 @@ function searchByQuery(query) {
             localStorage.setItem(LS_KEY, JSON.stringify({ x, y }));
         }
 
-        // ⚠️ NON forzare subito bottom/right a 'auto':
-        // mantieni gli anchor del CSS se non hai una posizione salvata
         const restored = restore();
         if (!restored) {
-            // assicura ancoraggio di default se non presente in linea
             const cs = getComputedStyle(root);
-            const hasAnyInlineAnchor =
-                root.style.left || root.style.top || root.style.right || root.style.bottom;
+            const hasAnyInlineAnchor = root.style.left || root.style.top || root.style.right || root.style.bottom;
             if (!hasAnyInlineAnchor) {
-                // lasciamo lavorare il CSS: left: max(16px, env(...)); bottom: 16px;
-                // non tocchiamo right/bottom qui
+                // lascia agire il CSS di default
             }
         }
 
-        // Reclamp SUBITO per evitare posizioni off‑screen al primo paint
         function reclamp() {
             const rect = getRootRect();
             const { w, h } = getViewportSize();
             let nx = rect.left;
             let ny = rect.top;
 
-            // Se l'ancoraggio è bottom/right (CSS), converti a left/top una volta sola
             const usingBottom = root.style.bottom && !root.style.top;
             const usingRight  = root.style.right  && !root.style.left;
 
             if (usingBottom || usingRight) {
-                // conversione semplice: posiziona dove sei ora ma con left/top
                 nx = clamp(rect.left, 0, w - rect.width);
                 ny = clamp(rect.top,  0, h - rect.height);
                 root.style.left = `${nx}px`;
@@ -2378,10 +2370,9 @@ function searchByQuery(query) {
             }
             save(nx, ny);
         }
-        // Esegui reclamp una volta all’inizio
         requestAnimationFrame(reclamp);
 
-        // —— Drag con soglia (per non rubare i click) ——
+        // —— Drag con soglia (come nel tuo codice) ——
         const THRESHOLD = 4;
         let startX = 0, startY = 0;
         let startLeft = 0, startTop = 0;
@@ -2390,6 +2381,7 @@ function searchByQuery(query) {
 
         const handle = handleSelector ? root.querySelector(handleSelector) : root;
         const dragClassEl = handleSelector ? handle : root;
+        if (!handle) return; // nel raro caso in cui il titolo non esista ancora
 
         function onPointerDown(e) {
             if (e.button !== 0) return;
@@ -2402,7 +2394,6 @@ function searchByQuery(query) {
             startX = e.clientX;
             startY = e.clientY;
 
-            // aspetta la soglia prima di "entrare in drag"
             window.addEventListener('pointermove', onPointerMove, { passive: true });
             window.addEventListener('pointerup', onPointerUp, { passive: true });
         }
@@ -2438,7 +2429,7 @@ function searchByQuery(query) {
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
 
-            if (!dragging) return; // click semplice → non sporcare posizione
+            if (!dragging) return;
 
             dragClassEl.classList.remove('is-dragging');
             const rect = getRootRect();
@@ -2450,12 +2441,12 @@ function searchByQuery(query) {
             pointerId = null;
         }
 
-        function reclampOnResize() { reclamp(); }
-
         handle.style.touchAction = 'none';
         handle.addEventListener('pointerdown', onPointerDown);
-        window.addEventListener('resize', reclampOnResize);
 
-        attached = true;
+        if (!resizeAttached) {
+            window.addEventListener('resize', () => reclamp());
+            resizeAttached = true;
+        }
     };
 })();
