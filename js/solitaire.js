@@ -1213,6 +1213,19 @@ document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
     applyDraggableToggleState();
 });
 
+function getThemeTeamsCount(themeObj) {
+    return Object.keys(themeObj || {}).length || 0;
+}
+
+function getThemeMaxMemberRows(themeObj, inARow) {
+    const counts = Object.values(themeObj || {}).map(members => {
+        const n = new Set((members || []).map(m => (m?.Name || '').trim()).filter(Boolean)).size;
+        return n;
+    });
+    const maxMembers = Math.max(0, ...counts);
+    return Math.max(1, Math.ceil(maxMembers / inARow));
+}
+
 function extractData(csvText) {
     if (!csvText) {
         alert('Missing CSV File!');
@@ -1305,36 +1318,23 @@ function extractData(csvText) {
 
     Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
-        const streamTeamSizes = Object.entries(secondLevelItems)
-            .filter(([themeName]) => !themeName.includes(secondLevelNA))
-            .flatMap(([, themeObj]) =>
-                Object.values(themeObj).map(members =>
-                    new Set(members.map(m => (m.Name || '').trim()).filter(Boolean)).size
-                )
-            );
 
-        const streamLargestThirdLevelSize = Math.max(1, ...(streamTeamSizes.length ? streamTeamSizes : [1]));
-        const streamRowCount = Math.ceil(streamLargestThirdLevelSize / inARow);
-
-        const teamBoxPadding = streamRowCount > 1 ? 80 : 120;
-        const themeBoxPadding = 100;
-        const teamBoxHeight = streamRowCount * cardBaseHeight * 1.2 + teamBoxPadding;
-        const themeBoxHeight = teamBoxHeight * 1.2 + themeBoxPadding;
-
+        // Filtra stream visibili
         if (filteredStreams) {
             const firstLevelNormalized = normalizeKey(firstLevel);
-            const isAllowed =
-                filteredStreams.has(firstLevel) || filteredStreams.has(firstLevelNormalized);
+            const isAllowed = filteredStreams.has(firstLevel) || filteredStreams.has(firstLevelNormalized);
             if (!isAllowed) return;
         }
 
+        // Descrizione stream
         const firstLevelMembers =
             Object.values(organization[firstLevel] || {})
                 .flatMap(themeObj => Object.values(themeObj))
                 .flat();
+        const firstLevelDescription =
+            aggregateInfoByHeader(firstLevelMembers, headers, "Team Stream Description")?.items?.join("") ?? '';
 
-        const firstLevelDescription = aggregateInfoByHeader(firstLevelMembers, headers, "Team Stream Description")?.items?.join("") ?? '';
-
+        // LARGHEZZA stream (come già fai)
         const firstLevelBoxWidth = computeStreamBoxWidthByCapacity(
             secondLevelItems,
             secondLevelBoxPadX,
@@ -1344,20 +1344,67 @@ function extractData(csvText) {
             SECOND_LEVEL_LABEL_EXTRA
         );
 
-
-        let secondLevelX = 60;
-
+        // Gruppo stream
         const firstLevelGroup = streamLayer.append('g')
             .attr('class', 'draggable')
             .attr('transform', `translate(${streamX},${streamY})`)
             .attr('data-key', `stream::${normalizeKey(firstLevel)}`);
-
         restoreGroupPosition(firstLevelGroup);
 
-        const themeRows = countRowsByTeamCapacity(secondLevelItems, MAX_TEAMS_PER_ROW);
+        // ---------- COSTRUZIONE RIGHE DI THEME ----------
+        const rows = [];
+        let currentRow = { themes: [], used: 0 };
 
-        const firstLevelBoxHeight = themeRows * (themeBoxHeight + secondLevelRowPadY) + 140;
+        for (const [secondLevel, thirdLevelItems] of Object.entries(secondLevelItems)) {
+            if (secondLevel.includes(secondLevelNA)) continue;
 
+            const nTeams = Object.keys(thirdLevelItems || {}).length || 0;
+            // Vai a capo se superi la capacità
+            if (currentRow.used > 0 && (currentRow.used + nTeams) > MAX_TEAMS_PER_ROW) {
+                rows.push(currentRow);
+                currentRow = { themes: [], used: 0 };
+            }
+
+            // Max righe di member richieste dal theme
+            const memberCounts = Object.values(thirdLevelItems || {}).map(members => {
+                return new Set((members || []).map(m => (m?.Name || '').trim()).filter(Boolean)).size;
+            });
+            const maxMembersInTheme = Math.max(0, ...memberCounts);
+            const themeMaxRows = Math.max(1, Math.ceil(maxMembersInTheme / inARow));
+
+            // Larghezza del theme (n° team * larghezza team + gap + etichetta)
+            const themeWidth =
+                nTeams * thirdLevelBoxWidth +
+                Math.max(0, nTeams - 1) * thirdLevelBoxPadX +
+                SECOND_LEVEL_LABEL_EXTRA;
+
+            currentRow.themes.push({
+                secondLevel,
+                thirdLevelItems,
+                nTeams,
+                themeMaxRows,
+                themeWidth
+            });
+            currentRow.used += nTeams;
+        }
+        if (currentRow.themes.length) rows.push(currentRow);
+
+        // ---------- ALTEZZE PER RIGA ----------
+        rows.forEach(r => {
+            r.rowMaxMemberRows = Math.max(1, ...r.themes.map(t => t.themeMaxRows));
+            const teamBoxPadding  = r.rowMaxMemberRows > 1 ? 80 : 120; // tuoi valori
+            const themeBoxPadding = 100;                                // tuoi valori
+            r.teamBoxHeight  = r.rowMaxMemberRows * cardBaseHeight * 1.2 + teamBoxPadding;
+            r.themeBoxHeight = r.teamBoxHeight * 1.2 + themeBoxPadding;
+        });
+
+        // ---------- ALTEZZA STREAM (somma delle righe) ----------
+        const firstLevelBoxHeight =
+            rows.reduce((acc, r) => acc + r.themeBoxHeight, 0) +
+            (rows.length > 1 ? (rows.length - 1) * secondLevelRowPadY : 0) +
+            140;
+
+        // Rettangolo stream
         const streamRect = firstLevelGroup.append('rect')
             .attr('class', 'stream-box')
             .attr('width', firstLevelBoxWidth)
@@ -1365,14 +1412,9 @@ function extractData(csvText) {
             .attr('rx', 40)
             .attr('ry', 40);
 
-        makeResizable(firstLevelGroup, streamRect, {
-            minWidth: 600,
-            minHeight: 300,
-            onResize: () => {
-                console.log('resizing')
-            }
-        });
+        makeResizable(firstLevelGroup, streamRect, { minWidth: 600, minHeight: 300 });
 
+        // Titolo stream
         const titleText = firstLevelGroup.append('text')
             .attr('x', 50)
             .attr('y', 70)
@@ -1382,10 +1424,7 @@ function extractData(csvText) {
         titleText.append('tspan')
             .attr('class', 'stream-title')
             .text(firstLevel);
-
-        titleText.append('tspan')
-            .attr('dx', 10)
-            .text('');
+        titleText.append('tspan').attr('dx', 10).text('');
 
         if (firstLevelDescription !== "") {
             titleText.append('tspan')
@@ -1393,12 +1432,9 @@ function extractData(csvText) {
                 .text(' ℹ️')
                 .on('click', (e) => {
                     e?.stopPropagation?.();
-                    openDrawer({name: firstLevel, description: firstLevelDescription});
+                    openDrawer({ name: firstLevel, description: firstLevelDescription });
                 });
-
-            titleText.append('tspan')
-                .attr('dx', 10)
-                .text('');
+            titleText.append('tspan').attr('dx', 10).text('');
         }
 
         if (visibleStreamNames.length > 1) {
@@ -1407,14 +1443,12 @@ function extractData(csvText) {
                 .text(' 👁️‍🗨️')
                 .on('click', async (e) => {
                     e.stopPropagation();
-
                     const confirmed = await askHideStreamModal(firstLevel);
                     if (!confirmed) return;
 
                     const others = visibleStreamNames.filter(
                         s => normalizeKey(s) !== normalizeKey(firstLevel)
                     );
-
                     const url = new URL(window.location.href);
                     if (others.length > 0) {
                         url.searchParams.set('stream', others.join(','));
@@ -1424,7 +1458,6 @@ function extractData(csvText) {
                     window.location.href = url.toString();
                 });
         }
-
 
         if (firstLevelDescription !== "") {
             firstLevelGroup.select('rect.stream-box')
@@ -1442,578 +1475,576 @@ function extractData(csvText) {
                 }));
         }
 
+        // ---------- RENDER THEME/TEAM CON ALTEZZE DI RIGA ----------
+        let secondLevelYBase = streamY + 100;
 
-        let rowIndex = 0;
-        let usedTeamsInRow = 0;
+        rows.forEach((r) => {
+            let secondLevelX = 60; // reset a inizio riga
+            const themeBoxHeightRow = r.themeBoxHeight;
+            const teamBoxHeightRow  = r.teamBoxHeight;
 
-        Object.entries(secondLevelItems).forEach(([secondLevel, thirdLevelItems]) => {
-            if (secondLevel.includes(secondLevelNA)) return;
+            r.themes.forEach(({ secondLevel, thirdLevelItems, nTeams, themeWidth }) => {
+                const secondLevelY = secondLevelYBase;
 
-            const nTeamsInTheme = Object.keys(thirdLevelItems || {}).length || 0;
+                const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {}).flat();
+                const secondLevelDescription = aggregateInfoByHeader(
+                    originalThemeMembers, headers, 'Team Theme Description'
+                )?.items?.join("") ?? '';
 
-            if (usedTeamsInRow > 0 && (usedTeamsInRow + nTeamsInTheme) > MAX_TEAMS_PER_ROW) {
-                rowIndex++;
-                usedTeamsInRow = 0;
-                secondLevelX = 60;
-            }
-
-            const secondLevelY = streamY + 100 + rowIndex * (themeBoxHeight + secondLevelRowPadY);
-
-            const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {})
-                .flat()
-            const secondLevelDescription = aggregateInfoByHeader(originalThemeMembers, headers, 'Team Theme Description')?.items?.join("") ?? '';
-
-            const themeWidth = Object.keys(thirdLevelItems).length * thirdLevelBoxWidth + SECOND_LEVEL_LABEL_EXTRA;
-
-            const secondLevelGroup = themeLayer.append('g')
-                .attr('class', 'draggable')
-                .attr('transform', `translate(${streamX + secondLevelX},${secondLevelY})`)
-                .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
-
-
-            restoreGroupPosition(secondLevelGroup);
-
-            const secondLevelRect = secondLevelGroup.append('rect')
-                .attr('class', 'theme-box')
-                .attr('width', themeWidth)
-                .attr('height', themeBoxHeight)
-                .attr('rx', 30)
-                .attr('ry', 30);
-
-            makeResizable(secondLevelGroup, secondLevelRect, {minWidth: 400, minHeight: 250});
-
-            secondLevelGroup.append('text')
-                .attr('x', themeWidth / 2)
-                .attr('y', 85)
-                .attr('text-anchor', 'middle')
-                .attr('class', 'theme-title')
-                .text(truncateString(secondLevel));
-
-            if (secondLevelDescription !== "") {
-                secondLevelGroup.select('text.theme-title')
-                    .append('tspan')
-                    .attr('class', 'theme-icon')
-                    .attr('dx', 10)
-                    .text(' ℹ️')
-                    .on('click', (e) => {
-                        e.stopPropagation();
-                        openDrawer({name: secondLevel, description: secondLevelDescription});
-                    });
-            }
-
-            if (secondLevelDescription !== "") {
-                secondLevelGroup.select('rect.theme-box')
-                    .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: secondLevel, description: secondLevelDescription}));
-
-                secondLevelGroup.select('text.theme-title')
-                    .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: secondLevel, description: secondLevelDescription}));
-            }
-
-            Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
-
-                const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
-
-                const services = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
-                const description = aggregateInfoByHeader(originalMembers, headers, 'Team Description')?.items?.join("") ?? '';
-                const channels = aggregateInfoByHeader(originalMembers, headers, 'Team Channels', true)?.items;
-                const email = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
-
-                const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
-                const teamLocalY = 130;
-
-                const thirdLevelGroup = teamLayer.append('g')
+                // Gruppo theme
+                const secondLevelGroup = themeLayer.append('g')
                     .attr('class', 'draggable')
-                    .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${secondLevelY + teamLocalY})`)
-                    .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`);
+                    .attr('transform', `translate(${streamX + secondLevelX},${secondLevelY})`)
+                    .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
+                restoreGroupPosition(secondLevelGroup);
 
-                restoreGroupPosition(thirdLevelGroup);
+                // Box theme (altezza di riga)
+                const secondLevelRect = secondLevelGroup.append('rect')
+                    .attr('class', 'theme-box')
+                    .attr('width', themeWidth)
+                    .attr('height', themeBoxHeightRow)
+                    .attr('rx', 30)
+                    .attr('ry', 30);
+                makeResizable(secondLevelGroup, secondLevelRect, { minWidth: 400, minHeight: 250 });
 
-                const thirdLevelRect = thirdLevelGroup.append('rect')
-                    .attr('class', 'team-box')
-                    .attr('width', thirdLevelBoxWidth)
-                    .attr('height', teamBoxHeight)
-                    .attr('rx', 20)
-                    .attr('ry', 20);
-
-                makeResizable(thirdLevelGroup, thirdLevelRect, {minWidth: 360, minHeight: 220});
-
-                const serviceCount = services?.items?.length || 0;
-                const titleText = `${thirdLevel} - ⚙️ (${serviceCount})`;
-
-                thirdLevelGroup.append('text')
-                    .attr('x', thirdLevelBoxWidth / 2)
-                    .attr('y', 70)
+                // Titolo theme
+                secondLevelGroup.append('text')
+                    .attr('x', themeWidth / 2)
+                    .attr('y', 85)
                     .attr('text-anchor', 'middle')
-                    .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
-                    .attr('class', 'team-title')
-                    .text(truncateString(titleText));
+                    .attr('class', 'theme-title')
+                    .text(truncateString(secondLevel));
 
-                thirdLevelGroup.select('rect.team-box')
-                    .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: thirdLevel, description, services, channels, email}));
-
-                thirdLevelGroup.select('text.team-title')
-                    .style('cursor', 'pointer')
-                    .on('click', () => openDrawer({name: thirdLevel, description, services, channels, email}));
-
-
-                members.forEach((member, mIdx) => {
-                    const col = mIdx % inARow;
-                    const row = Math.floor(mIdx / inARow);
-                    const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
-                    const cardY = secondLevelY + 70 + 45 + row * (cardBaseHeight + 10) + 130;
-
-                    const group = cardLayer.append('g')
-                        .attr('data-role', (member[ROLE_FIELD_WITH_MAPPING] || '').toString().trim())
-                        .attr('data-company', (member[COMPANY_FIELD] || '').toString().trim())
-                        .attr('data-location', (member[LOCATION_FIELD] || '').toString().trim())
-                        .attr('class', 'draggable')
-                        .attr('transform', `translate(${cardX},${cardY})`)
-                        .attr('data-key', `card::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}::${normalizeKey(member['Name'] || member['User'] || mIdx)}`);
-
-
-                    const colorKey =
-                        colorBy === ROLE_FIELD_WITH_MAPPING ? group.attr('data-role') :
-                            colorBy === COMPANY_FIELD ? group.attr('data-company') :
-                                group.attr('data-location');
-
-                    colorKeyMappings.set(
-                        colorBy,
-                        (colorKeyMappings.get(colorBy) ?? new Set()).add(colorKey)
-                    );
-
-                    restoreGroupPosition(group);
-
-                    const memberRect = group.append('rect')
-                        .attr('class', 'profile-box')
-                        .attr('width', memberWidth)
-                        .attr('height', cardBaseHeight)
-                        .attr('rx', 14)
-                        .attr('ry', 14)
-                        .attr('fill', getCardFill(group) ? getCardFill(group) : NEUTRAL_COLOR);
-
-                    const f = getCardFill(group) || NEUTRAL_COLOR;
-                    if ((f || '').toLowerCase() === '#ffffff' || f === 'white') {
-                        memberRect.attr('stroke', '#b8b8b8').attr('stroke-width', 1);
-                    }
-
-                    if (member.guestRole) {
-                        memberRect.attr('stroke', '#333')
-                            .attr('stroke-width', 1.5)
-                            .attr('stroke-dasharray', '4 2');
-                    }
-
-                    function getPhotoCandidates(email) {
-                        const baseName = (email.split('@')[0] || '').replace('-ext', '').replace('.', '-');
-
-                        const fileName = `./assets/photos/${baseName}`;
-
-                        return [
-                            // `${fileName}.webp`,
-                            // `${fileName}.avif`,
-                            `${fileName}.jpg`,
-                            `${fileName}.png`,
-                            `${fileName}.jpeg`,
-                        ];
-                    }
-
-                    function resolvePhoto(email, fallback = './assets/user-icon.png', timeoutMs = 4000) {
-                        const candidates = getPhotoCandidates(email);
-
-                        const tryWithTimeout = (url) => new Promise((resolve, reject) => {
-                            const img = new Image();
-                            const timer = setTimeout(() => {
-                                img.onload = img.onerror = null;
-                                reject(new Error('timeout'));
-                            }, timeoutMs);
-
-                            img.onload = () => {
-                                clearTimeout(timer);
-                                resolve(url);
-                            };
-                            img.onerror = () => {
-                                clearTimeout(timer);
-                                reject(new Error('error'));
-                            };
-
-                            // optional: cache-busting
-                            // img.src = `${url}?t=${Date.now()}`;
-                            img.src = url;
+                if (secondLevelDescription !== "") {
+                    secondLevelGroup.select('text.theme-title')
+                        .append('tspan')
+                        .attr('class', 'theme-icon')
+                        .attr('dx', 10)
+                        .text(' ℹ️')
+                        .on('click', (e) => {
+                            e.stopPropagation();
+                            openDrawer({ name: secondLevel, description: secondLevelDescription });
                         });
 
-                        return candidates
-                            .reduce(
-                                (chain, url) => chain.catch(() => tryWithTimeout(url)),
-                                Promise.reject()
-                            )
-                            .catch(() => fallback);
-                    }
+                    secondLevelGroup.select('rect.theme-box')
+                        .style('cursor', 'pointer')
+                        .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
 
-                    resolvePhoto(member[emailField]).then(photoPath => {
-                        const photoSize = 60;
-                        const photoX = (memberWidth - photoSize) / 2;
-                        const photoY = 8;
+                    secondLevelGroup.select('text.theme-title')
+                        .style('cursor', 'pointer')
+                        .on('click', () => openDrawer({ name: secondLevel, description: secondLevelDescription }));
+                }
 
-                        const photoWrapper = group.append('g')
-                            .attr('class', 'photo-wrapper');
+                // Team cards nel theme
+                Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
+                    const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
+                    const services    = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
+                    const description = aggregateInfoByHeader(originalMembers, headers, 'Team Description')?.items?.join("") ?? '';
+                    const channels    = aggregateInfoByHeader(originalMembers, headers, 'Team Channels', true)?.items;
+                    const email       = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
 
-                        const photoFO = photoWrapper.append('foreignObject')
-                            .attr('x', photoX)
-                            .attr('y', photoY)
-                            .attr('width', photoSize)
-                            .attr('height', photoSize)
-                            .attr('requiredExtensions', 'http://www.w3.org/1999/xhtml');
+                    const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
+                    const teamLocalY = 130;
 
-                        const photoDiv = photoFO.append('xhtml:div')
-                            .style('width',  `${photoSize}px`)
-                            .style('height', `${photoSize}px`)
-                            .style('border-radius', '50%')
-                            .style('overflow', 'hidden');
+                    const thirdLevelGroup = teamLayer.append('g')
+                        .attr('class', 'draggable')
+                        .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${secondLevelY + teamLocalY})`)
+                        .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`);
+                    restoreGroupPosition(thirdLevelGroup);
 
-                        const photoImg = photoDiv.append('xhtml:img')
-                            .attr('src', photoPath)
-                            .attr('alt', member.Name || 'profile photo')
-                            .style('display', 'block')
-                            .style('width',  '100%')
-                            .style('height', '100%')
-                            .style('object-fit', 'cover')
-                            .style('pointer-events', 'none');
+                    // Box team (altezza di riga)
+                    const thirdLevelRect = thirdLevelGroup.append('rect')
+                        .attr('class', 'team-box')
+                        .attr('width', thirdLevelBoxWidth)
+                        .attr('height', teamBoxHeightRow)
+                        .attr('rx', 20)
+                        .attr('ry', 20);
+                    makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
 
-                        let nTeams = 0;
+                    const serviceCount = services?.items?.length || 0;
+                    const titleText = `${truncateString(thirdLevel)} - ⚙️ (${serviceCount})`;
 
-                        try {
-                            nTeams = countTeamsForMemberInOrg(member, visibleOrganizationWithManagers) || 0;
-                        } catch {}
+                    thirdLevelGroup.append('text')
+                        .attr('x', thirdLevelBoxWidth / 2)
+                        .attr('y', 70)
+                        .attr('text-anchor', 'middle')
+                        .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
+                        .attr('class', 'team-title')
+                        .text(titleText);
 
-                        if (nTeams > 1) {
-                            const badgeR = 10;
-                            const bx = photoX + photoSize - badgeR - 1;
-                            const by = photoY + photoSize - badgeR - 1;
+                    thirdLevelGroup.select('rect.team-box')
+                        .style('cursor', 'pointer')
+                        .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
+                    thirdLevelGroup.select('text.team-title')
+                        .style('cursor', 'pointer')
+                        .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
 
-                            const tooltipText = `Click to browse ${member.Name}'s ${nTeams} teams`;
+                    // RENDER CARD MEMBRO (lascia il tuo codice esistente)
+                    members.forEach((member, mIdx) => {
+                        const col = mIdx % inARow;
+                        const row = Math.floor(mIdx / inARow);
+                        const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
+                        const cardY = secondLevelY + 70 + 45 + row * (cardBaseHeight + 10) + 130;
 
-                            const badgeG = photoWrapper.append('g')
-                                .attr('class', 'multi-team-badge')
-                                .attr('transform', `translate(${bx},${by})`)
-                                .style('cursor', 'pointer')
-                                .attr('role', 'button')
-                                .attr('tabindex', 0)
-                                .attr('aria-label', tooltipText)
-                                .attr('data-tooltip', tooltipText);
 
-                            badgeG.append('circle')
-                                .attr('r', badgeR)
-                                .attr('fill', '#111')
-                                .attr('stroke', '#fff')
-                                .attr('stroke-width', 1.5);
+                        const group = cardLayer.append('g')
+                            .attr('data-role', (member[ROLE_FIELD_WITH_MAPPING] || '').toString().trim())
+                            .attr('data-company', (member[COMPANY_FIELD] || '').toString().trim())
+                            .attr('data-location', (member[LOCATION_FIELD] || '').toString().trim())
+                            .attr('class', 'draggable')
+                            .attr('transform', `translate(${cardX},${cardY})`)
+                            .attr('data-key', `card::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}::${normalizeKey(member['Name'] || member['User'] || mIdx)}`);
 
-                            badgeG.append('text')
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'central')
-                                .attr('fill', '#fff')
-                                .style('font-weight', 600)
-                                .style('font-size', `${badgeR + 2}px`)
-                                .text(nTeams);
+                        const colorKey =
+                            colorBy === ROLE_FIELD_WITH_MAPPING ? group.attr('data-role') :
+                                colorBy === COMPANY_FIELD ? group.attr('data-company') :
+                                    group.attr('data-location');
 
-                            // Click/tastiera: vai al prossimo risultato per il nome del member
-                            const triggerSearch = (e) => {
-                                e?.stopPropagation?.();
-                                const q = member.Name?.toLowerCase();
-                                if (q) searchByQuery(q);
-                            };
-                            badgeG.on('click', triggerSearch);
-                            badgeG.on('keydown', (e) => {
-                                if (e.key === 'Enter' || e.key === ' ') triggerSearch(e);
+                        colorKeyMappings.set(
+                            colorBy,
+                            (colorKeyMappings.get(colorBy) ?? new Set()).add(colorKey)
+                        );
+
+                        restoreGroupPosition(group);
+
+                        const memberRect = group.append('rect')
+                            .attr('class', 'profile-box')
+                            .attr('width', memberWidth)
+                            .attr('height', cardBaseHeight)
+                            .attr('rx', 14)
+                            .attr('ry', 14)
+                            .attr('fill', getCardFill(group) ? getCardFill(group) : NEUTRAL_COLOR);
+
+
+                        {
+                            const f = getCardFill(group) || NEUTRAL_COLOR;
+                            if ((f || '').toLowerCase() === '#ffffff' || f === 'white') {
+                                memberRect.attr('stroke', '#b8b8b8').attr('stroke-width', 1);
+                            }
+                        }
+
+
+
+                        if (member.guestRole) {
+                            memberRect.attr('stroke', '#333')
+                                .attr('stroke-width', 1.5)
+                                .attr('stroke-dasharray', '4 2');
+                        }
+
+                        function getPhotoCandidates(email) {
+                            const baseName = (email.split('@')[0] || '').replace('-ext', '').replace('.', '-');
+
+                            const fileName = `./assets/photos/${baseName}`;
+
+                            return [
+                                `${fileName}.webp`,
+                                // `${fileName}.avif`,
+                                `${fileName}.jpg`,
+                                `${fileName}.png`,
+                                `${fileName}.jpeg`,
+                            ];
+                        }
+
+                        function resolvePhoto(email, fallback = './assets/user-icon.png', timeoutMs = 4000) {
+                            const candidates = getPhotoCandidates(email);
+
+                            const tryWithTimeout = (url) => new Promise((resolve, reject) => {
+                                const img = new Image();
+                                const timer = setTimeout(() => {
+                                    img.onload = img.onerror = null;
+                                    reject(new Error('timeout'));
+                                }, timeoutMs);
+
+                                img.onload = () => {
+                                    clearTimeout(timer);
+                                    resolve(url);
+                                };
+                                img.onerror = () => {
+                                    clearTimeout(timer);
+                                    reject(new Error('error'));
+                                };
+
+                                img.src = url;
                             });
 
-                            badgeG.raise();
-                        }
-                    });
-
-                    const nameY = 72;
-                    const defaultNameBoxH = 24;
-
-                    const nameFO = group.append('foreignObject')
-                        .attr('x', 0)
-                        .attr('y', nameY)
-                        .attr('width', memberWidth)
-                        .attr('height', defaultNameBoxH);
-                    const nameDiv = nameFO.append('xhtml:div')
-                        .attr('class', 'profile-name')
-                        .html(member['Name']);
-
-                    function adjustNameAndInfoHeights() {
-                        const measured = nameDiv.node()?.scrollHeight || defaultNameBoxH;
-
-                        const nameBoxH = Math.max(defaultNameBoxH, Math.ceil(measured) + 2);
-
-                        nameFO.attr('height', nameBoxH);
-
-                        const infoStartY = nameY + nameBoxH + 4;
-
-                        const infoFOExisting = group.select('foreignObject .info').node()
-                            ? d3.select(group.select('foreignObject .info').node().closest('foreignObject'))
-                            : null;
-
-                        if (infoFOExisting) {
-                            infoFOExisting.attr('y', infoStartY);
-                        }
-                    }
-
-                    requestAnimationFrame(() => requestAnimationFrame(adjustNameAndInfoHeights));
-
-                    const infoDiv = group.append('foreignObject')
-                        .attr('x', 8)
-                        .attr('y', 98)
-                        .attr('width', memberWidth - 16)
-                        .attr('height', cardBaseHeight - 102)
-                        .append('xhtml:div')
-                        .attr('class', 'info');
-
-                    const email = member[emailField];
-
-                    const photoSize = 60;
-                    const photoX = (memberWidth - photoSize) / 2;
-
-                    const photoY = 8;
-
-                    const isWebKit = /AppleWebKit/i.test(navigator.userAgent)
-                        && /Safari/i.test(navigator.userAgent)
-                        && !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
-
-                    const useSvgFabs = isWebKit
-                        || /iPad|iPhone|iPod/i.test(navigator.userAgent)
-                        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-                    const spacingX = 17;
-                    const isMobile = window.matchMedia('(max-width: 480px)').matches;
-                    const leftSpacingX = 1;
-                    const fabSize = useSvgFabs ? 28 : 24;
-                    const gap = useSvgFabs ? 3 : 8;
-
-                    const fabsHeight = (fabSize * 2) + gap;
-
-                    const rightX = Math.round(photoX + photoSize + spacingX);
-
-                    const leftX  = Math.round(photoX - spacingX - fabSize - leftSpacingX);
-
-                    const fabsY = Math.round(photoY + Math.round((photoSize - fabsHeight) / 2) - 4);
-
-                    const r  = fabSize / 2;
-                    const cx = Math.round(rightX + fabSize / 2);
-                    const cy = Math.round(fabsY + fabSize / 2);
-                    const dy = fabSize + gap;
-
-                    const lc = {
-                        cx: Math.round(leftX + fabSize / 2),
-                        cy: Math.round(fabsY + fabSize / 2),
-                        r:  r
-                    };
-
-                    const reportClickHandler = (event) => {
-                        event?.preventDefault?.();
-                        event?.stopPropagation?.();
-                        openPersonReportCompose(
-                            peopleDBUpdateRecipients,
-                            portfolioDBUpdateRecipients,
-                            member,
-                            { firstLevel, secondLevel, thirdLevel }
-                        ).then(() => console.log('report a change started'));
-                    };
-
-                    const companyGroupTalentUrl = getCompanyGroupTalentUrl(member);
-                    const isInternal = isInternalCompany(member);
-
-                    if (useSvgFabs) {
-                        const reportG = group.append('g')
-                            .attr('class', 'contact-fabs-svg contact-fabs--left')
-                            .attr('transform', `translate(${lc.cx},${lc.cy})`);
-
-                        const reportA = reportG.append('a')
-                            .attr('href', '#')
-                            .attr('target', '_blank')
-                            .attr('rel', 'noopener noreferrer')
-                            .attr('class', 'contact-fab report')
-                            .attr('data-tooltip', 'Report change')
-                            .attr('aria-label', 'Report change');
-
-                        if (isInternal) {
-                            const talentA_left = reportG.append('a')
-                                .attr('href', companyGroupTalentUrl)
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .attr('class', 'contact-fab companygroup-talent')
-                                .attr('data-tooltip', 'Company Group Talent')
-                                .attr('aria-label', 'Company Group Talent');
-
-                            const talentG_left = talentA_left.append('g')
-                                .attr('transform', `translate(0, ${dy})`);
-
-                            talentG_left.append('circle').attr('r', lc.r).attr('class', 'fab-circle');
-                            talentG_left.append('text')
-                                .attr('class', 'fab-emoji')
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'central')
-                                .text('👤');
-
-                            talentA_left
-                                .on('pointerdown', (e) => e.stopPropagation())
-                                .on('touchstart',  (e) => e.stopPropagation());
+                            return candidates
+                                .reduce(
+                                    (chain, url) => chain.catch(() => tryWithTimeout(url)),
+                                    Promise.reject()
+                                )
+                                .catch(() => fallback);
                         }
 
 
-                        const reportBtn = reportA.append('g').attr('transform', 'translate(0,0)');
-                        reportBtn.append('circle')
-                            .attr('r', lc.r)
-                            .attr('class', 'fab-circle');
-                        reportBtn.append('text')
-                            .attr('class', 'fab-emoji')
-                            .attr('text-anchor', 'middle')
-                            .attr('dominant-baseline', 'central')
-                            .text('📝');
+                        resolvePhoto(member[emailField]).then(photoPath => {
+                            const photoSize = 60;
+                            const photoX = (memberWidth - photoSize) / 2;
+                            const photoY = 8;
 
-                        reportA
-                            .on('pointerdown', (e) => e.stopPropagation())
-                            .on('touchstart', (e) => e.stopPropagation())
-                            .on('click', reportClickHandler);
+                            const photoWrapper = group.append('g')
+                                .attr('class', 'photo-wrapper');
 
-                        if (member[emailField]) {
-                            const fabsG = group.append('g')
-                                .attr('class', 'contact-fabs-svg contact-fabs--right')
-                                .attr('transform', `translate(${cx},${cy})`);
+                            const photoFO = photoWrapper.append('foreignObject')
+                                .attr('x', photoX)
+                                .attr('y', photoY)
+                                .attr('width', photoSize)
+                                .attr('height', photoSize)
+                                .attr('requiredExtensions', 'http://www.w3.org/1999/xhtml');
 
-                            const chatA = fabsG.append('a')
-                                .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .attr('class', 'contact-fab chat')
-                                .attr('data-tooltip', 'Chat')
-                                .attr('aria-label', 'Chat');
+                            const photoDiv = photoFO.append('xhtml:div')
+                                .style('width',  `${photoSize}px`)
+                                .style('height', `${photoSize}px`)
+                                .style('border-radius', '50%')
+                                .style('overflow', 'hidden');
 
-                            const chatG = chatA.append('g').attr('transform', 'translate(0,0)');
-                            chatG.append('circle').attr('r', r).attr('class', 'fab-circle');
-                            chatG.append('text')
-                                .attr('class', 'fab-emoji')
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'central')
-                                .text('💬');
+                            const photoImg = photoDiv.append('xhtml:img')
+                                .attr('src', photoPath)
+                                .attr('alt', member.Name || 'profile photo')
+                                .style('display', 'block')
+                                .style('width',  '100%')
+                                .style('height', '100%')
+                                .style('object-fit', 'cover')
+                                .style('pointer-events', 'none');
 
-                            const mailA = fabsG.append('a')
-                                .attr('href', createOutlookUrl([email]))
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .attr('class', 'contact-fab mail')
-                                .attr('data-tooltip', 'Send email')
-                                .attr('aria-label', 'Send email');
+                            let nTeams = 0;
+                            try {
+                                nTeams = countTeamsForMemberInOrg(member, visibleOrganizationWithManagers) || 0;
+                            } catch {}
 
-                            const mailG = mailA.append('g').attr('transform', `translate(0, ${dy})`);
-                            mailG.append('circle').attr('r', r).attr('class', 'fab-circle');
-                            mailG.append('text')
-                                .attr('class', 'fab-emoji')
-                                .attr('text-anchor', 'middle')
-                                .attr('dominant-baseline', 'central')
-                                .text('✉️');
+                            if (nTeams > 1) {
+                                const badgeR = 10;
+                                const bx = photoX + photoSize - badgeR - 1;
+                                const by = photoY + photoSize - badgeR - 1;
 
-                            fabsG.selectAll('a.contact-fab')
-                                .on('pointerdown', (event) => event.stopPropagation())
-                                .on('touchstart', (event) => event.stopPropagation());
+                                const tooltipText = `Focus shared across ${nTeams} teams. Click to browse them`;
+
+                                const badgeG = photoWrapper.append('g')
+                                    .attr('class', 'multi-team-badge')
+                                    .attr('transform', `translate(${bx},${by})`)
+                                    .style('cursor', 'pointer')
+                                    .attr('role', 'button')
+                                    .attr('tabindex', 0)
+                                    .attr('aria-label', tooltipText)
+                                    .attr('data-tooltip', tooltipText);
+
+                                badgeG.append('circle')
+                                    .attr('r', badgeR)
+                                    .attr('fill', '#111')
+                                    .attr('stroke', '#fff')
+                                    .attr('stroke-width', 1.5);
+
+                                badgeG.append('text')
+                                    .attr('text-anchor', 'middle')
+                                    .attr('dominant-baseline', 'central')
+                                    .attr('fill', '#fff')
+                                    .style('font-weight', 600)
+                                    .style('font-size', `${badgeR + 2}px`)
+                                    .text(nTeams);
+
+                                const triggerSearch = (e) => {
+                                    e?.stopPropagation?.();
+                                    const q = member.Name?.toLowerCase();
+                                    if (q) searchByQuery(q);
+                                };
+                                badgeG.on('click', triggerSearch);
+                                badgeG.on('keydown', (e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') triggerSearch(e);
+                                });
+
+                                badgeG.raise();
+                            }
+
+                        });
+
+
+                        const nameY = 72;
+                        const defaultNameBoxH = 24;
+
+                        const nameFO = group.append('foreignObject')
+                            .attr('x', 0)
+                            .attr('y', nameY)
+                            .attr('width', memberWidth)
+                            .attr('height', defaultNameBoxH);
+                        const nameDiv = nameFO.append('xhtml:div')
+                            .attr('class', 'profile-name')
+                            .html(member['Name']);
+
+                        function adjustNameAndInfoHeights() {
+                            const measured = nameDiv.node()?.scrollHeight || defaultNameBoxH;
+
+                            const nameBoxH = Math.max(defaultNameBoxH, Math.ceil(measured) + 2);
+
+                            nameFO.attr('height', nameBoxH);
+
+                            const infoStartY = nameY + nameBoxH + 4;
+
+                            const infoFOExisting = group.select('foreignObject .info').node()
+                                ? d3.select(group.select('foreignObject .info').node().closest('foreignObject'))
+                                : null;
+
+                            if (infoFOExisting) {
+                                infoFOExisting.attr('y', infoStartY);
+                            }
                         }
-                    } else {
-                        const leftColumnCount = isInternal ? 2 : 1;
-                        const leftFabsHeight = (fabSize * leftColumnCount) + (gap * (leftColumnCount - 1));
 
-                        const fabsLeft = group.append('foreignObject')
-                            .attr('x', leftX)
-                            .attr('y', fabsY)
-                            .attr('width', fabSize)
-                            .attr('height', leftFabsHeight)
-                            .attr('pointer-events', 'all')
-                            .style('overflow', 'visible')
+                        requestAnimationFrame(() => requestAnimationFrame(adjustNameAndInfoHeights));
+
+                        const infoDivFO_Y = nameY + defaultNameBoxH + 4;
+                        const infoDiv = group.append('foreignObject')
+                            .attr('x', 8)
+                            .attr('y', infoDivFO_Y)
+                            .attr('width', memberWidth - 16)
+                            .attr('height', Math.max(0, cardBaseHeight - (infoDivFO_Y - 8)))
                             .append('xhtml:div')
-                            .attr('class', 'contact-fabs contact-fabs--left');
+                            .attr('class', 'info');
 
-                        fabsLeft.append('a')
-                            .attr('class', 'contact-fab report')
-                            .attr('href', '#')
-                            .attr('data-tooltip', 'Report change')
-                            .attr('aria-label', 'Report change')
-                            .html(`<span class="icon" aria-hidden="true">📝</span>`)
-                            .on('click', reportClickHandler);
+                        const email = member[emailField];
 
-                        if (isInternal) {
-                            fabsLeft.append('a')
-                                .attr('class', 'contact-fab companygroup-talent')
-                                .attr('href', companyGroupTalentUrl)
+                        const isWebKit = /AppleWebKit/i.test(navigator.userAgent)
+                            && /Safari/i.test(navigator.userAgent)
+                            && !/(Chrome|Chromium|Edg)/i.test(navigator.userAgent);
+
+                        const useSvgFabs = isWebKit
+                            || /iPad|iPhone|iPod/i.test(navigator.userAgent)
+                            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+                        const photoSize = 60;
+                        const photoX = (memberWidth - photoSize) / 2;
+
+                        const photoY = 8;
+
+                        const spacingX = 17;
+                        const leftSpacingX = 1;
+                        const fabSize = useSvgFabs ? 28 : 24;
+                        const gap = useSvgFabs ? 3 : 8;
+
+                        const fabsHeight = (fabSize * 2) + gap;
+
+                        const rightX = Math.round(photoX + photoSize + spacingX);
+
+                        const leftX = Math.round(photoX - spacingX - fabSize - leftSpacingX);
+
+                        const fabsY = Math.round(photoY + Math.round((photoSize - fabsHeight) / 2) - 4);
+
+                        const r = fabSize / 2;
+                        const cx = Math.round(rightX + fabSize / 2);
+                        const cy = Math.round(fabsY + fabSize / 2);
+                        const dy = fabSize + gap;
+
+                        const lc = {
+                            cx: Math.round(leftX + fabSize / 2),
+                            cy: Math.round(fabsY + fabSize / 2),
+                            r: r
+                        };
+
+                        const reportClickHandler = (event) => {
+                            event?.preventDefault?.();
+                            event?.stopPropagation?.();
+                            openPersonReportCompose(
+                                peopleDBUpdateRecipients,
+                                portfolioDBUpdateRecipients,
+                                member,
+                                {firstLevel, secondLevel, thirdLevel}
+                            ).then(() => console.log('report a change started'));
+                        };
+                        const companyGroupTalentUrl = getCompanyGroupTalentUrl(member);
+                        const isInternal = isInternalCompany(member);
+
+
+                        if (useSvgFabs) {
+                            const reportG = group.append('g')
+                                .attr('class', 'contact-fabs-svg contact-fabs--left')
+                                .attr('transform', `translate(${lc.cx},${lc.cy})`);
+
+                            const reportA = reportG.append('a')
+                                .attr('href', '#')
                                 .attr('target', '_blank')
                                 .attr('rel', 'noopener noreferrer')
-                                .attr('data-tooltip', 'Company Group Talent')
-                                .attr('aria-label', 'Company Group Talent')
-                                .html(`<span class="icon" aria-hidden="true">👤</span>`);
-                        }
+                                .attr('class', 'contact-fab report')
+                                .attr('data-tooltip', 'Report change')
+                                .attr('aria-label', 'Report change');
 
-                        if (member[emailField]) {
-                            const fabs = group.append('foreignObject')
-                                .attr('x', rightX)
+                            if (isInternal) {
+                                const talentA_left = reportG.append('a')
+                                    .attr('href', companyGroupTalentUrl)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('class', 'contact-fab companygroup-talent')
+                                    .attr('data-tooltip', 'Company Group Talent')
+                                    .attr('aria-label', 'Company Group Talent');
+
+                                const talentG_left = talentA_left.append('g')
+                                    .attr('transform', `translate(0, ${dy})`);
+
+                                talentG_left.append('circle').attr('r', lc.r).attr('class', 'fab-circle');
+                                talentG_left.append('text')
+                                    .attr('class', 'fab-emoji')
+                                    .attr('text-anchor', 'middle')
+                                    .attr('dominant-baseline', 'central')
+                                    .text('👤');
+
+                                talentA_left
+                                    .on('pointerdown', (e) => e.stopPropagation())
+                                    .on('touchstart', (e) => e.stopPropagation());
+                            }
+
+                            const reportBtn = reportA.append('g').attr('transform', 'translate(0,0)');
+                            reportBtn.append('circle')
+                                .attr('r', lc.r)
+                                .attr('class', 'fab-circle');
+                            reportBtn.append('text')
+                                .attr('class', 'fab-emoji')
+                                .attr('text-anchor', 'middle')
+                                .attr('dominant-baseline', 'central')
+                                .text('📝');
+
+                            reportA
+                                .on('pointerdown', (e) => e.stopPropagation())
+                                .on('touchstart', (e) => e.stopPropagation())
+                                .on('click', reportClickHandler);
+
+                            if (member[emailField]) {
+                                const fabsG = group.append('g')
+                                    .attr('class', 'contact-fabs-svg contact-fabs--right')
+                                    .attr('transform', `translate(${cx},${cy})`);
+
+                                const chatA = fabsG.append('a')
+                                    .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('class', 'contact-fab chat')
+                                    .attr('data-tooltip', 'Chat')
+                                    .attr('aria-label', 'Chat');
+
+                                const chatG = chatA.append('g').attr('transform', 'translate(0,0)');
+                                chatG.append('circle').attr('r', r).attr('class', 'fab-circle');
+                                chatG.append('text')
+                                    .attr('class', 'fab-emoji')
+                                    .attr('text-anchor', 'middle')
+                                    .attr('dominant-baseline', 'central')
+                                    .text('💬');
+                                const mailA = fabsG.append('a')
+                                    .attr('href', createOutlookUrl([email]))
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('class', 'contact-fab mail')
+                                    .attr('data-tooltip', 'Send email')
+                                    .attr('aria-label', 'Send email');
+
+
+                                const mailG = mailA.append('g').attr('transform', `translate(0, ${dy})`);
+                                mailG.append('circle').attr('r', r).attr('class', 'fab-circle');
+                                mailG.append('text')
+                                    .attr('class', 'fab-emoji')
+                                    .attr('text-anchor', 'middle')
+                                    .attr('dominant-baseline', 'central')
+                                    .text('✉️');
+
+                                fabsG.selectAll('a.contact-fab')
+                                    .on('pointerdown', (event) => event.stopPropagation())
+                                    .on('touchstart', (event) => event.stopPropagation());
+                            }
+                        } else {
+                            const leftColumnCount = isInternal ? 2 : 1;
+                            const leftFabsHeight = (fabSize * leftColumnCount) + (gap * (leftColumnCount - 1));
+
+
+                            const fabsLeft = group.append('foreignObject')
+                                .attr('x', leftX)
                                 .attr('y', fabsY)
                                 .attr('width', fabSize)
-                                .attr('height', fabsHeight)
+                                .attr('height', leftFabsHeight)
                                 .attr('pointer-events', 'all')
                                 .style('overflow', 'visible')
                                 .append('xhtml:div')
-                                .attr('class', 'contact-fabs contact-fabs--right');
+                                .attr('class', 'contact-fabs contact-fabs--left');
 
-                            fabs.append('a')
-                                .attr('class', 'contact-fab chat')
-                                .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .attr('data-tooltip', 'Chat')
-                                .attr('aria-label', 'Chat')
-                                .html(`<span class="icon" aria-hidden="true">💬</span>`);
+                            fabsLeft.append('a')
+                                .attr('class', 'contact-fab report')
+                                .attr('href', '#')
+                                .attr('data-tooltip', 'Report change')
+                                .attr('aria-label', 'Report change')
+                                .html(`<span class="icon" aria-hidden="true">📝</span>`)
+                                .on('click', reportClickHandler);
 
-                            fabs.append('a')
-                                .attr('class', 'contact-fab mail')
-                                .attr('href', createOutlookUrl([email]))
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .attr('data-tooltip', 'Send email')
-                                .attr('aria-label', 'Send email')
-                                .html(`<span class="icon" aria-hidden="true">✉️</span>`);
-                        }
-                    }
-                    group.classed('card', true);
-
-                    group.selectAll('.contact-fabs-svg, .contact-fabs').each(function () {
-                        this.parentNode.appendChild(this);
-                    });
-
-                    wireFabsInteractions(group);
-
-                    Object.entries(member).forEach(([key, value]) => {
-                        if (fieldsToShow.includes(key) && value) {
-                            let finalValue = value;
-
-                            if (dateValues.includes(key)) {
-                                const parsed = new Date(value);
-                                if (!isNaN(parsed)) {
-                                    finalValue = formatMonthYear(parsed);
-                                }
+                            if (isInternal) {
+                                fabsLeft.append('a')
+                                    .attr('class', 'contact-fab companygroup-talent')
+                                    .attr('href', companyGroupTalentUrl)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('data-tooltip', 'Company Group Talent')
+                                    .attr('aria-label', 'Company Group Talent')
+                                    .html(`<span class="icon" aria-hidden="true">👤</span>`);
                             }
 
-                            infoDiv.append('div')
-                                .attr('class', key.toLowerCase() + '-field')
-                                .html(`<strong>${key}:</strong> ${finalValue}`);
+                            if (member[emailField]) {
+                                const fabs = group.append('foreignObject')
+                                    .attr('x', rightX)
+                                    .attr('y', fabsY)
+                                    .attr('width', fabSize)
+                                    .attr('height', fabsHeight)
+                                    .attr('pointer-events', 'all')
+                                    .style('overflow', 'visible')
+                                    .append('xhtml:div')
+                                    .attr('class', 'contact-fabs contact-fabs--right');
+
+                                fabs.append('a')
+                                    .attr('class', 'contact-fab chat')
+                                    .attr('href', `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('data-tooltip', 'Chat')
+                                    .attr('aria-label', 'Chat')
+                                    .html(`<span class="icon" aria-hidden="true">💬</span>`);
+
+                                fabs.append('a')
+                                    .attr('class', 'contact-fab mail')
+                                    .attr('href', createOutlookUrl([email]))
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .attr('data-tooltip', 'Send email')
+                                    .attr('aria-label', 'Send email')
+                                    .html(`<span class="icon" aria-hidden="true">✉️</span>`);
+                            }
+
                         }
+
+                        group.classed('card', true);
+                        group.selectAll('.contact-fabs-svg, .contact-fabs').each(function () {
+                            this.parentNode.appendChild(this);
+                        });
+                        wireFabsInteractions(group);
+
+                        Object.entries(member).forEach(([key, value]) => {
+                            if (fieldsToShow.includes(key) && value) {
+                                let finalValue = value;
+
+                                if (dateValues.includes(key)) {
+                                    const parsed = new Date(value);
+                                    if (!isNaN(parsed)) {
+                                        finalValue = formatMonthYear(parsed);
+                                    }
+
+                                }
+
+                                infoDiv.append('div')
+                                    .attr('class', key.toLowerCase() + '-field')
+                                    .html(`<strong>${key}:</strong> ${finalValue}`);
+                            }
+                        });
                     });
                 });
+
+                // Avanza X per il prossimo theme della stessa riga
+                secondLevelX += themeWidth + secondLevelBoxPadX;
             });
 
-            secondLevelX += themeWidth + secondLevelBoxPadX;
-            usedTeamsInRow += nTeamsInTheme;
+            // Avanza Y per la riga successiva
+            secondLevelYBase += themeBoxHeightRow + secondLevelRowPadY;
         });
 
+        // Avanza Y per lo stream successivo
         streamY += firstLevelBoxHeight + firstLevelBoxPadY;
     });
 
