@@ -1089,18 +1089,62 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     z-index: 3000;
 }
 
-#legend-root.legend.legend--generic {
-    cursor: grab;
+#legend-root .legend__title.is-dragging {
+    cursor: grabbing;
 }
 
-#legend-root.legend.legend--generic.is-dragging {
+#legend-root {
+    cursor: default !important;
+}
+
+#legend-root .legend__title.is-dragging {
     cursor: grabbing;
-    user-select: none;
+}
+
+#legend-root,
+.legend,
+#legend-root.legend.legend--generic {
+    position: fixed !important;
+    pointer-events: auto !important;
 }
 
 #legend-root .legend__title {
-    cursor: grab;
+    pointer-events: auto !important;
 }
 #legend-root .legend__title.is-dragging {
-    cursor: grabbing;
+    cursor: move !important;
+}
+
+#legend-root .legend__title {
+    cursor: move !important;
+}
+
+#legend-root .legend__item {
+    pointer-events: auto !important;
+}
+
+body.drawer-open #legend-root {
+    z-index: 10000 !important;
+}
+
+body.side-drawer-open #legend-root {
+    z-index: 2000 !important;
+}
+
+#legend-root {
+    z-index: 9990 !important;
+}
+
+@media (max-width: 768px) {
+    #legend-root {
+        z-index: 500 !important;
+    }
+}
+
+
+@media (max-width: 768px) {
+    body.drawer-open #legend-root {
+        z-index: 500 !important;
+        pointer-events: none !important;
+    }
 }
