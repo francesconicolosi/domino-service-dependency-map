@@ -1012,7 +1012,6 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
 }
 
 #legend-root .legend__title{
-    font: 600 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     letter-spacing: .04em;
     text-transform: uppercase;
     margin-bottom: 6px;
@@ -1030,7 +1029,6 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     gap: 8px;
     min-height: 24px;
     line-height: 24px;
-    font: 500 13px/24px system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     color: #222;
 }
 
