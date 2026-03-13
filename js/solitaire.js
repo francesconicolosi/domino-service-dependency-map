@@ -139,7 +139,7 @@ function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topK
         const item = document.createElement('div');
         item.className = 'legend__item';
         item.setAttribute('data-value', key);
-        item.setAttribute('data-field', fieldName);
+        item.setAttribute('data-field', colorBy);
 
         const disabled = isUnknownLegendKey(key);
         if (disabled) {
@@ -171,23 +171,30 @@ function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topK
         list.appendChild(item);
     });
 
+    const isUnknownKey = (el) => {
+        const v = (el.getAttribute('data-value') || '').trim();
+        return isUnknownLegendKey(v);
+    };
+
     const activate = (el) => {
         const value = el.getAttribute('data-value') ?? '';
+        const field = (el.getAttribute('data-field') || '').trim(); // 'role' | 'company' | 'location' |
+        const missing = isUnknownKey(el);
         const searchInput = document.getElementById('drawer-search-input');
-        if (searchInput) searchInput.value = value;
-        searchByQuery(value);
+        if (searchInput) searchInput.value = missing ? '' : value;
+        searchByQuery(missing ? '' : value, { field, missing });
     };
 
     list.addEventListener('click', (e) => {
         const el = e.target.closest('.legend__item');
-        if (!el || el.classList.contains('legend__item--disabled')) return;
+        if (!el) return;
         activate(el);
     });
 
     list.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const el = e.target.closest('.legend__item');
-        if (!el || el.classList.contains('legend__item--disabled')) return;
+        if (!el) return;
         e.preventDefault();
         activate(el);
     });
@@ -2199,37 +2206,75 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
     }
 });
 
-function searchByQuery(query) {
-    if (!query) return;
-
+function searchByQuery(query, opts = {}) {
     const q = (query ?? '').toString().trim().toLowerCase();
-    if (!q) {
+    const scopeField = (opts.field || '').toLowerCase();
+    const missing = !!opts.missing;
+
+    if (!q && !missing) {
         clearSearch();
         return;
     }
+
     const searchInput = document.getElementById('drawer-search-input');
     if (searchInput && searchInput.value.trim().toLowerCase() !== q) {
         searchInput.value = q;
     }
 
-    const nodes = Array.from(document.querySelectorAll(
-        '.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]'
-    ));
+    const FIELD_SELECTORS = {
+        role: '.role-field',
+        company: '.company-field',
+        location: '.location-field'
+    };
 
-    const matches = nodes.filter(n => {
-        const txt = (n.textContent || '').toLowerCase();
-        const textMatch = txt.includes(q);
-        const attrMatch = (n.getAttribute('data-services') || '').toLowerCase().includes(q);
-        return textMatch || attrMatch;
-    });
+    function normalizeFieldName(f) {
+        const fLow = (f || '').toLowerCase();
+        if (fLow.includes('role')) return 'role';
+        if (fLow.includes('company')) return 'company';
+        if (fLow.includes('location')) return 'location';
+        return '';
+    }
+
+    const normalizedField = normalizeFieldName(scopeField);
+
+    let nodes = [];
+    let matches = [];
+
+    if (missing && normalizedField) {
+        const attrName =
+            normalizedField === 'role' ? 'data-role' :
+                normalizedField === 'company' ? 'data-company' : 'data-location';
+
+        nodes = Array.from(document.querySelectorAll(`g[data-key^="card::"]`));
+
+        matches = nodes.filter(n => {
+            const raw = (n.getAttribute(attrName) || '');
+            const norm = normalizeWs(raw).trim().toLowerCase();
+            return !norm || UNKNOWN_MATCHER.test(norm);
+        });
+
+    } else {
+        const nodesSelector = (normalizedField && FIELD_SELECTORS[normalizedField])
+            ? FIELD_SELECTORS[normalizedField]
+            : '.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]';
+
+        nodes = Array.from(document.querySelectorAll(nodesSelector));
+
+        matches = nodes.filter(n => {
+            const txt = (n.textContent || '').trim().toLowerCase();
+            const textMatch = txt.includes(q);
+            const attrMatch = (n.getAttribute?.('data-services') || '').toLowerCase().includes(q);
+            return textMatch || attrMatch;
+        });
+    }
 
     if (matches.length === 0) {
         clearSearchDimming();
-        showToast(`No result found for ${q}`);
+        showToast(missing ? 'No result found for Unknown' : `No result found for ${q}`);
         return;
     }
 
-    if (q === lastSearch) {
+    if (q === lastSearch && !missing) {
         currentIndex = (currentIndex + 1) % matches.length;
     } else {
         lastSearch = q;
@@ -2240,68 +2285,75 @@ function searchByQuery(query) {
     clearFieldHighlights();
     closeDrawer();
 
-    zoomToElement(target, 1, 600);
-    applySearchDimmingForMatches(matches);
-    showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
-    setSearchQuery(q);
+    if (!missing) {
+        const zoomTarget = (target.matches?.('g[data-key^="card::"]'))
+            ? (target.querySelector('.profile-box') || target)
+            : target;
 
-    const FIELD_CLASSES = ['role-field', 'company-field', 'location-field'];
-    if (target.classList) {
-        const hitClass = FIELD_CLASSES.find(c => target.classList.contains(c));
-        if (hitClass) {
-            target.classList.add('field-hit-highlight');
-        } else {
-            const group = target.closest('g[data-key^="card::"]');
-            if (group) {
-                FIELD_CLASSES.forEach(cls => {
-                    const el = group.querySelector('.' + cls);
-                    if (!el) return;
-                    const tn = (el.textContent || '').toLowerCase();
-                    if (tn.includes(q)) el.classList.add('field-hit-highlight');
-                });
+        zoomToElement(zoomTarget, 1, 600);
+        applySearchDimmingForMatches(matches);
+        showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
+        setSearchQuery(q);
+
+        const FIELD_CLASSES = ['role-field', 'company-field', 'location-field'];
+        if (zoomTarget.classList) {
+            const hitClass = FIELD_CLASSES.find(c => zoomTarget.classList.contains(c));
+            if (hitClass) {
+                zoomTarget.classList.add('field-hit-highlight');
+            } else {
+                const group = zoomTarget.closest('g[data-key^="card::"]');
+                if (group) {
+                    FIELD_CLASSES.forEach(cls => {
+                        const el = group.querySelector('.' + cls);
+                        if (!el) return;
+                        const tn = (el.textContent || '').toLowerCase();
+                        if (tn.includes(q)) el.classList.add('field-hit-highlight');
+                    });
+                }
             }
         }
+
+        // apertura drawer servizi (comportamento esistente)
+        try {
+            const group = zoomTarget.closest('g');
+            const teamTitleEl = group ? group.querySelector('text.team-title') : null;
+            if (!teamTitleEl) return;
+
+            const rawServices = (teamTitleEl.getAttribute('data-services') || '')
+                .split(',').map(s => s.trim()).filter(Boolean);
+            if (rawServices.length === 0) return;
+
+            const norm = v => (v || '').toString().trim().toLowerCase();
+            const normalized = rawServices.map(s => ({ raw: s, norm: norm(s) }));
+            const hit = normalized.find(svc => svc.norm.includes(q));
+            if (!hit) return;
+
+            const teamName =
+                teamTitleEl.getAttribute('data-team-name') || getNameFromTitleEl(teamTitleEl);
+            const email = teamTitleEl.getAttribute('data-team-email') || '';
+            const channels = (() => {
+                try { return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]'); }
+                catch { return []; }
+            })();
+            const description = teamTitleEl.getAttribute('data-team-description') || '';
+
+            openDrawer({
+                name: teamName,
+                description,
+                services: { items: rawServices },
+                channels,
+                email,
+                highlightService: hit.raw,
+                highlightQuery: q
+            });
+        } catch (e) {
+            console.warn('Drawer open/highlight skipped:', e);
+        }
+    } else {
+        applySearchDimmingForMatches(matches);
+        showToast(`Found ${matches.length} result(s).`);
+        setSearchQuery(q);
     }
-
-    try {
-        const group = target.closest('g');
-        const teamTitleEl = group ? group.querySelector('text.team-title') : null;
-        if (!teamTitleEl) return;
-
-        const rawServices = (teamTitleEl.getAttribute('data-services') || '')
-            .split(',').map(s => s.trim()).filter(Boolean);
-        if (rawServices.length === 0) return;
-
-        const norm = v => (v || '').toString().trim().toLowerCase();
-        const normalized = rawServices.map(s => ({ raw: s, norm: norm(s) }));
-        const hit = normalized.find(svc => svc.norm.includes(q));
-        if (!hit) return;
-
-        const teamName =
-            teamTitleEl.getAttribute('data-team-name') || getNameFromTitleEl(teamTitleEl);
-        const email = teamTitleEl.getAttribute('data-team-email') || '';
-        const channels = (() => {
-            try { return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]'); }
-            catch { return []; }
-        })();
-        const description = teamTitleEl.getAttribute('data-team-description') || '';
-
-        openDrawer({
-            name: teamName,
-            description,
-            services: {items: rawServices},
-            channels,
-            email,
-            highlightService: hit.raw,
-            highlightQuery: q
-        });
-
-    } catch (e) {
-
-        console.warn('Drawer open/highlight skipped:', e);
-
-    }
-
 }
 
 (function enableLegendDragOnce() {
