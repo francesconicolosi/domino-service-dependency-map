@@ -78,13 +78,6 @@ const guestRolesMap = new Map([
     ["Team Security Champion", ["Security Champion"]]
 ]);
 
-const additionalRolesToHighlight = ["OMS expert", "Project Manager", "Business Analyst"];
-
-const legendaRoles = Array.from(new Set([
-    ...Array.from(guestRolesMap.values()).flat(),
-    ...additionalRolesToHighlight
-]));
-
 const guestRoleColumns = Array.from(guestRolesMap.keys());
 
 let colorKeyMappings = new Map();
@@ -95,14 +88,9 @@ const peopleDBUpdateRecipients = [
 
 const portfolioDBUpdateRecipients = ['portfolio@nycosoft.com', 'bleiz.jonas@nycosoft.com'];
 
-function initColorScale(initialField, members) {
-    colorBy = initialField;
-    colorScale = buildLegendaColorScale(colorBy, members.slice(), d3, PALETTE, NEUTRAL_COLOR, ROLE_FIELD_WITH_MAPPING, legendaRoles);
-
-    if (typeof colorScale !== 'function') {
-        throw new Error('colorScale was not created as a function');
-    }
-}
+let roleDetailsMapping;
+const seenLegendClickKeys = new Set();
+let lastLegendClickAt = 0;
 
 function getCardFill(g) {
     if (typeof colorScale !== 'function') return NEUTRAL_COLOR;
@@ -182,7 +170,23 @@ function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topK
         const missing = isUnknownKey(el);
         const searchInput = document.getElementById('drawer-search-input');
         if (searchInput) searchInput.value = missing ? '' : value;
-        searchByQuery(missing ? '' : value, { field, missing });
+        const normalizedValue = normalizeWs(value).toLowerCase();
+        const normalizedField = normalizeWs(field).toLowerCase();
+        const clickKey = `${normalizedField}::${normalizedValue}`;
+
+        let noZoom = false;
+        if (!missing) {
+            const now = Date.now();
+            const elapsed = now - (lastLegendClickAt || 0);
+
+            if (elapsed > 1000) {
+                noZoom = true;
+            }
+
+            lastLegendClickAt = now;
+        }
+
+        searchByQuery(missing ? '' : value, { field, missing, noZoom });
     };
 
     list.addEventListener('click', (e) => {
@@ -656,7 +660,7 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
     window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
 })();
 
-function openDrawer({name: title, description, services, channels, email, highlightService, highlightQuery}) {
+function openDrawer({name: title, description, elements, channels, email, highlightService, highlightQuery, elementsTitle = "Managed Services:", elementsBaseUrl}) {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
@@ -666,7 +670,6 @@ function openDrawer({name: title, description, services, channels, email, highli
     if (!drawer || !titleEl || !listEl || !descEl) return;
 
     titleEl.textContent = `${title}`;
-
 
     descEl.innerHTML = '';
 
@@ -679,6 +682,7 @@ function openDrawer({name: title, description, services, channels, email, highli
         addTagToElement(descEl, 1);
         descEl.appendChild(document.createTextNode('Channels 💬'));
         addTagToElement(descEl, 1);
+
         const ul = document.createElement('ul');
         channels.forEach(channel => {
             const li = document.createElement('li');
@@ -702,15 +706,19 @@ function openDrawer({name: title, description, services, channels, email, highli
 
     listEl.innerHTML = '';
 
-    if (services && services.items && services.items.length !== 0) {
-        descEl.appendChild(document.createTextNode('Managed Services:'));
-        services.items.forEach(s => {
+    if (elements && elements.items && elements.items.length !== 0) {
+        descEl.appendChild(document.createTextNode(elementsTitle));
+        elements.items.forEach(s => {
             const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = `index.html?search=id%3A"${encodeURIComponent(s)}"`;
-            a.textContent = s;
-            a.target = '_blank';
-            li.appendChild(a);
+            if (elementsBaseUrl) {
+                const a = document.createElement('a');
+                a.href = elementsBaseUrl(s)
+                a.textContent = s;
+                a.target = '_blank';
+                li.appendChild(a);
+            } else {
+                li.textContent = s;
+            }
             listEl.appendChild(li);
         });
 
@@ -723,9 +731,9 @@ function openDrawer({name: title, description, services, channels, email, highli
             let firstHighlighted = null;
             const q = (highlightQuery || '').trim();
             if (q) {
-                const qn = normalizeWs(query).toLowerCase();
+                const qn = normalizeWs(q).toLowerCase();
                 anchors.forEach(a => {
-                    const tn = normalizeWs(n.textContent).toLowerCase();
+                    const tn = normalizeWs(a.textContent).toLowerCase();
                     if (tn.includes(qn)) {
                         a.classList.add('service-hit-highlight');
                         if (!firstHighlighted) firstHighlighted = a;
@@ -750,7 +758,6 @@ function openDrawer({name: title, description, services, channels, email, highli
                 }
             }
         })();
-
     }
 
     drawer.classList.add('open');
@@ -871,6 +878,30 @@ function resetVisualization() {
 }
 
 function showToast(message, duration = 3000) {
+    // --- helper: posiziona il container in base allo stato del drawer ---
+    function positionToastContainer(container) {
+        const drawer = document.getElementById('drawer');
+        const isDrawerOpen = drawer?.classList.contains('open');
+
+        // basso a destra se il drawer è aperto; altrimenti alto a destra
+        if (isDrawerOpen) {
+            container.style.top = 'unset';
+            container.style.bottom = '20px';
+            container.style.right = '20px';
+        } else {
+            container.style.bottom = 'unset';
+            container.style.top = '70px';
+            container.style.right = '20px';
+        }
+        // assicurati che stia sopra a drawer (9999) e overlay (9998)
+        container.style.zIndex = '10001';
+        container.style.position = 'fixed';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '10px';
+    }
+
+    // --- crea o recupera il container ---
     let container = document.querySelector('.toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -878,16 +909,34 @@ function showToast(message, duration = 3000) {
         document.body.appendChild(container);
     }
 
+    // --- posiziona subito (nel caso il drawer sia già aperto) ---
+    positionToastContainer(container);
+
+    // --- crea il toast e animazione ---
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
-
     container.appendChild(toast);
 
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 10);
+    // fornisci il tempo al browser per applicare gli stili prima della transizione .show
+    setTimeout(() => toast.classList.add('show'), 10);
 
+    // --- riposiziona al prossimo frame e dopo un piccolo delay ---
+    // (copre il caso in cui openDrawer venga chiamato subito dopo showToast)
+    requestAnimationFrame(() => positionToastContainer(container));
+    setTimeout(() => positionToastContainer(container), 180);
+
+    // --- attacca un observer UNA SOLA VOLTA per reagire ai cambi dello stato del drawer ---
+    if (!window.__toastDrawerObserverAttached) {
+        const drawer = document.getElementById('drawer');
+        if (drawer) {
+            const mo = new MutationObserver(() => positionToastContainer(container));
+            mo.observe(drawer, { attributes: true, attributeFilter: ['class'] });
+            window.__toastDrawerObserverAttached = true;
+        }
+    }
+
+    // --- chiudi e rimuovi il toast dopo la durata ---
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
@@ -952,6 +1001,7 @@ const findPersonByName = (targetName, result) => {
 };
 
 function buildOrganization(people) {
+    roleDetailsMapping = new Map();
     const organization = {};
     for (const person of people) {
         let firstLevelItems = (person[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
@@ -974,6 +1024,10 @@ function buildOrganization(people) {
                         || (person.User || '').trim()
                         || (person[emailField] || '').trim()
                         || 'Unknown';
+
+                    if (!roleDetailsMapping.has(person.Role)) {
+                        roleDetailsMapping.set(person.Role, {grants: person["Role Grants"], description: person["Role Description"] });
+                    }
 
                     const teamArr = organization[firstLevelItem][theme][team];
 
@@ -1581,10 +1635,10 @@ function extractData(csvText) {
 
                     thirdLevelGroup.select('rect.team-box')
                         .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
+                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"` }));
                     thirdLevelGroup.select('text.team-title')
                         .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, services, channels, email }));
+                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"` }));
 
                     // RENDER CARD MEMBRO (lascia il tuo codice esistente)
                     members.forEach((member, mIdx) => {
@@ -1639,7 +1693,7 @@ function extractData(csvText) {
                         }
 
                         function getPhotoCandidates(email) {
-                            const baseName = (email.split('@')[0] || '').replace('-ext', '').replace('.', '-');
+                            const baseName = (email?.split('@')[0] || '').replace('-ext', '').replace('.', '-');
 
                             const fileName = `./assets/photos/${baseName}`;
 
@@ -2210,6 +2264,7 @@ function searchByQuery(query, opts = {}) {
     const q = (query ?? '').toString().trim().toLowerCase();
     const scopeField = (opts.field || '').toLowerCase();
     const missing = !!opts.missing;
+    const noZoom = !!opts.noZoom;
 
     if (!q && !missing) {
         clearSearch();
@@ -2290,7 +2345,9 @@ function searchByQuery(query, opts = {}) {
             ? (target.querySelector('.profile-box') || target)
             : target;
 
-        zoomToElement(zoomTarget, 1, 600);
+        if (!noZoom) {
+            zoomToElement(zoomTarget, 1, 600);
+        }
         applySearchDimmingForMatches(matches);
         showToast(`Found ${matches.length} result(s). Showing ${currentIndex + 1}/${matches.length}.`);
         setSearchQuery(q);
@@ -2313,7 +2370,15 @@ function searchByQuery(query, opts = {}) {
             }
         }
 
-        // apertura drawer servizi (comportamento esistente)
+        const roleMapping = roleDetailsMapping.get(query);
+        if (scopeField?.toLowerCase() === "role" && roleMapping) {
+            openDrawer({
+                name: query,
+                description: roleMapping["description"],
+                elements: { items: (roleMapping["grants"] || '')
+                        .split(',').map(s => s.trim()).filter(Boolean) }, elementsTitle: "Role Grants"
+            });
+        }
         try {
             const group = zoomTarget.closest('g');
             const teamTitleEl = group ? group.querySelector('text.team-title') : null;
@@ -2340,7 +2405,7 @@ function searchByQuery(query, opts = {}) {
             openDrawer({
                 name: teamName,
                 description,
-                services: { items: rawServices },
+                elements: { items: rawServices },
                 channels,
                 email,
                 highlightService: hit.raw,
