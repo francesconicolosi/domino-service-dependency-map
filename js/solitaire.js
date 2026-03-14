@@ -660,27 +660,69 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
     window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
 })();
 
-function openDrawer({name: title, description, elements, channels, email, highlightService, highlightQuery, elementsTitle = "Managed Services:", elementsBaseUrl}) {
+function openDrawer({
+                        name: title,
+                        description,
+                        elements,
+                        channels,
+                        email,
+                        highlightService,
+                        highlightQuery,
+                        elementsTitle = "Managed Services:",
+                        elementsBaseUrl
+                    }) {
     console.log('open');
+
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
-    const titleEl = document.getElementById('drawer-title');
-    const listEl = document.getElementById('drawer-list');
-    const descEl = document.getElementById('drawer-description');
 
-    //if (!drawer || !titleEl || !listEl || !descEl) return;
+    if (!drawer) {
+        console.warn('[drawer] #drawer non trovato');
+        return;
+    }
 
-    titleEl.textContent = `${title}`;
+    // --- recupera/crea in modo robusto i sotto-elementi del drawer ---
+    // title
+    let titleEl = document.getElementById('drawer-title');
+    if (!titleEl) {
+        titleEl = document.createElement('h2');
+        titleEl.id = 'drawer-title';
+        drawer.prepend(titleEl);
+    }
 
-    descEl.innerHTML = '';
+    // description
+    let descEl = document.getElementById('drawer-description');
+    if (!descEl) {
+        descEl = document.createElement('div');
+        descEl.id = 'drawer-description';
+        drawer.appendChild(descEl);
+    }
 
-    createFormattedLongTextElementsFrom(description).forEach(element => descEl.appendChild(element));
+    // list
+    let listEl = document.getElementById('drawer-list');
+    if (!listEl) {
+        listEl = document.createElement('ul');
+        listEl.id = 'drawer-list';
+        drawer.appendChild(listEl);
+    }
+
+    // --- set title ---
+    titleEl.textContent = `${title ?? ''}`;
+
+    // --- reset contenuti in modo sicuro ---
+    descEl.replaceChildren();     // svuota senza toccare il nodo
+    listEl.replaceChildren();     // svuota senza toccare il nodo
+
+    // --- description (testo formattato + separatori) ---
     if (description) {
+        createFormattedLongTextElementsFrom(description)
+            .forEach(el => descEl.appendChild(el));
         addTagToElement(descEl, 2);
         addTagToElement(descEl, 1, 'hr');
         addTagToElement(descEl, 1);
     }
 
+    // --- channels ---
     if (channels && channels.length > 0) {
         descEl.appendChild(document.createTextNode('Channels 💬'));
         addTagToElement(descEl, 1);
@@ -688,16 +730,20 @@ function openDrawer({name: title, description, elements, channels, email, highli
         const ul = document.createElement('ul');
         channels.forEach(channel => {
             const li = document.createElement('li');
-            const channelLink = createHrefElement(channel, channel?.includes("slack.com") ? "Slack Channel" : "Link");
+            const channelLink = createHrefElement(
+                channel,
+                channel?.includes("slack.com") ? "Slack Channel" : "Link"
+            );
             li.appendChild(channelLink);
             ul.appendChild(li);
-        })
+        });
         descEl.appendChild(ul);
         addTagToElement(descEl, 1);
         addTagToElement(descEl, 1, 'hr');
         addTagToElement(descEl, 1);
     }
 
+    // --- email ---
     if (email && email !== "") {
         descEl.appendChild(document.createTextNode('Team Mailbox ✉️'));
         addTagToElement(descEl, 1);
@@ -707,32 +753,43 @@ function openDrawer({name: title, description, elements, channels, email, highli
         addTagToElement(descEl, 1);
     }
 
-    if (listEl) listEl.innerHTML = '';
-
-    if (elements && elements.items && elements.items.length !== 0) {
+    // --- elements (lista servizi) ---
+    if (elements && elements.items && elements.items.length > 0) {
         descEl.appendChild(document.createTextNode(elementsTitle));
+
+        // usa un fragment per evitare reflow inutili
+        const frag = document.createDocumentFragment();
         elements.items.forEach(s => {
             const li = document.createElement('li');
             if (elementsBaseUrl) {
                 const a = document.createElement('a');
-                a.href = elementsBaseUrl(s)
+                a.href = elementsBaseUrl(s);
                 a.textContent = s;
                 a.target = '_blank';
                 li.appendChild(a);
             } else {
                 li.textContent = s;
             }
-            if (listEl) listEl.appendChild(li);
-            if (descEl) descEl.appendChild(listEl);
+            frag.appendChild(li);
         });
 
+        listEl.replaceChildren(frag);
+        // append una sola volta la lista nella descrizione
+        descEl.appendChild(listEl);
+
+        // evidenzia/scroll ai servizi
         (function multiHighlight() {
             const norm = v => (v || '').toString().trim().toLowerCase();
+
+            // se non ci sono link, esci pulito
             const anchors = Array.from(listEl.querySelectorAll('li > a'));
+            if (!anchors.length) return;
+
             listEl.querySelectorAll('.service-hit-highlight')
                 .forEach(el => el.classList.remove('service-hit-highlight'));
 
             let firstHighlighted = null;
+
             const q = (highlightQuery || '').trim();
             if (q) {
                 const qn = normalizeWs(q).toLowerCase();
@@ -757,19 +814,20 @@ function openDrawer({name: title, description, elements, channels, email, highli
 
             if (firstHighlighted) {
                 try {
-                    firstHighlighted.scrollIntoView({block: 'center', behavior: 'smooth'});
-                } catch {
-                }
+                    firstHighlighted.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                } catch {}
             }
         })();
     }
 
+    // --- stato visivo del drawer ---
     drawer.classList.add('open');
     overlay?.classList.add('visible');
-    document.body.classList.add('drawer-open');
+    document.body.classList.add('drawer-open'); // valuta `right-drawer-open` se separi i due drawer
     drawer.setAttribute('aria-hidden', 'false');
     console.log('fine');
 }
+
 
 function closeDrawer() {
     const drawer = document.getElementById('drawer');
