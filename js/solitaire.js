@@ -661,13 +661,14 @@ window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 })();
 
 function openDrawer({name: title, description, elements, channels, email, highlightService, highlightQuery, elementsTitle = "Managed Services:", elementsBaseUrl}) {
+    console.log('open');
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
     const titleEl = document.getElementById('drawer-title');
     const listEl = document.getElementById('drawer-list');
     const descEl = document.getElementById('drawer-description');
 
-    if (!drawer || !titleEl || !listEl || !descEl) return;
+    //if (!drawer || !titleEl || !listEl || !descEl) return;
 
     titleEl.textContent = `${title}`;
 
@@ -675,11 +676,12 @@ function openDrawer({name: title, description, elements, channels, email, highli
 
     createFormattedLongTextElementsFrom(description).forEach(element => descEl.appendChild(element));
     if (description) {
+        addTagToElement(descEl, 2);
         addTagToElement(descEl, 1, 'hr');
+        addTagToElement(descEl, 1);
     }
 
     if (channels && channels.length > 0) {
-        addTagToElement(descEl, 1);
         descEl.appendChild(document.createTextNode('Channels 💬'));
         addTagToElement(descEl, 1);
 
@@ -702,9 +704,10 @@ function openDrawer({name: title, description, elements, channels, email, highli
         descEl.appendChild(createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`));
         addTagToElement(descEl, 2);
         addTagToElement(descEl, 1, 'hr');
+        addTagToElement(descEl, 1);
     }
 
-    listEl.innerHTML = '';
+    if (listEl) listEl.innerHTML = '';
 
     if (elements && elements.items && elements.items.length !== 0) {
         descEl.appendChild(document.createTextNode(elementsTitle));
@@ -719,7 +722,8 @@ function openDrawer({name: title, description, elements, channels, email, highli
             } else {
                 li.textContent = s;
             }
-            listEl.appendChild(li);
+            if (listEl) listEl.appendChild(li);
+            if (descEl) descEl.appendChild(listEl);
         });
 
         (function multiHighlight() {
@@ -764,6 +768,7 @@ function openDrawer({name: title, description, elements, channels, email, highli
     overlay?.classList.add('visible');
     document.body.classList.add('drawer-open');
     drawer.setAttribute('aria-hidden', 'false');
+    console.log('fine');
 }
 
 function closeDrawer() {
