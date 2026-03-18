@@ -750,3 +750,232 @@ body, html{
 .start-menu {}
 .menu-item {}
 .clock {}
+
+/* ============================
+   ROOT VARIABLES (solo per riuso comodo)
+============================ */
+:root {
+    --bg-intro: #0d0d0d;
+    --bg-intro-grad-top: #0d0d0d;
+    --bg-intro-grad-bottom: #121212;
+
+    /* Win95 (già usate inline in origine come CSS vars) */
+    --win95-bg: #c0c0c0;
+    --win95-dk: #404040;
+    --win95-lt: #ffffff;
+
+    --text-hero: #ffffff;
+    --text-subtle: #e6e6e6;
+    --accent: #9ee7c4;
+
+    --shadow-strong: 0 16px 40px rgba(0,0,0,.45);
+}
+
+/* ============================
+   GLOBAL / LAYOUT
+============================ */
+html, body {
+    height: 100%;
+}
+body {
+    margin: 0;
+}
+
+.section {
+    position: relative; /* alcune sezioni lo richiedono per bg/popup */
+}
+
+.bg-container {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.parallax-bg {
+    position: absolute;
+    inset: 0;
+}
+
+/* ============================
+   INTRO – “PROFESSIONAL INTRO”
+============================ */
+#intro-prof {
+    position: relative;            /* prima inline */
+    background: var(--bg-intro);   /* prima inline: #0d0d0d */
+}
+
+.intro-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--bg-intro-grad-top) 0%, var(--bg-intro-grad-bottom) 90%);
+    z-index: 1;
+}
+
+.intro-wrapper {
+    position: relative;
+    z-index: 3;
+    width: 90%;
+    max-width: 1500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+    padding: 40px 20px;
+    flex-wrap: wrap;
+    margin-inline: auto; /* centratura contenuto */
+}
+
+.intro-left {
+    flex: 1 1 500px;
+    max-width: 700px;
+}
+
+.intro-tag {
+    color: var(--accent);
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin: 0 0 18px;
+    text-transform: uppercase;
+}
+
+.intro-title {
+    margin: 0;
+    font-size: clamp(42px, 9vw, 120px);
+    font-weight: 900;
+    line-height: 0.95;
+    color: var(--text-hero);
+}
+
+.intro-right {
+    flex: 1 1 360px;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.intro-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: var(--shadow-strong);
+}
+
+.intro-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 80%; /* prima inline */
+}
+
+.intro-p {
+    font-size: 17px;
+    color: var(--text-subtle);
+    line-height: 1.5;
+    margin-top: 18px;
+}
+
+.intro-p.first {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.italic-span {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 18px;
+}
+
+/* collegamenti “linkedin/more” */
+.p-links a {
+    color: var(--accent);
+    text-decoration: none;
+}
+.p-links a:hover {
+    text-decoration: underline;
+}
+
+/* ============================
+   WINDOWS 95 / EARLY DAYS
+============================ */
+.window { /* struttura già presente altrove nel tuo progetto */ }
+.title-bar { }
+.window-body { }
+
+.win95-btn {
+    margin-top: 18px;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+
+    /* bordi esattamente come inline */
+    border: 2px solid var(--win95-dk);
+    border-right-color: var(--win95-lt);
+    border-bottom-color: var(--win95-lt);
+    background: var(--win95-bg);
+}
+
+/* Clonazione BSOD locale alla sezione "from-early-days" */
+.bsod-clone { }
+.bsod-header { }
+.bsod-btn { }
+
+/* ============================
+   RETRO
+============================ */
+.retro-stage { }
+#retroCanvas { }
+
+/* ============================
+   VIDEO SECTION
+============================ */
+#video {
+    position: relative; /* prima inline sulla section */
+}
+
+.video-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-popup { }
+.video-popup-icon { }
+
+/* ============================
+   ABOUT
+============================ */
+.bg-teal { }
+
+/* ============================
+   MS-DOS SECTION
+============================ */
+.dos-section { }
+.dos-scanlines { }
+.dos-inner { }
+
+/* ============================
+   BSOD (sezione finale)
+============================ */
+.bg-bsod { }
+.bsod-content { }
+
+/* ============================
+   TASKBAR
+============================ */
+.taskbar { display: flex; align-items: center; gap: 12px; }
+.start-btn { }
+.start-menu { }
+.menu-item { }
+.clock { }
+
+/* testo “C:\WINDOWS\System32\Nicolosi.dll” aveva inline style */
+.taskbar-path {
+    margin-left: 10px;
+    font-size: 12px;
+}
