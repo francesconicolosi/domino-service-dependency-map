@@ -5,7 +5,8 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 module.exports = {
     entry: {
         main: './js/main.js',
-        second: './js/solitaire.js'
+        second: './js/solitaire.js',
+        third: './js/me.js'
     },
     output: {
         filename: '[name].bundle.js',
@@ -34,6 +35,22 @@ module.exports = {
             inject: 'body',
             scriptLoading: 'blocking',
             chunks: ['second'],
+            minify: {
+                collapseWhitespace: true,
+                keepClosingSlash: true,
+                removeComments: true,
+                removeRedundantAttributes: false, // do not remove type="text"
+                removeScriptTypeAttributes: true,
+                removeStyleLinkTypeAttributes: true,
+                useShortDoctype: true
+            }
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/me.html',
+            filename: 'me.html',
+            inject: 'body',
+            scriptLoading: 'blocking',
+            chunks: ['third'],
             minify: {
                 collapseWhitespace: true,
                 keepClosingSlash: true,
