@@ -375,18 +375,46 @@ function processData(data) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = data.map(d => {
-        const node = {id: d['Service Name'], color: colorScale(d['Type'])};
-        for (const key in d) {
-            node[key] = d[key];
-        }
+        const node = { id: d['Service Name'], color: colorScale(d['Type']) };
+        for (const key in d) node[key] = d[key];
         return node;
     });
     const nodeIds = new Set(nodes.map(d => d.id));
-    links = data.flatMap(d => [
-        ...d['Depends on'].split('\n').map(dep => nodeIds.has(dep) ? {source: d['Service Name'], target: dep} : null)
-    ]).filter(link => link !== null);
+    const usedByMap = new Map(); // dep -> Set(of services that depend on it)
 
-    activeServiceNodes = nodes.filter(d => (d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date']));
+    links = data.flatMap(d => {
+        const src = d['Service Name'];
+        const deps = splitValues(d['Depends on']); // <-- IMPORTANT: supports ||, \\n, ,
+        return deps.map(dep => {
+            const depTrim = dep.trim();
+            if (!nodeIds.has(depTrim)) return null;
+
+            // reverse mapping: dep is used by src
+            if (!usedByMap.has(depTrim)) usedByMap.set(depTrim, new Set());
+            usedByMap.get(depTrim).add(src);
+
+            return { source: src, target: depTrim };
+        });
+    }).filter(Boolean);
+
+    // ✅ 3) If "Used by" column is missing in input CSV, compute it
+    const hasUsedByColumn = data.columns.includes('Used by');
+
+    if (!hasUsedByColumn) {
+        nodes.forEach(n => {
+            const users = Array.from(usedByMap.get(n.id) || []);
+            // output as || so it stays consistent with your new CSV standard
+            n['Used by'] = users.join('||');
+        });
+
+        // opzionale: fai comparire la colonna anche nelle UI che leggono data.columns
+        // (non sempre serve, ma è utile per coerenza e per list-view selector)
+        data.columns = [...data.columns, 'Used by'];
+    }
+
+    activeServiceNodes = nodes.filter(d =>
+        (d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date'])
+    );
     activeServiceNodeIds = new Set(activeServiceNodes.map(d => d.id));
 
     createMap();
@@ -417,13 +445,16 @@ function isSearchResultWithKeyValue(node) {
         return (node[key] ?? "").trim() !== "";
     }
 
-    const expectedValues = rawValue.split(',')
-        .map(v => getTermToCompare(v.trim()));
+    const expectedValues = splitValues(rawValue)
+        .map(v => getTermToCompare(v));
 
-    const nodeData = getTermToCompare(node[key] ?? "");
-
-    const matches = expectedValues.some(value =>
-        isAccurateSearch ? nodeData === value : nodeData.includes(value)
+    const nodeParts = splitValues(node[key] ?? "");
+    const matches = expectedValues.some(ev =>
+        nodeParts.some(p =>
+            isAccurateSearch
+                ? getTermToCompare(p) === ev
+                : getTermToCompare(p).includes(ev)
+        )
     );
     return isNegation ? !matches : matches;
 }
@@ -770,6 +801,13 @@ function computeTrackingSoftwareValue(node) {
 }
 
 function showNodeDetails(node, openDrawer = true) {
+    const PRIORITY_KEYS = [
+        'id',
+        'Key',
+        'Description',
+        'Depends on',
+        'Used by'
+    ];
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('overlay');
     const drawerContent = document.getElementById('drawerContent');
@@ -852,7 +890,25 @@ function showNodeDetails(node, openDrawer = true) {
         table.appendChild(tr);
         renderedKeys.add(key);
     };
-    Object.entries(node).forEach(([key, value]) => renderRow(key, value));
+    const nodeKeys = Object.keys(node);
+
+    const normalizeKeyForOrder = (k) =>
+        k === 'Service Name' ? 'id' : k;
+
+    const orderedKeys = PRIORITY_KEYS
+        .map(pk => {
+            if (pk === 'id' && nodeKeys.includes('Service Name')) return 'Service Name';
+            return nodeKeys.find(k => normalizeKeyForOrder(k) === pk);
+        })
+        .filter(Boolean);
+
+    const remainingKeys = nodeKeys.filter(
+        k => !orderedKeys.includes(k)
+    );
+
+    [...orderedKeys, ...remainingKeys].forEach(key => {
+        renderRow(key, node[key]);
+    });
     serviceInfoEnhancers
         .map(fn => fn(node))
         .filter(r => r && r.key && r.value && !renderedKeys.has(r.key))

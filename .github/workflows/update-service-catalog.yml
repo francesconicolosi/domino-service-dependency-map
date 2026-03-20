@@ -1,0 +1,109 @@
+name: Update Service Catalog & People CSV
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"     # 06:00 UTC → 08:00 Milano
+
+permissions:
+  contents: write
+
+jobs:
+  update-csv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      # ===============================
+      # BACKUP CSV
+      # ===============================
+      - name: Backup current CSVs
+        run: |
+          if [ -f src/service-catalog.csv ]; then
+            cp src/service-catalog.csv /tmp/service-catalog.before.csv
+          fi
+
+          if [ -f src/people-database.csv ]; then
+            cp src/people-database.csv /tmp/people-database.before.csv
+          fi
+
+      # ===============================
+      # SERVICE CATALOG EXPORT
+      # ===============================
+      - name: Run Assets export (Service Catalog)
+        env:
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ASSETS_WORKSPACE_ID: ${{ secrets.ASSETS_WORKSPACE_ID }}
+          ATLASSIAN_SITE: ${{ secrets.ATLASSIAN_SITE }}
+        run: |
+          python scripts/assets_export_services_enriched_v3.py \
+            --out src/service-catalog.csv
+
+      - name: Show Service Catalog CSV diff (if any)
+        run: |
+          if [ -f /tmp/service-catalog.before.csv ]; then
+            echo "====== SERVICE CATALOG CSV DIFF ======"
+            git diff --no-index --color=always \
+              /tmp/service-catalog.before.csv \
+              src/service-catalog.csv || true
+            echo "====================================="
+          else
+            echo "No previous Service Catalog CSV found"
+          fi
+
+      # ===============================
+      # PEOPLE DATABASE EXPORT
+      # ===============================
+      - name: Run Assets export (People Database)
+        env:
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ASSETS_WORKSPACE_ID: ${{ secrets.ASSETS_WORKSPACE_ID }}
+          ATLASSIAN_SITE: ${{ secrets.ATLASSIAN_SITE }}
+        run: |
+          python scripts/assets_export_people_enriched_v2.py \
+            --out src/people-database.csv
+
+      - name: Show People Database CSV diff (if any)
+        run: |
+          if [ -f /tmp/people-database.before.csv ]; then
+            echo "====== PEOPLE DATABASE CSV DIFF ======"
+            git diff --no-index --color=always \
+              /tmp/people-database.before.csv \
+              src/people-database.csv || true
+            echo "====================================="
+          else
+            echo "No previous People Database CSV found"
+          fi
+
+      # ===============================
+      # COMMIT
+      # ===============================
+      - name: Commit updated CSVs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/service-catalog.csv
+          git add src/people-database.csv
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: auto-update service catalog & people database CSVs"
+          git push

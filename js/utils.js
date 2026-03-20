@@ -12,9 +12,9 @@ export const thirdLevelNA = `No ${thirdOrgLevel}`;
 export const ROLE_FIELD_WITH_MAPPING = 'Role';
 export const LOCATION_FIELD = 'Location';
 export const COMPANY_FIELD = 'Company';
+export const NEUTRAL_COLOR = '#fcfcfc';
 export const MAX_TEAMS_PER_ROW = 5;
 export const emailField = "Company email"; // this will be used to resolve the photo filename
-export const NEUTRAL_COLOR = '#fcfcfc';
 
 export function countRowsByTeamCapacity(secondLevelItems, capacityPerRow) {
     let rows = 1;
@@ -203,12 +203,15 @@ export function isUrl(v) {
     return URL_RE.test(v);
 }
 
-export function splitValues(value) {
-    const sep = value.includes("\n,") ? "\n," : value.includes("\n") ? "\n" : value.includes(",") ? "," : "";
-    if (!sep) return [value.trim()];
-    return [...new Set(value.split(sep).map(s => s.trim()).filter(Boolean))];
-}
+export function splitValues(raw) {
+    if (!raw) return [];
 
+    return raw
+        .toString()
+        .split(/\s*\|\|\s*|\n|,/)
+        .map(s => s.trim())
+        .filter(Boolean);
+}
 export function refreshDrawerColumnIcons() {
     const drawerContent = document.getElementById('drawerContent');
     if (!drawerContent) return;

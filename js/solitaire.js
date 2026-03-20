@@ -40,11 +40,10 @@ import {
     makeKeyColorScale,
     getLegendTitleFor,
     computeKeysAndCountsFromVisibleOrg,
-    countRowsByTeamCapacity,
     computeStreamBoxWidthByCapacity,
-    MAX_TEAMS_PER_ROW,
+    MAX_TEAMS_PER_ROW, splitValues, NEUTRAL_COLOR,
     ROLE_FIELD_WITH_MAPPING,
-    COMPANY_FIELD, LOCATION_FIELD, emailField, NEUTRAL_COLOR
+    COMPANY_FIELD, LOCATION_FIELD, emailField
 } from './utils.js';
 
 let lastSearch = '';
@@ -65,7 +64,15 @@ function isUnknownLegendKey(v) {
 
 let visibleOrganizationWithManagers = null;
 
-const PALETTE = d3.schemeTableau10;
+const STREAM_ORDER = [
+    'Digital Design',
+    'Digital Enablers',
+    'Upper Funnel',
+    'AI Enablement',
+    'E-Commerce Core',
+    'Lower Funnel',
+    'Order Management System'
+].map(s => normalizeKey(s));
 
 let colorBy = ROLE_FIELD_WITH_MAPPING;
 
@@ -513,18 +520,12 @@ function aggregateInfoByHeader(members, headers, headerName = 'Team Managed Serv
     members.forEach(m => {
         const raw = m[headerRealName];
         if (!raw) return;
-        if (sortElements) {
-            raw
-                .split(/\n|,/)
-                .map(s => s.trim())
-                .filter(Boolean)
-                .forEach(v => set.add(v));
-        } else {
-            set.add(raw);
-        }
+        splitValues(raw).forEach(v => set.add(v));
     });
 
-    const itemsToReturn = sortElements ? [...set].sort((a, b) => a.localeCompare(b, 'it', {sensitivity: 'base'})) : [...set];
+    const itemsToReturn = sortElements
+        ? [...set].sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
+        : [...set];
 
     return {
         exists: true,
@@ -783,7 +784,9 @@ function openDrawer({
 
             // se non ci sono link, esci pulito
             const anchors = Array.from(listEl.querySelectorAll('li > a'));
-            if (!anchors.length) return;
+            const items = anchors.length
+                ? anchors
+                : Array.from(listEl.querySelectorAll('li'));
 
             listEl.querySelectorAll('.service-hit-highlight')
                 .forEach(el => el.classList.remove('service-hit-highlight'));
@@ -793,29 +796,28 @@ function openDrawer({
             const q = (highlightQuery || '').trim();
             if (q) {
                 const qn = normalizeWs(q).toLowerCase();
-                anchors.forEach(a => {
-                    const tn = normalizeWs(a.textContent).toLowerCase();
-                    if (tn.includes(qn)) {
-                        a.classList.add('service-hit-highlight');
-                        if (!firstHighlighted) firstHighlighted = a;
+                items.forEach(el => {
+                    const text = normalizeWs(el.textContent).toLowerCase();
+                    if (text.includes(qn)) {
+                        el.classList.add('service-hit-highlight');
+                        if (!firstHighlighted) firstHighlighted = el;
                     }
                 });
             }
 
             if (highlightService) {
-                const target = norm(highlightService);
-                anchors.forEach(a => {
-                    if (norm(a.textContent) === target) {
-                        a.classList.add('service-hit-highlight');
-                        if (!firstHighlighted) firstHighlighted = a;
+                const target = (highlightService || '').toString().trim().toLowerCase();
+                items.forEach(el => {
+                    const text = (el.textContent || '').toString().trim().toLowerCase();
+                    if (text === target) {
+                        el.classList.add('service-hit-highlight');
+                        if (!firstHighlighted) firstHighlighted = el;
                     }
                 });
             }
 
             if (firstHighlighted) {
-                try {
-                    firstHighlighted.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                } catch {}
+                try { firstHighlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
             }
         })();
     }
@@ -1117,7 +1119,10 @@ function buildOrganization(people) {
 const addGuestManagersByRole = (person, guestRole, thirdLevel, organization) => {
     if (!person[guestRole]) return;
     const guestNames = [...new Set(
-        person[guestRole].split(/\n|,/).map(m => m.trim()).filter(Boolean)
+        splitValues(person[guestRole] || '')
+            .flatMap(v => v.split(/\n|,/))
+            .map(v => v.trim())
+            .filter(Boolean)
     )];
 
     guestNames.forEach(name => {
@@ -1440,7 +1445,24 @@ function extractData(csvText) {
     let streamY = 40;
     let streamX = 40;
 
-    Object.entries(organizationWithManagers).forEach(([firstLevel, secondLevelItems]) => {
+    const orderedStreams = Object.entries(organizationWithManagers)
+        .sort(([a], [b]) => {
+            const na = normalizeKey(a);
+            const nb = normalizeKey(b);
+
+            const ia = STREAM_ORDER.indexOf(na);
+            const ib = STREAM_ORDER.indexOf(nb);
+
+            if (ia !== -1 && ib !== -1) return ia - ib;
+
+            if (ia !== -1) return -1;
+
+            if (ib !== -1) return 1;
+
+            return a.localeCompare(b, 'en', { sensitivity: 'base' });
+        });
+
+    orderedStreams.forEach(([firstLevel, secondLevelItems]) => {
         if (firstLevel.includes(firstLevelNA)) return;
 
         // Filtra stream visibili
@@ -2472,7 +2494,8 @@ function searchByQuery(query, opts = {}) {
                 channels,
                 email,
                 highlightService: hit.raw,
-                highlightQuery: q
+                highlightQuery: q,
+                elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"`
             });
         } catch (e) {
             console.warn('Drawer open/highlight skipped:', e);

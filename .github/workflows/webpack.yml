@@ -1,52 +1,65 @@
 name: NodeJS with Webpack
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 on:
+  workflow_run:
+    workflows: ["Update Service Catalog CSV"]
+    types:
+      - completed
+
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
+    # ✅ Parte su push OPPURE dopo Update CSV riuscita
+    if: >
+      github.event_name == 'push' ||
+      github.event.workflow_run.conclusion == 'success'
+
     runs-on: ubuntu-latest
+
+    # ✅ OBBLIGATORIO per deploy-pages
+    environment:
+      name: github-pages
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build project
         run: npm run build
 
       - name: Verify dist directory
-        run: ls -la dist || echo "Dist directory not found"
-
-      - name: Debug dist directory
         run: |
           echo "Contents of dist directory:"
           ls -la dist
 
-      - name: Create .nojekyll file
+      - name: Disable Jekyll
         run: echo "" > dist/.nojekyll
 
-      - name: Upload dist folder as artifact
-        uses: actions/upload-artifact@v4
+      # ✅ STEP 1 — prepara artifact Pages
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: dist
           path: dist
 
+      # ✅ STEP 2 — crea deployment Pages
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+        uses: actions/deploy-pages@v4
