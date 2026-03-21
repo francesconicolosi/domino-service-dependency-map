@@ -88,22 +88,35 @@ jobs:
           else
             echo "No previous People Database CSV found"
           fi
+      # ===============================
+      # FETCH MISSING PEOPLE AVATARS
+      # ===============================
+      - name: Fetch missing People avatars from Atlassian
+        env:
+          ATLASSIAN_EMAIL: ${{ secrets.ATLASSIAN_EMAIL }}
+          ATLASSIAN_API_TOKEN: ${{ secrets.ATLASSIAN_API_TOKEN }}
+          ATLASSIAN_SITE: ${{ secrets.ATLASSIAN_SITE }}
+        run: |
+          python scripts/fetch_missing_avatars.py \
+            --csv src/people-database.csv \
+            --assets-dir assets/photos
 
       # ===============================
       # COMMIT
       # ===============================
-      - name: Commit updated CSVs
+      - name: Commit updated CSVs and avatars
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add src/service-catalog.csv
           git add src/people-database.csv
+          git add assets/photos
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
 
-          git commit -m "chore: auto-update service catalog & people database CSVs"
+          git commit -m "chore: auto-update service catalog, people CSV & avatars"
           git push

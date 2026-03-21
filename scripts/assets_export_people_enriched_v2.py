@@ -52,7 +52,7 @@ ASSETS_WORKSPACE_ID
 
 Optional env vars
 -----------------
-ATLASSIAN_SITE (default https://guccidigital.atlassian.net)
+ATLASSIAN_SITE (default https://instance.atlassian.net)
 
 Usage
 -----
@@ -71,7 +71,7 @@ import argparse
 import requests
 from typing import Any, Dict, List, Optional
 
-SITE = os.environ.get("ATLASSIAN_SITE", "https://guccidigital.atlassian.net").rstrip("/")
+SITE = os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net").rstrip("/")
 WORKSPACE_ID = os.environ["ASSETS_WORKSPACE_ID"]
 EMAIL = os.environ["ATLASSIAN_EMAIL"]
 API_TOKEN = os.environ["ATLASSIAN_API_TOKEN"]
