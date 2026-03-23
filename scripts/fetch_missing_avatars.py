@@ -10,6 +10,8 @@ from typing import Optional, Dict, Any, List, Tuple
 
 import requests
 
+FORCE_COL_DEFAULT = "Force avatar update on Visual People DB"
+
 # ----------------------------
 # Helpers: naming rules
 # ----------------------------
@@ -35,7 +37,6 @@ def existing_avatar_path(assets_dir: Path, dotted_base: str, dashed_base: str) -
     if not assets_dir.exists():
         return None
 
-    # priority: dashed first, then dotted
     for pattern in (f"{dashed_base}.*", f"{dotted_base}.*"):
         hits = list(assets_dir.glob(pattern))
         if hits:
@@ -56,7 +57,7 @@ def guess_ext_from_content_type(ct: str) -> str:
 
 def pick_largest_avatar_url(avatar_urls: Dict[str, str]) -> Optional[str]:
     """
-    Jira user objects include avatarUrls with keys like 16x16, 24x24, 32x32, 48x48. citeturn138search218turn138search210
+    Jira user objects include avatarUrls with keys like 16x16, 24x24, 32x32, 48x48.
     We'll pick the largest numeric size.
     """
     if not isinstance(avatar_urls, dict) or not avatar_urls:
@@ -75,13 +76,11 @@ def pick_largest_avatar_url(avatar_urls: Dict[str, str]) -> Optional[str]:
             best_size = size
             best_url = v
 
-    # fallback: any value
     return best_url or next((v for v in avatar_urls.values() if v), None)
 
 def try_upgrade_to_96(url: str) -> str:
     """
-    In some Atlassian avatar URLs you can change trailing /48 to /96 for a bigger avatar (best effort). citeturn138search214
-    We'll only attempt if URL ends with '/<number>'.
+    Best-effort: if URL ends with '/<number>', try to replace it with '/96'.
     """
     if not url:
         return url
@@ -102,7 +101,6 @@ def build_basic_auth_header(email: str, token: str) -> Dict[str, str]:
 def jira_user_search(session: requests.Session, site: str, query: str, max_results: int = 50) -> List[Dict[str, Any]]:
     """
     GET /rest/api/3/user/search?query=...
-    This is part of Jira Cloud REST API v3 user search. citeturn138search217
     """
     url = f"{site.rstrip('/')}/rest/api/3/user/search"
     r = session.get(url, params={"query": query, "maxResults": max_results}, timeout=(10, 60))
@@ -130,7 +128,7 @@ def pick_user_from_results(results: List[Dict[str, Any]], email: str) -> Optiona
 
 def download_image(session: requests.Session, url: str) -> Optional[Tuple[bytes, str]]:
     """
-    Download image bytes; allow redirects. Some avatar URLs redirect to site URLs.
+    Download image bytes; allow redirects.
     """
     r = session.get(url, timeout=(10, 60), allow_redirects=True)
     if not r.ok or not r.content:
@@ -138,23 +136,58 @@ def download_image(session: requests.Session, url: str) -> Optional[Tuple[bytes,
     return r.content, (r.headers.get("Content-Type") or "")
 
 # ----------------------------
-# CSV reading
+# CSV reading: email + force flag
 # ----------------------------
 
-def iter_emails_from_csv(csv_path: Path, email_col: str = "Email") -> List[str]:
+def iter_people_from_csv(csv_path: Path,
+                         email_col: str = "Email",
+                         force_col: str = FORCE_COL_DEFAULT) -> List[Dict[str, Any]]:
+    """
+    Returns a list of dicts: { email, force_update }.
+    Dedup is done later (with OR semantics on force flag).
+    """
+    people: List[Dict[str, Any]] = []
     with open(csv_path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if not reader.fieldnames:
             raise RuntimeError("CSV has no header")
         if email_col not in reader.fieldnames:
             raise RuntimeError(f"CSV missing '{email_col}' column. Found: {reader.fieldnames}")
+        if force_col not in reader.fieldnames:
+            # Non blocchiamo: se la colonna non c'è ancora, consideriamo force_update False per tutti
+            # (ma nel tuo caso hai aggiunto l’attributo e quindi ci aspettiamo che esista)
+            pass
 
-        emails = []
         for row in reader:
-            e = (row.get(email_col) or "").strip()
-            if e:
-                emails.append(e)
-        return emails
+            email = (row.get(email_col) or "").strip()
+            if not email:
+                continue
+
+            raw = (row.get(force_col) or "").strip().lower()
+            force_update = raw in ("true", "yes", "1")
+
+            people.append({"email": email, "force_update": force_update})
+    return people
+
+def dedup_people_by_email(people: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Dedup preserving order.
+    If same email appears multiple times, force_update is OR'ed (True wins).
+    """
+    ordered: List[str] = []
+    agg: Dict[str, bool] = {}
+
+    for p in people:
+        e = (p.get("email") or "").strip().lower()
+        if not e:
+            continue
+        if e not in agg:
+            ordered.append(e)
+            agg[e] = bool(p.get("force_update"))
+        else:
+            agg[e] = agg[e] or bool(p.get("force_update"))
+
+    return [{"email": e, "force_update": agg[e]} for e in ordered]
 
 # ----------------------------
 # Main workflow
@@ -162,14 +195,22 @@ def iter_emails_from_csv(csv_path: Path, email_col: str = "Email") -> List[str]:
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch missing Jira avatars for emails in people-database.csv")
-    parser.add_argument("--csv", default="src/people-database.csv", help="Path to people-database.csv (default: src/people-database.csv)")
-    parser.add_argument("--assets-dir", default="assets", help="Assets folder where avatars are stored (default: assets)")
-    parser.add_argument("--email-col", default="Email", help="CSV column containing email (default: Email)")
-    parser.add_argument("--site", default=os.environ.get("ATLASSIAN_SITE", "https://guccidigital.atlassian.net"),
+    parser.add_argument("--csv", default="src/people-database.csv",
+                        help="Path to people-database.csv (default: src/people-database.csv)")
+    parser.add_argument("--assets-dir", default="assets/photos",
+                        help="Assets folder where avatars are stored (default: assets/photos)")
+    parser.add_argument("--email-col", default="Email",
+                        help="CSV column containing email (default: Email)")
+    parser.add_argument("--force-col", default=FORCE_COL_DEFAULT,
+                        help=f"CSV column containing force flag (default: {FORCE_COL_DEFAULT})")
+    parser.add_argument("--site", default=os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net"),
                         help="Atlassian site base url (default from ATLASSIAN_SITE)")
-    parser.add_argument("--atlassian-email", default=os.environ.get("ATLASSIAN_EMAIL", ""), help="Atlassian email (default from ATLASSIAN_EMAIL)")
-    parser.add_argument("--atlassian-token", default=os.environ.get("ATLASSIAN_API_TOKEN", ""), help="Atlassian API token (default from ATLASSIAN_API_TOKEN)")
-    parser.add_argument("--sleep", type=float, default=0.05, help="Sleep between downloads (default: 0.05)")
+    parser.add_argument("--atlassian-email", default=os.environ.get("ATLASSIAN_EMAIL", ""),
+                        help="Atlassian email (default from ATLASSIAN_EMAIL)")
+    parser.add_argument("--atlassian-token", default=os.environ.get("ATLASSIAN_API_TOKEN", ""),
+                        help="Atlassian API token (default from ATLASSIAN_API_TOKEN)")
+    parser.add_argument("--sleep", type=float, default=0.05,
+                        help="Sleep between downloads (default: 0.05)")
     args = parser.parse_args()
 
     csv_path = Path(args.csv)
@@ -190,28 +231,40 @@ def main():
         **build_basic_auth_header(args.atlassian_email, args.atlassian_token),
     })
 
-    emails = iter_emails_from_csv(csv_path, args.email_col)
-    # Dedup while preserving order
-    seen = set()
-    emails = [e for e in emails if not (e.lower() in seen or seen.add(e.lower()))]
+    people_raw = iter_people_from_csv(
+        csv_path,
+        email_col=args.email_col,
+        force_col=args.force_col
+    )
+    people = dedup_people_by_email(people_raw)
 
-    total = len(emails)
+    total = len(people)
     downloaded = 0
+    overwritten = 0
     skipped = 0
     not_found = 0
     failed = 0
 
-    print(f"[start] csv={csv_path} assets_dir={assets_dir} emails={total}", flush=True)
+    print(f"[start] csv={csv_path} assets_dir={assets_dir} people={total}", flush=True)
 
-    for idx, email in enumerate(emails, start=1):
+    for idx, person in enumerate(people, start=1):
+        email = person["email"]
+        force_update = person["force_update"]
+
         dotted, dashed = email_to_bases(email)
         existing = existing_avatar_path(assets_dir, dotted, dashed)
-        if existing:
+
+        # ✅ New decision rule:
+        # download if missing OR force_update == True
+        if existing and not force_update:
             skipped += 1
             continue
 
-        # Search user by email first; fallback to localpart without -ext
-        fallback_q = dotted  # already removed -ext
+        if existing and force_update:
+            overwritten += 1
+            print(f"[avatar] force update -> overwrite for {email}", flush=True)
+
+        fallback_q = dotted  # already removed -ext by email_to_bases rules
         try:
             results = jira_user_search(session, args.site, email)
             if not results:
@@ -227,7 +280,7 @@ def main():
                 not_found += 1
                 continue
 
-            # Try 96px first (best effort), then the original largest url citeturn138search214
+            # Try 96px first (best effort), then original
             urls_to_try = []
             up96 = try_upgrade_to_96(avatar_url)
             if up96 and up96 != avatar_url:
@@ -246,17 +299,16 @@ def main():
                 failed += 1
                 continue
 
-            ext = guess_ext_from_content_type(content_type)
-            if not ext:
-                # fallback if content-type missing
-                ext = ".png"
+            ext = guess_ext_from_content_type(content_type) or ".png"
 
             out_path = assets_dir / f"{dashed}{ext}"
             out_path.write_bytes(img_bytes)
+
             downloaded += 1
 
             if idx % 25 == 0 or idx == total:
-                print(f"[progress] {idx}/{total} downloaded={downloaded} skipped={skipped} not_found={not_found} failed={failed}", flush=True)
+                print(f"[progress] {idx}/{total} downloaded={downloaded} overwritten={overwritten} "
+                      f"skipped={skipped} not_found={not_found} failed={failed}", flush=True)
 
             if args.sleep:
                 time.sleep(args.sleep)
@@ -265,7 +317,8 @@ def main():
             failed += 1
             continue
 
-    print(f"[done] downloaded={downloaded} skipped(existing)={skipped} not_found={not_found} failed={failed}", flush=True)
+    print(f"[done] downloaded={downloaded} overwritten={overwritten} skipped={skipped} "
+          f"not_found={not_found} failed={failed}", flush=True)
 
 
 if __name__ == "__main__":

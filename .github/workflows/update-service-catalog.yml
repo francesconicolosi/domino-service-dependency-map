@@ -2,8 +2,8 @@ name: Update Service Catalog & People CSV
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * *"     # 06:00 UTC → 08:00 Milano
+  #schedule:
+  #  - cron: "0 6 * * *"     # 06:00 UTC → 08:00 Milano
 
 permissions:
   contents: write

@@ -17,7 +17,7 @@ This repository contains Python scripts used to **import and export data from Ji
 Before running any script, make sure the following environment variables are set:
 
 ```bash
-export ATLASSIAN_EMAIL="email@gucci.com"
+export ATLASSIAN_EMAIL="email@company.com"
 export ATLASSIAN_API_TOKEN="YOUR_API_TOKEN"
 export ASSETS_WORKSPACE_ID="1057bc5d-8678-4112-b041-8b5b4b879b50"
 ```
@@ -34,7 +34,7 @@ This script imports data into Jira Assets, mapping teams to managed services.
 ### Example usage
 
 ```bash
-python assets_import_param.py   --csv "Team Database - Gucci Digital (7).csv"   --source-object-type 34   --key-col "Name"   --map "Managed Services=Managed Services|Managed services|Managed"
+python assets_import_param.py   --csv "Team Database.csv"   --source-object-type 34   --key-col "Name"   --map "Managed Services=Managed Services|Managed services|Managed"
 ```
 
 ### Parameters
