@@ -29,7 +29,7 @@ function parseSortParam(param) {
     const key = normalizeColumnToken(decodeURIComponent(rawLabel || ''));
     if (!key) return null;
     const dir = (rawDir || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
-    return { key, dir };
+    return {key, dir};
 }
 
 function syncSortParamInUrl() {
@@ -375,7 +375,7 @@ function processData(data) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
     nodes = data.map(d => {
-        const node = { id: d['Service Name'], color: colorScale(d['Type']) };
+        const node = {id: d['Service Name'], color: colorScale(d['Type'])};
         for (const key in d) node[key] = d[key];
         return node;
     });
@@ -393,7 +393,7 @@ function processData(data) {
             if (!usedByMap.has(depTrim)) usedByMap.set(depTrim, new Set());
             usedByMap.get(depTrim).add(src);
 
-            return { source: src, target: depTrim };
+            return {source: src, target: depTrim};
         });
     }).filter(Boolean);
 
@@ -423,6 +423,45 @@ function processData(data) {
 
 function getTermToCompare(term) {
     return term.replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+}
+
+function parseActiveKeyValueSearch(term) {
+    if (!term || !term.includes(':')) return null;
+    const raw = term.trim();
+    const negated = raw.startsWith('!');
+    if (negated) return null; // niente +/- su negazioni
+
+    const idx = raw.indexOf(':');
+    const key = raw.slice(0, idx).trim();
+    const valuePart = raw.slice(idx + 1).trim();
+
+    const quoted = valuePart.includes('"');
+    const clean = valuePart.replaceAll('"', '');
+    const values = splitValues(clean).map(v => v.trim()).filter(Boolean);
+
+    return {key, values, quoted};
+}
+
+function normalizeForCompare(v) {
+    return (v ?? '').toString().replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+}
+
+function buildKeyValueSearch(key, values, quoted) {
+    if (!key || !values || !values.length) return '';
+    const body = quoted
+        ? values.map(v => `"${v}"`).join(',')
+        : values.join(',');
+    return `${key}:${body}`;
+}
+
+function updateSearchAndRefresh(q) {
+    searchTerm = q || '';
+    const searchInput = document.getElementById('drawer-search-input');
+    if (searchInput) searchInput.value = searchTerm;
+    setSearchQuery(searchTerm);
+    updateVisualization(nodeGraph, linkGraph, labels, true);
+
+    if (clickedNode) showNodeDetails(clickedNode, true);
 }
 
 function isSearchResultWithKeyValue(node) {
@@ -471,18 +510,18 @@ function isSearchResultValueOnly(d) {
     );
 }
 
-const mapEl      = document.getElementById('map');
+const mapEl = document.getElementById('map');
 const listViewEl = document.getElementById('list-view');
-const legendEl   = document.getElementById('legend');
-const btnList    = document.getElementById('view-list');
-const btnGraph   = document.getElementById('view-graph');
+const legendEl = document.getElementById('legend');
+const btnList = document.getElementById('view-list');
+const btnGraph = document.getElementById('view-graph');
 
 function toListView() {
     mapEl.style.display = 'none';
     if (legendEl) legendEl.style.display = 'none';
     listViewEl.style.display = 'block';
 
-    btnList.style.display  = 'none';
+    btnList.style.display = 'none';
     btnGraph.style.display = 'inline-block';
 
     syncListViewParamInUrl();
@@ -497,7 +536,7 @@ function toGraphView() {
     listViewEl.style.display = 'none';
 
     btnGraph.style.display = 'none';
-    btnList.style.display  = 'inline-block';
+    btnList.style.display = 'inline-block';
 
     const url = new URL(window.location.href);
     url.searchParams.delete('listView');
@@ -546,7 +585,7 @@ function renderListFromSearch() {
             if (sortKey === 'Decommission Date' && typeof va === 'number' && typeof vb === 'number') {
                 cmp = (va === vb ? 0 : (va < vb ? -1 : 1));
             } else {
-                cmp = String(va).localeCompare(String(vb), undefined, { sensitivity: 'base', numeric: true });
+                cmp = String(va).localeCompare(String(vb), undefined, {sensitivity: 'base', numeric: true});
             }
             return sortDir === 'asc' ? cmp : -cmp;
         });
@@ -724,7 +763,7 @@ function updateVisualization(node, link, labels, showDrawer = true) {
     let nodeToZoom;
 
     node.each(d => {
-        const byKey   = isSearchResultWithKeyValue(d);
+        const byKey = isSearchResultWithKeyValue(d);
         const byValue = relaxedSearchEnabled && isSearchResultValueOnly(d);
         if (byKey || byValue) {
             nodeToZoom = nodeToZoom || d;
@@ -817,7 +856,7 @@ function showNodeDetails(node, openDrawer = true) {
 
     drawerContent.innerHTML = '';
 
-    const excluded = new Set(['index','x','y','vy','vx','fx','fy','color','Service Name']);
+    const excluded = new Set(['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name']);
     const isListVisible = isListViewVisible();
     const table = document.createElement('table');
     const renderedKeys = new Set();
@@ -825,15 +864,22 @@ function showNodeDetails(node, openDrawer = true) {
     const renderValueCell = (key, raw) => {
         const td = document.createElement('td');
         if (typeof raw !== 'string') return td;
+
+        // long text
         if (descriptionFields.includes(key)) {
             createFormattedLongTextElementsFrom(raw).forEach(el => td.appendChild(el));
             return td;
         }
+
         const parts = splitValues(raw);
+
+        // urls
         if (parts.some(isUrl)) {
-            manageMultiPart(parts,td);
+            manageMultiPart(parts, td);
             return td;
         }
+
+        // people db links
         if (searchableAttributesOnPeopleDb.includes(key)) {
             td.innerHTML = `<i>${
                 parts.length > 1
@@ -842,18 +888,47 @@ function showNodeDetails(node, openDrawer = true) {
             }</i>`;
             return td;
         }
+
+        // ===== toggle (+ / −) logic only if there is an active key:value search =====
+        const active = parseActiveKeyValueSearch(searchTerm); // {key, values, quoted} | null
+        const isSameKey = !!active && active.key === key;
+        const activeVals = new Set((active?.values || []).map(normalizeForCompare));
+
+        const makeToggleBtn = (v) => {
+            if (!isSameKey) return '';
+            const inSearch = activeVals.has(normalizeForCompare(v));
+            const cls = inSearch ? 'search-remove' : 'search-add';
+            const sym = inSearch ? '−' : '+';
+            return ` <a class="fade-link search-toggle ${cls}"
+                data-key="${encodeURIComponent(key)}"
+                data-value="${encodeURIComponent(v)}"
+                href="#">${sym}</a>`;
+        };
+
+        // ===== render values =====
         if (parts.length > 1) {
             const ul = document.createElement('ul');
             parts.forEach(v => {
                 const li = document.createElement('li');
-                li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a></i>`;
+                li.innerHTML = `<i>${v}
+        <a class="fade-link search-trigger"
+           data-key="${encodeURIComponent(key)}"
+           data-value="${encodeURIComponent(v)}"
+           href="#">⌞ ⌝</a>${makeToggleBtn(v)}
+      </i>`;
                 ul.appendChild(li);
             });
             td.appendChild(ul);
         } else {
             const v = parts[0] || '';
-            td.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a></i>`;
+            td.innerHTML = `<i>${v}
+      <a class="fade-link search-trigger"
+         data-key="${encodeURIComponent(key)}"
+         data-value="${encodeURIComponent(v)}"
+         href="#">⌞ ⌝</a>${makeToggleBtn(v)}
+    </i>`;
         }
+
         return td;
     };
     const renderKeyCell = (key) => {
@@ -1052,20 +1127,55 @@ function createMap() {
     }
 
     document.addEventListener('click', function (e) {
-        if (e.target.classList.contains('search-trigger')) {
+        const trigger = e.target.closest('.search-trigger');
+        const addBtn  = e.target.closest('.search-add');
+        const remBtn  = e.target.closest('.search-remove');
+
+        // 1) Click su ⌞ ⌝ = comportamento attuale
+        if (trigger) {
             clickedNode = null;
             e.preventDefault();
-            const key = decodeURIComponent(e.target.getAttribute('data-key'));
+
+            const key = decodeURIComponent(trigger.getAttribute('data-key'));
             const isAccurateSearch = key === "Depends on" || key === "Used by" || key === "id";
             const mappedKey = isAccurateSearch ? "id" : key;
-            const value = isAccurateSearch ? `"${decodeURIComponent(e.target.getAttribute('data-value'))}"` : `${decodeURIComponent(e.target.getAttribute('data-value'))}`;
+
+            const value = isAccurateSearch
+                ? `"${decodeURIComponent(trigger.getAttribute('data-value'))}"`
+                : `${decodeURIComponent(trigger.getAttribute('data-value'))}`;
+
             const combinedSearchTerm = `${mappedKey}:${value}`;
-            searchTerm = combinedSearchTerm;
-            const searchInput = document.getElementById('drawer-search-input');
-            searchInput.value = combinedSearchTerm;
-            setSearchQuery(combinedSearchTerm);
-            updateVisualization(nodeGraph, linkGraph, labels);
+            updateSearchAndRefresh(combinedSearchTerm);
             window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+        }
+
+        // 2) Click su + / −
+        if (addBtn || remBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const btn = addBtn || remBtn;
+            const key = decodeURIComponent(btn.getAttribute('data-key'));
+            const value = decodeURIComponent(btn.getAttribute('data-value'));
+
+            const active = parseActiveKeyValueSearch(searchTerm);
+            if (!active || active.key !== key) return; // solo se search key:value attiva e stessa key
+
+            const values = [...active.values];
+            const needle = normalizeForCompare(value);
+
+            const idx = values.findIndex(v => normalizeForCompare(v) === needle);
+
+            if (addBtn) {
+                if (idx === -1) values.push(value);
+            } else {
+                if (idx !== -1) values.splice(idx, 1);
+            }
+
+            const next = buildKeyValueSearch(active.key, values, active.quoted);
+            updateSearchAndRefresh(next);
+            return;
         }
     });
 }
