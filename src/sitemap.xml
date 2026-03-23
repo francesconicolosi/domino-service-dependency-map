@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://francesconicolosi.github.io/</loc>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://francesconicolosi.github.io/domino-service-dependency-map/domino.html</loc>
+    </url>
+    <url>
+        <loc>https://francesconicolosi.github.io/domino-service-dependency-map/solitaire.html</loc>
+    </url>
+</urlset>

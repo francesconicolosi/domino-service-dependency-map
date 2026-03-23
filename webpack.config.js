@@ -66,6 +66,8 @@ module.exports = {
                 {from: 'css', to: 'css'},
                 {from: 'src/sample_services.csv', to: 'sample_services.csv'},
                 {from: 'src/sample-people-database.csv', to: 'sample-people-database.csv'},
+                {from: 'src/robots.txt', to: 'robots.txt'},
+                {from: 'src/sitemap.xml', to: 'sitemap.xml'},
                 { from: 'assets', to: 'assets' },
             ],
         }),
