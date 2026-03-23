@@ -1,85 +1,397 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino: Dependency Mapping Visualization Tool</title>
-    <link rel="stylesheet" href="./css/styles.css">
-    <link rel="icon" type="image/svg+xml" href="assets/domino.svg">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Francesco Nicolosi — System Portfolio</title>
+  <link rel="stylesheet" href="./css/me.css">
 </head>
+
 <body>
-<div id="side-overlay" tabindex="-1"></div>
 
-<aside id="side-drawer" aria-hidden="true" aria-labelledby="side-title" role="dialog">
-    <header class="drawer-header">
-        <h1>Domino ⚅ Dependency Mapping Visualization Tool</h1>
-        <button id="side-close" aria-label="Close">✖</button>
-    </header>
+<!-- =====================================================
+     PROFESSIONAL INTRO
+     ===================================================== -->
+<section class="section" id="introduction">
+  <div id="intro-prof-container"></div>
 
-    <nav class="content">
-        <ul class="actions">
-            <li><button id="act-upload">📤 Upload CSV</button></li>
-            <li><button id="act-fit">↺ Fit to content</button></li>
-            <li>
-                <label class="switch-label">
-                    🚫 Show Decommissioned
-                    <input type="checkbox" id="toggle-decommissioned">
-                    <span class="slider"></span>
-                </label>
-            </li>
-            <li>
-                <label class="switch-label">
-                    🎛️ Relaxed Search
-                    <input type="checkbox" id="relaxed-search">
-                    <span class="slider"></span>
-                </label>
-            </li>
-            <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Solitaire</button></li>
-        </ul>
-    </nav>
+  <div id="left-block-container">
 
-    <footer class="drawer-footer">
-        <small id="side-last-update"></small>
-    </footer>
-
-</aside>
-
-<div class="top-bar">
-    <span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
-    <div class="top-search">
-        <input type="text" id="drawer-search-input" placeholder='Search… (field:"value" | field:value | value)' />
-        <button id="drawer-search-go">🔎</button>
-        <button id="view-list" title="Vista elenco (tabella)">📋</button>
-        <button id="view-graph" title="Vista grafo" style="display:none;">🕸️</button>
-        <button id="act-clear">❌</button>
+    <div id="left-block">
+      <p id="left-block-paragraph">Leading complex digital services &amp; processes</p>
+      <h1 id="left-header">
+        DIGITAL<br>SERVICE<br>MANAGER
+      </h1>
     </div>
+
+    <div id="right-block-container">
+
+      <div id="image-video-container">
+        <img id="image-video" src="./assets/francesconicolosi-profile.jpeg" alt="">
+      </div>
+
+      <p class="right-block-paragraph">
+        My name is Francesco Nicolosi, an
+        <span class="span-right-block">IT Service Manager (ITIL Expert) &amp; Project Manager</span>
+        with over
+        <span class="span-right-block">13+ years of experience in luxury and e‑commerce</span>
+        and nearly 20 years across the IT industry.
+      </p>
+
+      <p class="right-block-paragraph">
+        With strong expertise in <span class="span-right-block">IT management</span> and a background in <span class="span-right-block">software engineering</span>,
+        I operate at the intersection of people, processes and platforms,
+        ensuring operational excellence, SLA compliance and service reliability.
+      </p>
+
+      <p class="right-block-paragraph">
+        My current focus is exploring
+        <span class="span-right-block">AI‑supported approaches</span>
+        to evolve Service Management toward faster decision‑making
+        and execution‑driven collaboration.
+      </p>
+
+      <p class="linkedin-more-links">
+        <a class="linkedin-more-links" href="https://it.linkedin.com/in/francesco-nicolosi-43930161">
+          My Linkedin profile
+        </a> |
+        <a class="linkedin-more-links" href="#domino-experiment">
+          Continue exploring →
+        </a>
+      </p>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- =====================================================
+     EXPERIMENTAL WORK & DOMINO
+     ===================================================== -->
+<section class="section modern-section" id="domino-experiment">
+
+  <div class="modern-container" id="serious-portfolio-container">
+
+    <div class="modern-offset">
+      <div class="modern-text-block">
+        <p class="modern-eyebrow">Experimental work</p>
+
+        <h2 class="modern-title">
+          Experiments within<br>Service Management
+        </h2>
+
+        <p class="right-block-paragraph">
+          During my role in Service Management, I explored practical ways
+          to improve <span class="span-right-block">service visibility and operational clarity
+          in large, complex organizations.</span>
+        </p>
+
+        <p class="right-block-paragraph">
+          These experiments were developed with the support of <span class="span-right-block">AI‑assisted tools</span>, enabling faster experimentation, reduced costs, and concrete outcomes.
+          By applying the same efficiency‑oriented approach used in Service Management, I was able to translate <span class="span-right-block">creative exploration into viable processes with real value for the organization</span>.
+        </p>
+
+
+        <p class="right-block-paragraph">
+          <span class="span-right-block">Domino</span> was the first of these internal experiments,
+          conceived to validate alternative approaches to understanding
+          services, dependencies and business processes using
+          existing organizational data.
+        </p>
+      </div>
+    </div>
+
+    <div class="modern-offset">
+      <div class="modern-card">
+        <p class="modern-eyebrow accent-blue">Domino</p>
+
+        <h3 class="modern-subtitle">Service visibility at speed</h3>
+
+        <div class="modern-video">
+          <video autoplay muted loop playsinline preload="auto">
+            <source src="./assets/domino.mp4" type="video/mp4">
+          </video>
+        </div>
+
+        <p class="right-block-paragraph">
+          Knowing which services support a product, how they depend on each other,
+          and how business processes flow across them is essential
+          for <span class="span-right-block">consistent service performance.</span>
+        </p>
+
+        <p class="right-block-paragraph">
+          <span class="span-right-block">Domino</span> was created within my Service Management role
+          to provide this understanding with speed and clarity,
+          leveraging data already available across the organization.
+        </p>
+
+        <p class="right-block-paragraph">
+          By connecting services and dependencies with people,
+          Domino established the foundation for the next step:
+          <span class="span-right-block">Solitaire</span>
+        </p>
+
+        <p class="linkedin-more-links">
+          <a class="linkedin-more-links" href="https://francesconicolosi.github.io/domino-service-dependency-map/domino.html">
+            Open Domino →
+          </a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- =====================================================
+     SOLITAIRE & OUTCOME
+     ===================================================== -->
+<section class="section modern-section" id="solitaire-experiment">
+
+  <div class="modern-container">
+
+    <div class="modern-offset">
+      <div class="modern-text-block">
+        <p class="modern-eyebrow muted">Outcome</p>
+
+        <h3 class="modern-subtitle large">
+          From silos to shared responsibility
+        </h3>
+
+        <p class="modern-text">
+          <span class="span-right-block">Organizational silos</span> are often reinforced by the lack of visibility
+          into how teams actually operate and contribute to services.
+        </p>
+
+        <p class="modern-text">
+          Making work visible — how teams act, collaborate and support services —
+          strengthens a culture that is <span class="span-right-block">collaborative,
+          service‑oriented and transparent</span>,
+          instead of one dominated by hierarchical structures.
+        </p>
+
+        <p class="modern-text">
+          This shift supports an operating model based on clarity
+          and shared responsibility, rather than isolated ownership
+          locked inside organizational silos.
+        </p>
+      </div>
+    </div>
+
+    <div class="modern-offset">
+      <div class="modern-card">
+        <p class="modern-eyebrow accent-red">Solitaire</p>
+
+        <h3 class="modern-subtitle">
+          Making team operations visible
+        </h3>
+
+        <div class="modern-video">
+          <video autoplay muted loop playsinline preload="auto">
+            <source src="./assets/solitaire.mp4" type="video/mp4">
+          </video>
+        </div>
+
+        <p class="modern-text">
+          <span class="span-right-block">Solitaire</span> was built to provide this visibility instantly,
+          connecting how teams operate with the service landscape
+          introduced by Domino.
+        </p>
+
+        <p class="modern-text">
+          By linking people and services in a single operational view,
+          Solitaire enables faster engagement, clearer accountability
+          and more effective collaboration across the service lifecycle.
+        </p>
+
+        <p class="linkedin-more-links">
+          <a class="linkedin-more-links" href="https://francesconicolosi.github.io/domino-service-dependency-map/solitaire.html">
+            Open Solitaire →
+          </a>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- =====================================================
+     MUSIC & TECHNOLOGY
+     ===================================================== -->
+<section class="section modern-section" id="music-experiment">
+
+  <div class="modern-container">
+
+    <!-- TEXT BLOCK — LEFT -->
+    <div class="modern-offset">
+      <div class="modern-text-block">
+
+        <p class="modern-eyebrow">Music &amp; Technology</p>
+
+        <h2 class="modern-title">
+          Where technology<br>
+          meets musical expression
+        </h2>
+
+        <p class="modern-text">
+          Beyond my passion for computer science and technology,
+          music has always played a central role in my personal
+          and creative journey.
+        </p>
+
+        <p class="modern-text">
+          I enjoy experimenting with new technological solutions
+          applied to music, exploring how software, hardware
+          and digital tools can expand creative possibilities.
+        </p>
+
+        <p class="modern-text">
+          I studied piano and gradually evolved my musical background
+          toward rock and electronic music, blending structured
+          musical education with experimentation and sound design.
+        </p>
+
+      </div>
+    </div>
+
+    <!-- VIDEO COLUMN — RIGHT -->
+    <div class="modern-offset">
+      <p class="music-audio-hint">Click to enable sound</p>
+      <div class="modern-card music-mosaic">
+
+        <!-- LEFT: 2 horizontal (stack) -->
+        <div class="music-mosaic-left">
+          <div class="music-card horizontal">
+            <video autoplay muted loop playsinline preload="auto">
+              <source src="./assets/piano-background.mp4" type="video/mp4">
+            </video>
+            <div class="music-audio-indicator" aria-hidden="true">🔊</div>
+            <div class="music-card-caption">Piano compositions</div>
+          </div>
+
+          <div class="music-card horizontal">
+            <video autoplay muted loop playsinline preload="auto">
+              <source src="./assets/seaboard.mp4" type="video/mp4">
+            </video>
+            <div class="music-audio-indicator" aria-hidden="true">🔊</div>
+            <div class="music-card-caption">MPE &amp; electronic sound design</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: 1 vertical (same total height as the two horizontals + gap) -->
+        <div class="music-card vertical">
+          <video autoplay muted loop playsinline preload="auto">
+            <source src="./assets/highway.mp4" type="video/mp4">
+          </video>
+          <div class="music-audio-indicator" aria-hidden="true">🔊</div>
+          <div class="music-card-caption">Rock band experiences</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section" id="retro">
+
+  <div class="bg-container">
+    <div class="parallax-bg" data-speed="0.18">
+      <div class="retro-stage" id="retroStage">
+        <img id="retroA" src="./assets/monkeyprince.png" alt="" loading="eager" decoding="sync" />
+        <img id="retroB" src="./assets/dukedoom.png"   alt="" loading="eager" decoding="sync" />
+        <canvas id="retroCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINESTRA WIN95 -->
+  <div class="window">
+
+    <div class="title-bar">
+      <span>Retro_Gaming.exe</span>
+      <span id="gamingCloseBtn" style="cursor:pointer;">X</span>
+    </div>
+
+    <div class="window-body">
+      <h2>Gaming Passion</h2>
+
+      <p>
+        My passion for gaming was born in the era of the <strong>Pentium 100</strong>,
+        with <strong>Windows 95</strong> released that very same year.
+        Starting with a personal computer rather than a console shaped
+        the way I experienced the medium from the beginning.
+      </p>
+
+      <p>
+        Gaming naturally coexisted with my other interests — study, writing and music —
+        but it also encouraged a more analytical perspective.
+        I grew up observing the <strong>engineering behind video games</strong>,
+        their technical constraints, design choices and the evolution of the PC gaming industry,
+        fueled by years of enthusiast PC gaming magazines.
+      </p>
+
+      <p>
+        Today, I still observe the medium closely.
+        What once was a rebellious and creative niche has become
+        an industry whose revenue now surpasses cinema.
+        I reflect on this transformation and its implications
+        in my personal blog at <strong><a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></strong>.
+      </p>
+
+      <button class="win95-btn"
+              onclick="window.open('https://www.gamerdad.cloud','_blank')">
+        Visit GamerDad.cloud
+      </button>
+    </div>
+  </div>
+
+  <!-- BSOD (EASTER EGG) -->
+  <div class="bsod-clone">
+    <div class="bsod-header">WINDOWS</div>
+
+    <p>
+      A fatal exception 0E has occurred while loading
+      <em>RETRO_GAMING.DLL</em>.
+    </p>
+
+    <p>
+      Cause: excessive nostalgia detected.<br>
+      Status: Gamer mode still running.
+    </p>
+
+    <button class="bsod-btn" id="restartGamingBtn">
+      Stop &amp; Restart
+    </button>
+  </div>
+
+</section>
+
+
+<!-- TASKBAR -->
+<div class="taskbar">
+  <div id="taskbar">
+    <button class="start-btn win95-btn" id="startBtn">Start</button>
+    <div class="start-menu" id="startMenu">
+      <a href="#introduction" class="menu-item">Introduction</a>
+      <a href="#domino-experiment" class="menu-item">AI Powered Visual Service Catalog</a>
+      <a href="#solitaire-experiment" class="menu-item">AI Powered Visual People Database</a>
+      <a href="#music-experiment" class="menu-item">Music & Technology</a>
+      <a href="#retro" class="menu-item">Gaming</a>
+    </div>
+  </div>
+  <div id="start-caption">C:\WINDOWS\System32\Nycosoft.dll</div>
+  <div class="clock" id="clock">00:00</div>
 </div>
 
-<label id="label-file" class="custom-file-upload">
-    <input type="file" id="fileInput" accept=".csv" class="file-input" />
-    Select the CSV
-</label>
+<nav class="section-navigator" aria-label="Section navigation">
 
-<div id="map"></div>
-<div id="list-view" class="list-view" style="display:none;"></div>
-<div class="tooltip" id="tooltip" style="opacity: 0;"></div>
-<div id="legend" class="legend"></div>
-<div id="overlay" class="overlay"></div>
+  <a href="#introduction" class="nav-dot" data-label="Introduction"></a>
+  <a href="#domino-experiment" class="nav-dot" data-label="AI Powered Visual Service Catalog"></a>
+  <a href="#solitaire-experiment" class="nav-dot" data-label="AI Powered Visual People Database"></a>
+  <a href="#music-experiment" class="nav-dot" data-label="Music & Technology"></a>
+  <a href="#retro" class="nav-dot" data-label="Gaming"></a>
+</nav>
 
-<div id="drawer" class="drawer">
-    <div class="drawer-header">
-        <h2>Service Information</h2>
-        <button class="close-drawer" id="closeDrawer">✖</button>
-    </div>
-    <div id="drawerContent" class="drawer-content"></div>
-</div>
-
-<footer>
-    <p><img src="./assets/company-logo.png" alt="Nycosoft" width="120"></p>
-    <p>Author: Francesco Nicolosi</p>
-    <p>Personal Blog: <a href="https://www.gamerdad.cloud" target="_blank">www.gamerdad.cloud</a></p>
-    <p><img src="https://img.shields.io/badge/license-NonCommercial-blue.svg"></p>
-</footer>
 </body>
 </html>

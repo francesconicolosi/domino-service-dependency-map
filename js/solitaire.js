@@ -1720,10 +1720,10 @@ function extractData(csvText) {
 
                     thirdLevelGroup.select('rect.team-box')
                         .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"` }));
+                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"` }));
                     thirdLevelGroup.select('text.team-title')
                         .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"` }));
+                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"` }));
 
                     // RENDER CARD MEMBRO (lascia il tuo codice esistente)
                     members.forEach((member, mIdx) => {
@@ -2495,7 +2495,7 @@ function searchByQuery(query, opts = {}) {
                 email,
                 highlightService: hit.raw,
                 highlightQuery: q,
-                elementsBaseUrl: (s) => `index.html?search=id%3A"${encodeURIComponent(s)}"`
+                elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"`
             });
         } catch (e) {
             console.warn('Drawer open/highlight skipped:', e);

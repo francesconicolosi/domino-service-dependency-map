@@ -14,8 +14,8 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './src/index.html',
-            filename: 'index.html',
+            template: './src/domino.html',
+            filename: 'domino.html',
             inject: 'body',
             scriptLoading: 'blocking',
             chunks: ['main'],
@@ -46,8 +46,8 @@ module.exports = {
             }
         }),
         new HtmlWebpackPlugin({
-            template: './src/me.html',
-            filename: 'me.html',
+            template: './src/domino.html',
+            filename: 'domino.html',
             inject: 'body',
             scriptLoading: 'blocking',
             chunks: ['third'],

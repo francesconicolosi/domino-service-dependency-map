@@ -14,7 +14,7 @@ I started developing this small application during a train journey and it was co
 - Enriched fields derived from existing attributes (e.g., automatic Tracking Software filter URLs).
 
 ## Repository Structure
-domino-service-dependency-map/ ├── README.md ├── index.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
+domino-service-dependency-map/ ├── README.md ├── domino.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
 
 
 ## Installation
@@ -31,7 +31,7 @@ cd domino-service-dependency-map
    npm run build
 
 ## Usage
-1. Open the `index.html` file in your browser (located in the `dist` folder).
+1. Open the `domino.html` file in your browser (located in the `dist` folder).
 2. Upload a CSV file using the upload button.
 3. Use the search bar to find specific services.
 4. Click on nodes to view detailed information about services.
