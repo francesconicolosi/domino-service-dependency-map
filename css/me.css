@@ -1333,26 +1333,57 @@ body, html{
 }
 
 /* =====================================================
-   MOBILE — REMOVE TOP GAP FROM MODERN SECTIONS
-   (this overrides the 120px desktop padding)
+   MOBILE — COMPACT VERTICAL SPACING (ALL BUT GAMING)
    ===================================================== */
 @media (max-width: 768px) {
 
-    /* tutte le sezioni moderne */
-    .section.modern-section .modern-container {
-        padding-top: 32px !important;
-        padding-bottom: 56px;
+    /* ✅ Tutte le sezioni TRANNE Gaming */
+    .section:not(#retro) {
+        min-height: auto;
+        align-items: flex-start;
     }
 
-    /* prima sezione (intro) ancora più compatta */
+    /* ✅ Container principali, TRANNE Gaming */
+    .section:not(#retro) .modern-container,
     #introduction #left-block-container {
-        padding-top: 32px !important;
+        padding-top: 40px;
+        padding-bottom: 60px;
+    }
+
+    /* Intro ancora più compatta */
+    #introduction #left-block-container {
+        padding-top: 32px;
         padding-bottom: 48px;
     }
 
-    /* niente centratura verticale forzata */
-    .section {
-        min-height: auto;
-        align-items: flex-start;
+    /* Evita margini fantasma (non gaming) */
+    .section:not(#retro) .modern-offset {
+        margin-top: 0;
+    }
+
+    /* Titoli più vicini all’inizio viewport */
+    .section:not(#retro) .modern-title,
+    #left-header {
+        margin-top: 0;
+    }
+}
+
+/* =====================================================
+   MOBILE — GAMING SECTION EXTRA BREATHING SPACE
+   ===================================================== */
+@media (max-width: 768px) {
+
+    /* Solo sezione Gaming */
+    #retro {
+        padding-top: 80px;
+        padding-bottom: 120px;
+        min-height: 100vh;          /* mantiene feeling immersivo */
+        align-items: flex-start;   /* evita centratura forzata */
+    }
+
+    /* Centra meglio la finestra Win95 nel viewport */
+    #retro .window {
+        margin-top: 40px;
+        margin-bottom: 40px;
     }
 }
