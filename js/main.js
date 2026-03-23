@@ -309,7 +309,7 @@ window.addEventListener('load', function () {
         window.currentColumnKeys = [...DEFAULT_COLUMN_KEYS];
     }
 
-    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample_services.csv')
+    fetch('https://francesconicolosi.github.io/itsm/sample_services.csv')
         .then(response => {
             searchParam = getQueryParam('search')
             if (searchParam) {

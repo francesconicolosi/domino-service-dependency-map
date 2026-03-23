@@ -14,15 +14,15 @@ I started developing this small application during a train journey and it was co
 - Enriched fields derived from existing attributes (e.g., automatic Tracking Software filter URLs).
 
 ## Repository Structure
-domino-service-dependency-map/ ├── README.md ├── domino.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
+itsm/ ├── README.md ├── domino.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE
 
 
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/domino-service-dependency-map.git
+   git clone https://github.com/your-username/itsm.git
 2. Navigate to the project folder:
-cd domino-service-dependency-map
+cd itsm
 3. Install the dependencies:
    ```bash
    npm install
@@ -276,9 +276,9 @@ Commercial use of this software, including but not limited to selling, sublicens
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Original Author: Francesco "Nyconator" Nicolosi
 
-Original Repository: https://github.com/francesconicolosi/domino-service-dependency-map
+Original Repository: https://github.com/francesconicolosi/itsm
 
-Original Github Page: https://francesconicolosi.github.io/domino-service-dependency-map/
+Original Github Page: https://francesconicolosi.github.io/itsm/
 
 ## Contact
 For any questions, you can contact me at fra900@gmail.com or through my personal blog at https://www.gamerdad.cloud.

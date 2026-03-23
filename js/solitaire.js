@@ -854,7 +854,7 @@ function initDrawerEvents() {
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
 
 window.addEventListener('load', function () {
-    fetch('https://francesconicolosi.github.io/domino-service-dependency-map/sample-people-database.csv')
+    fetch('https://francesconicolosi.github.io/itsm/sample-people-database.csv')
         .then(response => response.text())
         .then(csvData => {
             resetVisualization();
