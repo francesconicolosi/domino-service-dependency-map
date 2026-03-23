@@ -46,8 +46,8 @@ module.exports = {
             }
         }),
         new HtmlWebpackPlugin({
-            template: './src/domino.html',
-            filename: 'domino.html',
+            template: './src/index.html',
+            filename: 'index.html',
             inject: 'body',
             scriptLoading: 'blocking',
             chunks: ['third'],
