@@ -637,7 +637,7 @@ body, html{
 }
 
 .span-right-block {
-    font-family:'Times New Roman', serif; font-style:italic; font-size:18px;
+    font-family:'Times New Roman', serif; font-style:italic; font-size:20px;
 }
 
 #goBlueBtn {
@@ -660,7 +660,7 @@ body, html{
     position:relative;
 }
 
-#intro-prof {
+#introduction {
     position:relative;
     background:#0d0d0d;
 }
@@ -680,4 +680,595 @@ body, html{
 
 #start-caption {
     margin-left:10px;font-size:12px;
+}
+
+/* =====================================================
+   MODERN SECTIONS (NON RETRO)
+   ===================================================== */
+
+.modern-section {
+    background: #0d0d0d;
+    color: #ffffff;
+}
+
+.modern-container {
+    position: relative;
+    z-index: 3;
+    width: 90%;
+    max-width: 1500px;
+    padding: 90px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 90px;
+    align-items: flex-start;
+}
+
+.modern-text-block {
+    flex: 1 1 520px;
+    max-width: 640px;
+}
+
+.modern-card {
+    flex: 1 1 420px;
+    max-width: 700px;
+}
+
+.modern-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    color: #9ee7c4;
+}
+
+.modern-eyebrow.accent-blue {
+    color: #9bc4ff;
+}
+
+.modern-eyebrow.accent-red {
+    color: #ffb3b3;
+}
+
+.modern-eyebrow.muted {
+    color: #cccccc;
+}
+
+.modern-title {
+    font-size: 42px;
+    line-height: 1.1;
+    margin: 0 0 28px;
+}
+
+.modern-subtitle {
+    font-size: 28px;
+    margin: 0 0 16px;
+}
+
+.modern-subtitle.large {
+    font-size: 34px;
+}
+
+.modern-text {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #e0e0e0;
+    margin-bottom: 16px;
+}
+
+.modern-text em {
+    font-family: "Times New Roman", serif;
+}
+
+.modern-video {
+    margin: 22px 0 26px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.modern-video video {
+    width: 100%;
+    max-width: 360px;
+    border-radius: 14px;
+    background: #000;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+}
+
+/* ===============================
+   MODERN SECTIONS: PAGE-LIKE LAYOUT
+   =============================== */
+
+/* Override del centering verticale */
+.section.modern-section {
+    align-items: flex-start;   /* ✅ non più center */
+}
+
+/* Punto di partenza verticale fisso */
+.section.modern-section .modern-container {
+    padding-top: 120px;        /* ✅ stesso offset per tutte */
+}
+
+/* =====================================================
+   UNIFIED PAGE BACKGROUND FOR INTRO + MODERN SECTIONS
+   ===================================================== */
+
+/* Background uniforme per tutte le “pagine” principali */
+#introduction,
+.section.modern-section {
+    background: linear-gradient(
+            180deg,
+            #0d0d0d 0%,
+            #121212 90%
+    );
+}
+
+/* Rimuove duplicazioni */
+#intro-prof-container {
+    background: none;
+}
+
+
+.section.modern-section .modern-container,
+#introduction #left-block-container {
+    padding-top: 120px;
+    padding-bottom: 120px;
+}
+
+/* Testo body coerente su tutte le sezioni */
+.modern-section .right-block-paragraph,
+.modern-section .modern-text {
+    font-size: 17px;
+    line-height: 1.5;
+    color: #e6e6e6;
+    margin-bottom: 20px;
+}
+/* =====================================================
+   SECTION NAVIGATOR (DOT SLIDESHOW)
+   ===================================================== */
+
+.section-navigator {
+    position: fixed;
+    bottom: 64px;               /* sopra taskbar */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 14px;
+    z-index: 2500;
+}
+
+.nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    position: relative;
+    transition: transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Hover */
+.nav-dot:hover {
+    background: #ffffff;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px rgba(255,255,255,0.12);
+}
+
+/* Tooltip */
+.nav-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 160%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    background: rgba(0,0,0,0.85);
+    color: #ffffff;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+/* Tooltip arrow */
+.nav-dot::before {
+    content: "";
+    position: absolute;
+    bottom: 140%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(0,0,0,0.85);
+
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.nav-dot:hover::after,
+.nav-dot:hover::before {
+    opacity: 1;
+}
+
+/* =====================================================
+   GLOBAL SECTION NAVIGATOR (DOTS)
+   ===================================================== */
+
+.section-navigator {
+    position: fixed;
+    bottom: 64px;               /* sopra taskbar */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 14px;
+    z-index: 2500;
+
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.25s ease;
+}
+
+/* quando taskbar è visibile → nascondi navigator */
+.taskbar.visible ~ .section-navigator {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* dot base */
+.nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    position: relative;
+    transition: transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* hover */
+.nav-dot:hover {
+    background: #ffffff;
+    transform: scale(1.25);
+    box-shadow: 0 0 0 6px rgba(255,255,255,0.12);
+}
+
+/* tooltip */
+.nav-dot::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 160%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    background: rgba(0,0,0,0.85);
+    color: #ffffff;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+/* tooltip arrow */
+.nav-dot::before {
+    content: "";
+    position: absolute;
+    bottom: 140%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(0,0,0,0.85);
+
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.nav-dot:hover::after,
+.nav-dot:hover::before {
+    opacity: 1;
+}
+
+/* dot attivo */
+.nav-dot.active {
+    background: #ffffff;
+    box-shadow: 0 0 0 6px rgba(255,255,255,0.18);
+}
+
+/* =====================================================
+   MUSIC & TECHNOLOGY SECTION
+   ===================================================== */
+
+.music-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+}
+
+.music-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+}
+
+.music-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.music-card-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 16px;
+
+    background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.85),
+            rgba(0,0,0,0)
+    );
+
+    color: #ffffff;
+    font-size: 14px;
+    letter-spacing: 0.4px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .music-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =====================================================
+   BSOD MODE FOR GAMING SECTION
+   ===================================================== */
+
+#retro.bsod-true {
+    background: var(--bsod-blue) !important;
+}
+
+#retro.bsod-true .bg-container,
+#retro.bsod-true .window {
+    display: none !important;
+}
+
+#retro .bsod-clone {
+    display: none;
+}
+
+#retro.bsod-true .bsod-clone {
+    display: block;
+    font-family: "Courier New", monospace;
+    color: #ffffff;
+    max-width: 900px;
+    padding: 40px;
+    z-index: 200;
+}
+
+/* =====================================================
+   MUSIC VIDEO HOVER AUDIO INDICATOR
+   ===================================================== */
+
+#music-experiment .music-card {
+    position: relative;
+}
+
+/* Icona altoparlante */
+#music-experiment .music-audio-indicator {
+    position: absolute;
+    bottom: 42px;
+    right: 14px;
+
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.9);
+
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 6px;
+
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Visibile solo quando l’audio è attivo */
+#music-experiment .music-card.audio-on .music-audio-indicator {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* =====================================================
+   MUSIC & TECHNOLOGY — CONSTRAINED LAYOUT
+   ===================================================== */
+
+/* colonna video come stack verticale */
+.music-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* card video */
+.music-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+
+    /* ✅ vincolo dimensioni */
+    max-width: 420px;
+    aspect-ratio: 16 / 9;
+}
+
+/* video sempre contenuto */
+.music-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* caption */
+.music-card-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 14px;
+
+    background: linear-gradient(
+            to top,
+            rgba(0,0,0,0.85),
+            rgba(0,0,0,0)
+    );
+
+    color: #ffffff;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+}
+
+/* =====================================================
+   MUSIC (desktop mosaic + mobile centered stack)
+   Scoped to #music-experiment to avoid conflicts
+   ===================================================== */
+
+#music-experiment .music-mosaic{
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+/* --- Desktop sizing baseline --- */
+#music-experiment{
+    --music-w: 360px;   /* width of each horizontal video card */
+    --music-gap: 18px;  /* gap between the two horizontals */
+}
+
+/* Left column: 2 horizontals stacked */
+#music-experiment .music-mosaic-left{
+    display: flex;
+    flex-direction: column;
+    gap: var(--music-gap);
+    width: var(--music-w);
+}
+
+/* Base card styling (keep your existing look) */
+#music-experiment .music-card{
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+}
+
+/* Horizontal cards */
+#music-experiment .music-card.horizontal{
+    width: var(--music-w);
+    aspect-ratio: 16 / 9;
+}
+
+/* Vertical card:
+   height = (horizontalHeight * 2) + gap
+   and width computed to keep 9:16 ratio */
+#music-experiment .music-card.vertical{
+    height: calc((var(--music-w) * 9 / 16) * 2 + var(--music-gap));
+    width:  calc((((var(--music-w) * 9 / 16) * 2 + var(--music-gap)) * 9) / 16);
+    border-radius: 14px;
+}
+
+/* Videos always fit */
+#music-experiment .music-card video{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Caption (reuses your style) */
+#music-experiment .music-card-caption{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 14px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+    color: #fff;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+}
+
+/* Speaker icon positioning (keep consistent) */
+#music-experiment .music-audio-indicator{
+    position: absolute;
+    bottom: 42px;
+    right: 14px;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0;
+    transform: scale(0.9);
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 6px;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#music-experiment .music-card.audio-on .music-audio-indicator{
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* -----------------------------------------------------
+   Mobile: same as before (stack), centered horizontally
+   ----------------------------------------------------- */
+@media (max-width: 900px){
+    #music-experiment .music-mosaic{
+        flex-direction: column;
+        align-items: center;    /* ✅ center horizontally */
+    }
+    #music-experiment .music-mosaic-left{
+        width: 100%;
+        align-items: center;    /* ✅ center the two horizontals */
+    }
+    #music-experiment .music-card.horizontal,
+    #music-experiment .music-card.vertical{
+        width: min(420px, 100%);
+        height: auto;
+        aspect-ratio: 16 / 9;   /* ✅ match current mobile look */
+    }
+}
+
+/* =====================================================
+   MUSIC — AUDIO ENABLE HINT
+   ===================================================== */
+
+#music-experiment .music-audio-hint{
+    margin: 0 0 10px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #9ee7c4;          /* stesso tono degli eyebrow */
+    opacity: 0.85;
+    user-select: none;
+    pointer-events: none;   /* non intercetta click */
+    transition: opacity .25s ease, transform .25s ease;
+}
+
+/* quando l’audio è sbloccato → nascondi */
+#music-experiment.audio-unlocked .music-audio-hint{
+    opacity: 0;
+    transform: translateY(-4px);
 }

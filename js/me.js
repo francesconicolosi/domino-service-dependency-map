@@ -268,11 +268,11 @@ setInterval(updateClock, 1000); updateClock();
 })();
 (function taskbarAppear(){
     const taskbar = document.querySelector('.taskbar');
-    const introProf = document.getElementById('intro-prof');
+    const retroSection = document.getElementById('retro');
 
     const obs = new IntersectionObserver(entries => {
         entries.forEach(e => {
-            if (!e.isIntersecting) {
+            if (e.isIntersecting) {
                 taskbar.classList.add('visible');
             } else {
                 taskbar.classList.remove('visible');
@@ -280,7 +280,7 @@ setInterval(updateClock, 1000); updateClock();
         });
     }, { threshold: 0.55 });
 
-    obs.observe(introProf);
+    obs.observe(retroSection);
 })();
 
 /* ======================================================
@@ -306,5 +306,201 @@ setInterval(updateClock, 1000); updateClock();
 
     exitBtn.addEventListener("click", () => {
         section.classList.remove("bsod-true");  // ripristina stile Win95
+    });
+})();
+
+/* =========================
+   GLOBAL SECTION NAVIGATOR (DOTS)
+   - Creates dots for ALL sections on the site
+   - Highlights active section on scroll
+   - Hides when Win95 taskbar becomes visible
+   ========================= */
+(function initSectionNavigator() {
+    function prettifyId(id) {
+        return (id || "")
+            .replace(/[-_]+/g, " ")
+            .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Friendly labels (override where needed)
+    const LABELS = {
+        introduction: "Introduction",
+        "domino-experiment": "AI Powered Visual Service Catalog",
+        "solitaire-experiment": "AI Powered Visual People Database",
+        "music-experiment": "Music & Technology",
+        retro: "Gaming",
+        video: "Video",
+        about: "About",
+        dos: "MS‑DOS",
+        error: "BSOD"
+    };
+
+    function ensureNavigator() {
+        let nav = document.querySelector(".section-navigator");
+        if (!nav) {
+            nav = document.createElement("nav");
+            nav.className = "section-navigator";
+            nav.setAttribute("aria-label", "Section navigation");
+            document.body.appendChild(nav);
+        }
+        return nav;
+    }
+
+    function buildDots(nav, sectionIds) {
+        nav.innerHTML = ""; // rebuild cleanly
+
+        sectionIds.forEach((id, idx) => {
+            const a = document.createElement("a");
+            a.className = "nav-dot";
+            a.href = `#${id}`;
+            a.setAttribute("data-label", LABELS[id] || prettifyId(id));
+            a.setAttribute("aria-label", `${LABELS[id] || prettifyId(id)} (section ${idx + 1}/${sectionIds.length})`);
+            nav.appendChild(a);
+        });
+    }
+
+    function observeActiveDots(sectionIds) {
+        const dots = Array.from(document.querySelectorAll(".nav-dot"));
+        const sections = sectionIds
+            .map(id => document.getElementById(id))
+            .filter(Boolean);
+
+        if (!sections.length || !dots.length) return;
+
+        const io = new IntersectionObserver((entries) => {
+            // pick the most visible intersecting entry
+            const visible = entries
+                .filter(e => e.isIntersecting)
+                .sort((a, b) => (b.intersectionRatio || 0) - (a.intersectionRatio || 0))[0];
+
+            if (!visible) return;
+
+            const idx = sectionIds.indexOf(visible.target.id);
+            if (idx === -1) return;
+
+            dots.forEach(d => d.classList.remove("active"));
+            if (dots[idx]) dots[idx].classList.add("active");
+        }, { threshold: [0.35, 0.5, 0.65] });
+
+        sections.forEach(sec => io.observe(sec));
+    }
+
+    function wireTaskbarHide(nav) {
+        const taskbar = document.querySelector(".taskbar");
+        if (!taskbar) return;
+
+        const apply = () => {
+            const visible = taskbar.classList.contains("visible");
+            nav.style.opacity = visible ? "0" : "1";
+            nav.style.pointerEvents = visible ? "none" : "auto";
+        };
+
+        apply();
+
+        const mo = new MutationObserver(apply);
+        mo.observe(taskbar, { attributes: true, attributeFilter: ["class"] });
+    }
+
+    function boot() {
+        const allSections = Array.from(document.querySelectorAll("section.section[id]"));
+        const sectionIds = allSections
+            .map(s => s.id)
+            .filter(Boolean);
+
+        if (!sectionIds.length) return;
+
+        const nav = ensureNavigator();
+        buildDots(nav, sectionIds);
+        observeActiveDots(sectionIds);
+        wireTaskbarHide(nav);
+    }
+
+    // Run when DOM is ready (safe even if script is loaded in <head>)
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot, { once: true });
+    } else {
+        boot();
+    }
+})();
+
+/* =========================
+   GAMING BSOD EASTER EGG
+   ========================= */
+(function gamingBsodEasterEgg(){
+    const section = document.getElementById("retro");
+    const closeBtn = document.getElementById("gamingCloseBtn");
+    const restartBtn = document.getElementById("restartGamingBtn");
+
+    if (!section || !closeBtn) return;
+
+    // Click sulla X → BSOD
+    closeBtn.addEventListener("click", () => {
+        section.classList.add("bsod-true");
+    });
+
+    // Stop & Restart → ritorna alla sezione gaming
+    if (restartBtn) {
+        restartBtn.addEventListener("click", () => {
+            section.classList.remove("bsod-true");
+        });
+    }
+})();
+
+/* =========================
+   UNLOCK AUDIO ON FIRST USER INTERACTION
+   (required by browser autoplay policy)
+   ========================= */
+let audioUnlocked = false;
+
+
+function unlockAudioOnce() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+
+    const section = document.getElementById('music-experiment');
+    if (section) section.classList.add('audio-unlocked'); // 👈 questa
+
+    document.querySelectorAll('#music-experiment video').forEach(v => {
+        v.muted = true;
+        v.play().catch(() => {});
+    });
+}
+
+// Qualsiasi vera interazione utente va bene
+document.addEventListener('click', unlockAudioOnce, { once: true });
+document.addEventListener('touchstart', unlockAudioOnce, { once: true });
+document.addEventListener('keydown', unlockAudioOnce, { once: true });
+
+
+/* =========================
+   MUSIC & TECHNOLOGY — HOVER AUDIO
+   ========================= */
+(function initMusicHoverAudio(){
+    const section = document.getElementById("music-experiment");
+    if (!section) return;
+
+    const cards = section.querySelectorAll(".music-card");
+
+    cards.forEach(card => {
+        const video = card.querySelector("video");
+        if (!video) return;
+
+        // sicurezza: parte sempre muto
+        video.muted = true;
+        video.volume = 0.8;
+
+
+        card.addEventListener("mouseenter", () => {
+                if (!audioUnlocked) return;   // ⬅️ fondamentale
+                video.muted = false;
+                video.play().catch(() => {});
+                card.classList.add("audio-on");
+            }
+        );
+
+        card.addEventListener("mouseleave", () => {
+            video.muted = true;
+            card.classList.remove("audio-on");
+        });
     });
 })();
