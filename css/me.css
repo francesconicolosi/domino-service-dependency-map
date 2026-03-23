@@ -1272,3 +1272,87 @@ body, html{
     opacity: 0;
     transform: translateY(-4px);
 }
+
+/* =====================================================
+   MOBILE — REDUCE TOP SPACING (INTRO + FIRST VIEW)
+   ===================================================== */
+@media (max-width: 768px) {
+
+    /* Prima sezione: riduci drasticamente lo spazio sopra */
+    #introduction #left-block-container {
+        padding-top: 40px;     /* era ~120px */
+        padding-bottom: 60px;
+    }
+
+    /* Allinea il titolo più in alto */
+    #left-block {
+        margin-top: 0;
+    }
+
+    /* Riduci distanza tra headline e immagine */
+    #image-video-container {
+        margin-top: 12px;
+    }
+
+}
+
+/* =====================================================
+   MOBILE — COMPACT VERTICAL SPACING (ALL SECTIONS)
+   ===================================================== */
+@media (max-width: 768px) {
+
+    /* Tutte le sezioni: niente hero forzata */
+    .section {
+        min-height: auto;
+        align-items: flex-start;
+    }
+
+    /* Container principali: riduci padding verticali */
+    .modern-container,
+    #left-block-container {
+        padding-top: 40px;
+        padding-bottom: 60px;
+    }
+
+    /* Prima sezione: ancora più compatta */
+    #introduction #left-block-container {
+        padding-top: 32px;
+        padding-bottom: 48px;
+    }
+
+    /* Evita margini “fantasma” sopra i blocchi */
+    .modern-offset {
+        margin-top: 0;
+    }
+
+    /* Titoli più vicini all’inizio viewport */
+    .modern-title,
+    #left-header {
+        margin-top: 0;
+    }
+}
+
+/* =====================================================
+   MOBILE — REMOVE TOP GAP FROM MODERN SECTIONS
+   (this overrides the 120px desktop padding)
+   ===================================================== */
+@media (max-width: 768px) {
+
+    /* tutte le sezioni moderne */
+    .section.modern-section .modern-container {
+        padding-top: 32px !important;
+        padding-bottom: 56px;
+    }
+
+    /* prima sezione (intro) ancora più compatta */
+    #introduction #left-block-container {
+        padding-top: 32px !important;
+        padding-bottom: 48px;
+    }
+
+    /* niente centratura verticale forzata */
+    .section {
+        min-height: auto;
+        align-items: flex-start;
+    }
+}
