@@ -12,7 +12,7 @@ import {
     splitValues,
     isUrl,
     labelForKey,
-    LABEL_FOR_KEY, isListViewVisible
+    LABEL_FOR_KEY, isListViewVisible, isDateTimeValue, formatDateTimeLocal
 } from './utils.js';
 
 
@@ -839,24 +839,65 @@ function computeTrackingSoftwareValue(node) {
     return `https://nycosoft.trackingsowftare.net/issues/?jql=${encodeURIComponent(jql)}`;
 }
 
+
 function showNodeDetails(node, openDrawer = true) {
+
+// ---------- Key detection + normalization ----------
+    const keyRaw = String(node['Key'] ?? '').trim();
+    const serviceRaw = String(node['Service Name'] ?? '').trim();
+    const idRaw = String(node.id ?? '').trim();
+
+    const keyFromCsv = keyRaw !== '';
+
+    const keyValue = keyFromCsv
+        ? keyRaw
+        : (serviceRaw || idRaw);
+
+// garantisci Key sempre valorizzato
+    node['Key'] = keyValue;
+
+// normalizzazione per confronti
+    const norm = v => v.toLowerCase();
+    const keyNorm = norm(keyValue);
+    const idNorm = norm(idRaw);
+    const serviceNorm = norm(serviceRaw);
+
+    const keyEqualsId = keyNorm && keyNorm === idNorm;
+
     const PRIORITY_KEYS = [
-        'id',
         'Key',
+        ...(!keyEqualsId ? ['id'] : []),
         'Description',
         'Depends on',
         'Used by'
     ];
+
+
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('overlay');
     const drawerContent = document.getElementById('drawerContent');
+
 
     const title = drawer.querySelector('.drawer-header h2');
     title.textContent = node['Service Name'] || 'Service Information';
 
     drawerContent.innerHTML = '';
 
-    const excluded = new Set(['index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color', 'Service Name']);
+    if (!keyFromCsv) {
+        // If Key column is missing/empty, use Service Name or internal id
+        node['Key'] = String(node['Service Name'] ?? node.id ?? '').trim();
+    }
+
+    const excluded = new Set([
+        'index','x','y','vy','vx','fx','fy','color',
+
+        // Service Name mai mostrato come riga
+        'Service Name',
+
+        // se Key == id → nascondi id
+        ...(keyEqualsId ? ['id'] : [])
+    ]);
+
     const isListVisible = isListViewVisible();
     const table = document.createElement('table');
     const renderedKeys = new Set();
@@ -864,6 +905,12 @@ function showNodeDetails(node, openDrawer = true) {
     const renderValueCell = (key, raw) => {
         const td = document.createElement('td');
         if (typeof raw !== 'string') return td;
+
+        if (isDateTimeValue(raw)) {
+            td.textContent = formatDateTimeLocal(raw);
+            td.title = raw; // tooltip con valore UTC originale
+            return td;
+        }
 
         // long text
         if (descriptionFields.includes(key)) {
@@ -971,12 +1018,8 @@ function showNodeDetails(node, openDrawer = true) {
         k === 'Service Name' ? 'id' : k;
 
     const orderedKeys = PRIORITY_KEYS
-        .map(pk => {
-            if (pk === 'id' && nodeKeys.includes('Service Name')) return 'Service Name';
-            return nodeKeys.find(k => normalizeKeyForOrder(k) === pk);
-        })
+        .map(pk => nodeKeys.find(k => k === pk))
         .filter(Boolean);
-
     const remainingKeys = nodeKeys.filter(
         k => !orderedKeys.includes(k)
     );

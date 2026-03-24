@@ -14,7 +14,36 @@ export const LOCATION_FIELD = 'Location';
 export const COMPANY_FIELD = 'Company';
 export const NEUTRAL_COLOR = '#fcfcfc';
 export const MAX_TEAMS_PER_ROW = 5;
-export const emailField = "Company email"; // this will be used to resolve the photo filename
+export const emailField = "Company email";
+
+export function isDateTimeValue(value) {
+    if (typeof value !== 'string') return false;
+
+    const isoRegex =
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+    if (!isoRegex.test(value)) return false;
+
+    const d = new Date(value);
+    return !isNaN(d.getTime());
+}
+
+export function formatDateTimeLocal(value) {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+
+    return new Intl.DateTimeFormat(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+    }).format(d);
+}
+
+
 
 export function countRowsByTeamCapacity(secondLevelItems, capacityPerRow) {
     let rows = 1;
