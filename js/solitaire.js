@@ -1166,8 +1166,8 @@ function addGuestManagersTo(organization) {
 }
 
 function getLatestUpdateFromCsv(headers, rows) {
-    if (headers.includes("Last Update")) {
-        const dateIndex = headers.indexOf("Last Update");
+    if (headers.includes("Updated")) {
+        const dateIndex = headers.indexOf("Updated");
         const dates = rows.slice(1)
             .map(row => row[dateIndex]?.trim())
             .filter(Boolean)
@@ -1374,8 +1374,8 @@ function extractData(csvText) {
     }).filter(p => (p.Status || '').toLowerCase() !== 'inactive');
 
     let lastUpdateISO = '';
-    if (headers.includes('Last Update')) {
-        const idx = headers.indexOf('Last Update');
+    if (headers.includes('Updated')) {
+        const idx = headers.indexOf('Updated');
         const dates = rows.slice(1)
             .map(r => r[idx]?.trim())
             .filter(Boolean)

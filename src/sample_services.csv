@@ -1,4 +1,4 @@
-Service Name,Description,Type,Depends on,Used by,Status,Decommission Date,Owner,Go Live Date,Business Risk,Product Theme,Last Update
+Service Name,Description,Type,Depends on,Used by,Status,Decommission Date,Owner,Go Live Date,Business Risk,Product Theme,Updated
 QuantumSync,Event bus per sincronizzazione near‑real‑time tra domini,Platform,"CoreStream
 DataHub",ShieldForce,,,Cameron Shade,,,Gaming,2025-10-15
 CyberEngine,Motore regole per valutazioni rischio in tempo reale,Microservice,"LogicLab

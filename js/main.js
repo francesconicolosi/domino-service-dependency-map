@@ -360,9 +360,9 @@ function processData(data) {
         return;
     }
 
-    if (data.columns.includes('Last Update')) {
+    if (data.columns.includes('Updated')) {
         const validDates = data
-            .map(d => new Date(d['Last Update']))
+            .map(d => new Date(d['Updated']))
             .filter(date => !isNaN(date.getTime()));
 
         if (validDates.length > 0) {

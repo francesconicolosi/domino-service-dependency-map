@@ -126,7 +126,7 @@ Services — Optional; multi‑value list of services this person (or their team
 
 
 ``` bash
-User,Role,Team member of,Leading team(s),Status,Company,Location,Room Link,In team since,Name,Company email,Photo,Stream,Team Stream,Team Theme,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager,Last Update,Team Managed Services
+User,Role,Team member of,Leading team(s),Status,Company,Location,Room Link,In team since,Name,Company email,Photo,Stream,Team Stream,Team Theme,Team Development Manager,Team Architect,Team Delivery Manager,Team Scrum Master,Team Product Manager,Updated,Team Managed Services
 CSVName,Role,Assigned team,Stream,Company email,Team link,Status,Services
 "Designer Name","UX Strategy","Foundation Digital Design","Replatforming Foundations","designer.name@Company.com","https://confluence/.../cb96a6d7-...","ACTIVE","Design System\nDesign Ops""Pinco Pallo","Delivery Manager","Delivery Management","Replatforming Foundations","pincopallo@company.com","https://confluence/.../02c2c794-...","ACTIVE","Platform Engineering\nAtlas""Mario Rossi","Product Manager","Teamcool","Replatforming themes","mario.rossi@company.com","https://confluence/.../d742fbd8-...","ACTIVE","PIM\nCatalog Enrichment"
 ```
