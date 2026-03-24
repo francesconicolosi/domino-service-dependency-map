@@ -609,7 +609,7 @@ body, html{
 
 #left-header {
     margin:0;
-    font-size:clamp(42px,9vw,120px);
+    font-size:clamp(42px,9vw,95px);
     font-weight:900;
     line-height:0.95;
     color:#ffffff;"
