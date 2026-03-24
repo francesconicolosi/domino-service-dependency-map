@@ -703,14 +703,21 @@ body, html{
     align-items: flex-start;
 }
 
+/* Desktop & laptop: keep horizontal layout */
+@media (min-width: 1024px) {
+    .modern-container {
+        flex-wrap: nowrap;
+    }
+}
+
 .modern-text-block {
-    flex: 1 1 520px;
-    max-width: 640px;
+    flex: 1 1 auto;
+    max-width: clamp(440px, 40vw, 640px);
 }
 
 .modern-card {
-    flex: 1 1 420px;
-    max-width: 700px;
+    flex: 1 1 auto;
+    max-width: clamp(420px, 45vw, 700px);
 }
 
 .modern-eyebrow {
@@ -1385,5 +1392,11 @@ body, html{
     #retro .window {
         margin-top: 40px;
         margin-bottom: 40px;
+    }
+}
+
+@media (max-width: 1440px) {
+    .modern-text-block {
+        max-width: 440px;
     }
 }
