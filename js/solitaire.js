@@ -669,7 +669,7 @@ function openDrawer({
                         email,
                         highlightService,
                         highlightQuery,
-                        elementsTitle = "Managed Services:",
+                        elementsTitle = "Managed Services ⚙️",
                         elementsBaseUrl
                     }) {
     console.log('open');
@@ -714,112 +714,147 @@ function openDrawer({
     descEl.replaceChildren();     // svuota senza toccare il nodo
     listEl.replaceChildren();     // svuota senza toccare il nodo
 
-    // --- description (testo formattato + separatori) ---
+    // --- accordion container (sezioni a comparsa) ---
+    const accordion = document.createElement('div');
+    accordion.className = 'drawer-accordion';
+    descEl.appendChild(accordion);
+
+// helper per creare una sezione collapsible
+    function addDrawerSection(label, fillFn, { open = false, sectionId = '' } = {}) {
+        const details = document.createElement('details');
+        details.className = 'drawer-section';
+        if (open) details.open = true;
+        if (sectionId) details.dataset.sectionId = sectionId;
+
+        const summary = document.createElement('summary');
+        summary.className = 'drawer-section__summary';
+        summary.textContent = label;
+
+        const body = document.createElement('div');
+        body.className = 'drawer-section__body';
+
+        details.appendChild(summary);
+        details.appendChild(body);
+        accordion.appendChild(details);
+
+        if (typeof fillFn === 'function') fillFn(body, details);
+
+        return { details, body };
+    }
+
+// (opzionale) comportamento "accordion": ne lascia aperta una sola
+    //   accordion.addEventListener('toggle', (e) => {
+    //       const t = e.target;
+    //       if (!(t instanceof HTMLDetailsElement)) return;
+    //       if (!t.open) return;
+    //       accordion.querySelectorAll('details.drawer-section').forEach(d => {
+    //           if (d !== t) d.open = false;
+    //       });
+    //   });
+
+// --- Overview / Description ---
     if (description) {
-        createFormattedLongTextElementsFrom(description)
-            .forEach(el => descEl.appendChild(el));
-        addTagToElement(descEl, 2);
-        addTagToElement(descEl, 1, 'hr');
-        addTagToElement(descEl, 1);
+        addDrawerSection('Overview', (body) => {
+            createFormattedLongTextElementsFrom(description).forEach(el => body.appendChild(el));
+        }, { open: true, sectionId: 'overview' });
     }
 
     // --- channels ---
     if (channels && channels.length > 0) {
-        descEl.appendChild(document.createTextNode('Channels 💬'));
-        addTagToElement(descEl, 1);
-
-        const ul = document.createElement('ul');
-        channels.forEach(channel => {
-            const li = document.createElement('li');
-            const channelLink = createHrefElement(
-                channel,
-                channel?.includes("slack.com") ? "Slack Channel" : "Link"
-            );
-            li.appendChild(channelLink);
-            ul.appendChild(li);
-        });
-        descEl.appendChild(ul);
-        addTagToElement(descEl, 1);
-        addTagToElement(descEl, 1, 'hr');
-        addTagToElement(descEl, 1);
+        addDrawerSection('Channels 💬', (body) => {
+            const ul = document.createElement('ul');
+            channels.forEach(channel => {
+                const li = document.createElement('li');
+                const channelLink = createHrefElement(
+                    channel,
+                    channel?.includes("slack.com") ? "Slack Channel" : "Link"
+                );
+                li.appendChild(channelLink);
+                ul.appendChild(li);
+            });
+            body.appendChild(ul);
+        }, { open: false, sectionId: 'channels' });
     }
 
     // --- email ---
     if (email && email !== "") {
-        descEl.appendChild(document.createTextNode('Team Mailbox ✉️'));
-        addTagToElement(descEl, 1);
-        descEl.appendChild(createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`));
-        addTagToElement(descEl, 2);
-        addTagToElement(descEl, 1, 'hr');
-        addTagToElement(descEl, 1);
+        addDrawerSection('Team Mailbox ✉️', (body) => {
+            body.appendChild(
+                createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`)
+            );
+        }, { open: false, sectionId: 'mailbox' });
     }
 
-    // --- elements (lista servizi) ---
+    // --- Managed Services / Elements ---
+    let servicesSection = null;
+
     if (elements && elements.items && elements.items.length > 0) {
-        descEl.appendChild(document.createTextNode(elementsTitle));
+        // apri di default se stai passando highlightService o highlightQuery
+        const shouldOpenServices = !!(highlightService || (highlightQuery && highlightQuery.trim()));
 
-        // usa un fragment per evitare reflow inutili
-        const frag = document.createDocumentFragment();
-        elements.items.forEach(s => {
-            const li = document.createElement('li');
-            if (elementsBaseUrl) {
-                const a = document.createElement('a');
-                a.href = elementsBaseUrl(s);
-                a.textContent = s;
-                a.target = '_blank';
-                li.appendChild(a);
-            } else {
-                li.textContent = s;
-            }
-            frag.appendChild(li);
-        });
+        servicesSection = addDrawerSection(elementsTitle, (body) => {
+            // riusa la UL già esistente (#drawer-list) per non rompere highlight/scroll
+            // (l'hai già creata sopra come listEl)
+            const frag = document.createDocumentFragment();
 
-        listEl.replaceChildren(frag);
-        // append una sola volta la lista nella descrizione
-        descEl.appendChild(listEl);
+            elements.items.forEach(s => {
+                const li = document.createElement('li');
+                if (elementsBaseUrl) {
+                    const a = document.createElement('a');
+                    a.href = elementsBaseUrl(s);
+                    a.textContent = s;
+                    a.target = '_blank';
+                    li.appendChild(a);
+                } else {
+                    li.textContent = s;
+                }
+                frag.appendChild(li);
+            });
 
-        // evidenzia/scroll ai servizi
-        (function multiHighlight() {
-            const norm = v => (v || '').toString().trim().toLowerCase();
+            listEl.replaceChildren(frag);
+            body.appendChild(listEl);
 
-            // se non ci sono link, esci pulito
-            const anchors = Array.from(listEl.querySelectorAll('li > a'));
-            const items = anchors.length
-                ? anchors
-                : Array.from(listEl.querySelectorAll('li'));
+            // evidenzia/scroll ai servizi
+            (function multiHighlight() {
+                const norm = v => (v || '').toString().trim().toLowerCase();
 
-            listEl.querySelectorAll('.service-hit-highlight')
-                .forEach(el => el.classList.remove('service-hit-highlight'));
+                const anchors = Array.from(listEl.querySelectorAll('li > a'));
+                const items = anchors.length ? anchors : Array.from(listEl.querySelectorAll('li'));
 
-            let firstHighlighted = null;
+                listEl.querySelectorAll('.service-hit-highlight')
+                    .forEach(el => el.classList.remove('service-hit-highlight'));
 
-            const q = (highlightQuery || '').trim();
-            if (q) {
-                const qn = normalizeWs(q).toLowerCase();
-                items.forEach(el => {
-                    const text = normalizeWs(el.textContent).toLowerCase();
-                    if (text.includes(qn)) {
-                        el.classList.add('service-hit-highlight');
-                        if (!firstHighlighted) firstHighlighted = el;
-                    }
-                });
-            }
+                let firstHighlighted = null;
 
-            if (highlightService) {
-                const target = (highlightService || '').toString().trim().toLowerCase();
-                items.forEach(el => {
-                    const text = (el.textContent || '').toString().trim().toLowerCase();
-                    if (text === target) {
-                        el.classList.add('service-hit-highlight');
-                        if (!firstHighlighted) firstHighlighted = el;
-                    }
-                });
-            }
+                const q = (highlightQuery || '').trim();
+                if (q) {
+                    const qn = normalizeWs(q).toLowerCase();
+                    items.forEach(el => {
+                        const text = normalizeWs(el.textContent).toLowerCase();
+                        if (text.includes(qn)) {
+                            el.classList.add('service-hit-highlight');
+                            if (!firstHighlighted) firstHighlighted = el;
+                        }
+                    });
+                }
 
-            if (firstHighlighted) {
-                try { firstHighlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
-            }
-        })();
+                if (highlightService) {
+                    const target = (highlightService || '').toString().trim().toLowerCase();
+                    items.forEach(el => {
+                        const text = (el.textContent || '').toString().trim().toLowerCase();
+                        if (text === target) {
+                            el.classList.add('service-hit-highlight');
+                            if (!firstHighlighted) firstHighlighted = el;
+                        }
+                    });
+                }
+
+                if (firstHighlighted) {
+                    try { firstHighlighted.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch {}
+                }
+            })();
+
+        }, { open: shouldOpenServices, sectionId: 'services' });
     }
 
     // --- stato visivo del drawer ---
