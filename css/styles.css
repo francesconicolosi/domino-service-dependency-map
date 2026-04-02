@@ -612,7 +612,6 @@ circle {
     background: #fff;
     border-top: 1px solid #ddd;
     font-family:  "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
-    max-height: 700px;
     overflow-y: auto;
     padding: 0 1.2rem 1rem;
     position: relative;
