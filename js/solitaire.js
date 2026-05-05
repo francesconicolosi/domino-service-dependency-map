@@ -1189,21 +1189,19 @@ window.addEventListener('DOMContentLoaded', () => {
     show("switch-label", isAdvanced);
 })();
 
-(function blockDesktopPinch() {
-    const isDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    const isMac = (navigator.platform || '').toUpperCase().includes('MAC') || /Mac OS X/.test(navigator.userAgent);
+(function enableAppPinchZoomOnly() {
+    const svg = document.getElementById('canvas');
+    if (!svg) return;
 
-    if (!(isDesktop && isMac)) return; //
-
-    window.addEventListener('wheel', (e) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-        }
-    }, {passive: false});
-
-    window.addEventListener('gesturestart', (e) => e.preventDefault(), {passive: false});
-    window.addEventListener('gesturechange', (e) => e.preventDefault(), {passive: false});
-    window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
+    svg.addEventListener(
+        'touchmove',
+        (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        },
+        { passive: false }
+    );
 })();
 
 function bringToCorrectLayer(g) {
@@ -1635,6 +1633,7 @@ function resetVisualization() {
         })
 
     svg.call(zoom);
+    installTrackpadPinchZoom(svg, zoom);
     const svgNode = svg.node();
     if (!window.__dsmGlobalContextMenuAttached) {
         window.__dsmGlobalContextMenuAttached = true;
@@ -1642,6 +1641,7 @@ function resetVisualization() {
         document.addEventListener('contextmenu', (e) => {
             const svgEl = document.getElementById('canvas');
             if (!svgEl || !svgEl.contains(e.target)) return;
+            svgEl.style.touchAction = 'none';
             e.preventDefault();
             e.stopPropagation();
             showContextMenu(e.clientX, e.clientY);
@@ -1777,6 +1777,29 @@ function resetVisualization() {
         e.stopPropagation();
         startMarquee(e);
     }, { capture: true });
+}
+
+function installTrackpadPinchZoom(svgSel, zoomBehavior) {
+    const svgNode = svgSel?.node?.();
+    if (!svgNode || !zoomBehavior) return;
+    if (svgNode.__pinchToD3Installed) return;
+    svgNode.__pinchToD3Installed = true;
+
+    const onWheel = (e) => {
+        if (!e.ctrlKey) return;
+        if (!svgNode.contains(e.target)) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const STEP = 1.12; // 1.08 = slow | 1.12 = figma-like | 1.18 = aggressive
+        const direction = Math.sign(e.deltaY);
+        const k = direction > 0 ? 1 / STEP : STEP;
+
+        const [x, y] = d3.pointer(e, svgNode);
+        svgSel.call(zoomBehavior.scaleBy, k, [x, y]);
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false, capture: true });
 }
 
 function setStreamFilter(streamKeys /* Set | null */) {
@@ -2016,28 +2039,39 @@ const addGuestManagersByRole = (person, guestRole, thirdLevel, organization) => 
 
 function addGuestManagersTo(organization) {
     const result = {};
+
     for (const [firstLevel, secondLevelItems] of Object.entries(organization)) {
         for (const [secondLevel, thirdLevelItems] of Object.entries(secondLevelItems)) {
             for (const [thirdLevel, members] of Object.entries(thirdLevelItems)) {
+
+                // const hasDirectMembers = members.length > 0;
+
                 if (!result[firstLevel]) result[firstLevel] = {};
                 if (!result[firstLevel][secondLevel]) result[firstLevel][secondLevel] = {};
-                if (!result[firstLevel][secondLevel][thirdLevel]) result[firstLevel][secondLevel][thirdLevel] = [];
+                if (!result[firstLevel][secondLevel][thirdLevel])
+                    result[firstLevel][secondLevel][thirdLevel] = [];
 
-                for (const p of members) {
-                    const names = Object.values(result[firstLevel][secondLevel][thirdLevel]).map(entry => entry.Name);
-                    if (!names.includes(p.Name)) result[firstLevel][secondLevel][thirdLevel].push(p);
-                    guestRoleColumns.forEach(role => addGuestManagersByRole(p, role, result[firstLevel][secondLevel][thirdLevel], organization));
-                }
-                result[firstLevel][secondLevel][thirdLevel].sort((a, b) => {
-                    const aIsGuest = guestRoleColumns.includes(a.guestRole);
-                    const bIsGuest = guestRoleColumns.includes(b.guestRole);
-                    if (aIsGuest && !bIsGuest) return 1;
-                    if (!aIsGuest && bIsGuest) return -1;
-                    return 0;
+                members.forEach(p => {
+                    if (!result[firstLevel][secondLevel][thirdLevel]
+                        .some(m => m.Name === p.Name)) {
+                        result[firstLevel][secondLevel][thirdLevel].push(p);
+                    }
+                });
+
+                members.forEach(p => {
+                    guestRoleColumns.forEach(role =>
+                        addGuestManagersByRole(
+                            p,
+                            role,
+                            result[firstLevel][secondLevel][thirdLevel],
+                            organization
+                        )
+                    );
                 });
             }
         }
     }
+
     return result;
 }
 

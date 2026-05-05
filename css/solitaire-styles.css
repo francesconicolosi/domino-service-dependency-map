@@ -1427,3 +1427,11 @@ g.draggable.multi-selected rect:first-of-type{
         font-size: 0.78rem;
     }
 }
+
+html, body {
+    overflow: hidden;
+}
+
+#canvas {
+    touch-action: none;
+}
