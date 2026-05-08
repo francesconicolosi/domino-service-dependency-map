@@ -16,6 +16,7 @@ A) Team cascade
     Team Email                  <- Team."Team email" (alias: Team Email)
     Team Channels               <- Team."Team Channels"
     Team Development Manager    <- Team."Development Manager"
+    Team Contributors           <- Team."Contributors"
     Team Solution Architect     <- Team."Architect" (alias: Solution Architect)
     Team Delivery Manager       <- Team."Delivery Manager"
     Team Security Champion      <- Team."Security Champion"
@@ -378,6 +379,7 @@ def main():
     team_email_id = resolve_attr_id(team_attr_defs, ['Team email', 'Team Email', 'Email'])
     team_channels_id = resolve_attr_id(team_attr_defs, ['Team Channels', 'Channels'])
     team_devmgr_id = resolve_attr_id(team_attr_defs, ['Development Manager', 'Dev Manager', 'Development manager'])
+    team_contr_id = resolve_attr_id(team_attr_defs, ['Contributors', 'Team Contributors'])
     team_arch_id = resolve_attr_id(team_attr_defs, ['Architect', 'Solution Architect', 'Team Solution Architect'])
     team_delivery_id = resolve_attr_id(team_attr_defs, ['Delivery Manager', 'Team Delivery Manager'])
     team_secchamp_id = resolve_attr_id(team_attr_defs, ['Security Champion', 'Team Security Champion'])
@@ -455,6 +457,7 @@ def main():
         'Team Email',
         'Team Channels',
         'Team Development Manager',
+        'Team Contributors',
         'Team Solution Architect',
         'Team Delivery Manager',
         'Team Security Champion',
@@ -481,6 +484,7 @@ def main():
             'Team Email': [],
             'Team Channels': [],
             'Team Development Manager': [],
+            'Team Contributors': [],
             'Team Solution Architect': [],
             'Team Delivery Manager': [],
             'Team Security Champion': [],
@@ -509,6 +513,8 @@ def main():
                 agg['Team Channels'].extend(values_from_attr_id(t, team_channels_id))
             if team_devmgr_id:
                 agg['Team Development Manager'].extend(values_from_attr_id(t, team_devmgr_id))
+            if team_contr_id:
+                agg['Team Contributors'].extend(values_from_attr_id(t, team_contr_id))
             if team_arch_id:
                 agg['Team Solution Architect'].extend(values_from_attr_id(t, team_arch_id))
             if team_delivery_id:
@@ -587,6 +593,22 @@ def main():
             team_labels: List[str] = []
             if people_team_member_id:
                 team_labels = values_from_attr_id(p, people_team_member_id)
+
+            # ALSO: treat team contributors as direct members (for visualization purposes)
+            if people_team_member_id:
+                # scan all teams to see if this person is listed as Contributor
+                person_name = row.get('Name', '').strip().lower()
+
+                for team_label, team_obj in teams_by_label.items():
+                    if not team_contr_id:
+                        continue
+
+                    contributors = values_from_attr_id(team_obj, team_contr_id)
+                    contributors_norm = [c.strip().lower() for c in contributors]
+
+                    if person_name and person_name in contributors_norm:
+                        if team_label not in [t.lower() for t in team_labels]:
+                            team_labels.append(team_label)
             row.update(enrich_from_teams(team_labels))
 
             # Roles

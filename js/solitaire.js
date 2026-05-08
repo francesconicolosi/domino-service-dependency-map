@@ -55,8 +55,11 @@ let longPressPointerId = null;
 let longPressStart = null;
 let longPressFired = false;
 
-const LONG_PRESS_MS = 520;     // 450–600ms è lo standard; 520 è un buon compromesso
-const LONG_PRESS_MOVE_PX = 10; // soglia movimento per cancellare long press
+const THEME_BOTTOM_PADDING = 40;
+const THEME_TOP_PADDING = 110;
+const TEAM_TOP_PADDING = 120;
+const LONG_PRESS_MS = 520;
+const LONG_PRESS_MOVE_PX = 10;
 
 let suppressClicksUntil = 0;
 let panMoved = false;
@@ -148,6 +151,9 @@ function resetStreamVisibility() {
 
 
 const secondLevelRowPadY = 60;
+const CARD_GAP_Y = 10;
+const TEAM_BOTTOM_PADDING = 28;
+const TEAM_MIN_HEIGHT = 220;
 
 const UNKNOWN_MATCHER = /^(unknown|n\/?a|not\s*(set|available)|-|—|none)$/i;
 function isUnknownLegendKey(v) {
@@ -174,6 +180,7 @@ const guestRolesMap = new Map([
     ["Team Delivery Manager", ["Delivery Manager"]],
     ["Team Scrum Master", ["Agile Coach/Scrum Master"]],
     ["Team Solution Architect", ["Solution Architect"]],
+    ["Team Contributors", ["Contributors"]],
     ["Team Development Manager", ["Development Manager"]],
     ["Team Security Champion", ["Security Champion"]]
 ]);
@@ -2463,10 +2470,27 @@ function extractData(csvText) {
         // ---------- ALTEZZE PER RIGA ----------
         rows.forEach(r => {
             r.rowMaxMemberRows = Math.max(1, ...r.themes.map(t => t.themeMaxRows));
-            const teamBoxPadding  = r.rowMaxMemberRows > 1 ? 80 : 120; // tuoi valori
-            const themeBoxPadding = 100;                                // tuoi valori
-            r.teamBoxHeight  = r.rowMaxMemberRows * cardBaseHeight * 1.2 + teamBoxPadding;
-            r.themeBoxHeight = r.teamBoxHeight * 1.2 + themeBoxPadding;
+            //const teamBoxPadding  = r.rowMaxMemberRows > 1 ? 80 : 120; // tuoi valori
+            //const themeBoxPadding = 100;                                // tuoi valori
+            const teamContentHeight =
+                r.rowMaxMemberRows * cardBaseHeight * 1.2;
+            const TEAM_BOTTOM_PADDING =
+                r.rowMaxMemberRows > 2 ? 60 : 40;
+
+            const cardsTopInTeam = 70 + 45;
+            r.teamBoxHeight =
+                cardsTopInTeam +
+                (r.rowMaxMemberRows - 1) * (cardBaseHeight + CARD_GAP_Y) +
+                cardBaseHeight +
+                TEAM_BOTTOM_PADDING;
+
+            const dynamicBottomPadding =
+                r.rowMaxMemberRows > 2 ? 60 : 40;
+
+            r.themeBoxHeight =
+                THEME_TOP_PADDING +
+                r.teamBoxHeight +
+                dynamicBottomPadding;
         });
 
         // ---------- ALTEZZA STREAM (somma delle righe) ----------
@@ -2644,6 +2668,20 @@ function extractData(csvText) {
 
                     const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
                     const teamLocalY = 130;
+                    // quante righe di card ha QUESTO team
+                    const teamRows = Math.max(1, Math.ceil((members?.length || 0) / inARow));
+
+                    const cardsTopInTeam = 70 + 45 + 130 - teamLocalY;
+
+                    const lastCardBottomInTeam =
+                        cardsTopInTeam +
+                        (teamRows - 1) * (cardBaseHeight + CARD_GAP_Y) +
+                        cardBaseHeight;
+
+                    const teamBoxHeight = Math.max(
+                        TEAM_MIN_HEIGHT,
+                        lastCardBottomInTeam + TEAM_BOTTOM_PADDING
+                    );
 
                     const thirdLevelGroup = teamLayer.append('g')
                         .attr('class', 'draggable')
@@ -2655,7 +2693,7 @@ function extractData(csvText) {
                     const thirdLevelRect = thirdLevelGroup.append('rect')
                         .attr('class', 'team-box')
                         .attr('width', thirdLevelBoxWidth)
-                        .attr('height', teamBoxHeightRow)
+                        .attr('height', teamBoxHeight)
                         .attr('rx', 20)
                         .attr('ry', 20);
                     makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
@@ -2687,6 +2725,18 @@ function extractData(csvText) {
                         const row = Math.floor(mIdx / inARow);
                         const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
                         const cardY = secondLevelY + 70 + 45 + row * (cardBaseHeight + 10) + 130;
+                        const cardTopInTeam =
+                            cardY - (secondLevelY + teamLocalY);
+
+                        const cardBottomInTeam =
+                            cardTopInTeam + cardBaseHeight;
+
+
+                        teamMaxCardBottom = Math.max(
+                            teamMaxCardBottom,
+                            cardBottomInTeam
+                        );
+
 
 
                         const group = cardLayer.append('g')
