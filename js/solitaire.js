@@ -43,7 +43,8 @@ import {
     computeStreamBoxWidthByCapacity,
     MAX_TEAMS_PER_ROW, splitValues, NEUTRAL_COLOR,
     ROLE_FIELD_WITH_MAPPING,
-    COMPANY_FIELD, LOCATION_FIELD, emailField, buildExpandedLayoutMapFromDom
+    COMPANY_FIELD, LOCATION_FIELD, emailField, buildExpandedLayoutMapFromDom,
+    isOnlyContributorsRow
 } from './utils.js';
 
 let lastSearch = '';
@@ -2059,8 +2060,8 @@ function addGuestManagersTo(organization) {
                     result[firstLevel][secondLevel][thirdLevel] = [];
 
                 members.forEach(p => {
-                    if (!result[firstLevel][secondLevel][thirdLevel]
-                        .some(m => m.Name === p.Name)) {
+                    if (isOnlyContributorsRow(p)) return;
+                    if (!result[firstLevel][secondLevel][thirdLevel].some(m => m.Name === p.Name)) {
                         result[firstLevel][secondLevel][thirdLevel].push(p);
                     }
                 });

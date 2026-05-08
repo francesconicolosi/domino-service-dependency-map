@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Assets Export People enriched with cascaded Team -> Theme -> Stream + Role (v2).
-
-This is an evolution of your people export script (v1) and follows the same principles used in
-<Service> export v3: resolve attribute IDs from object type definitions and fetch ALL objects using
-iterative exclusion (tenant often returns ~25 results for broad queries).
+"""Assets Export People enriched with cascaded Team -> Theme -> Stream + Role (v2) + STEP 6 OnlyContributors rows.
 
 Enrichment rules
 ----------------
@@ -26,7 +22,7 @@ A) Team cascade
     Team Product Manager        <- Team."Product Manager"
     Team Service Manager        <- Team."Service Manager"
 
-- NEW (v2): From the referenced Team object, read Team."Theme" and:
+- From the referenced Team object, read Team."Theme" and:
     Team Theme                  <- Team."Theme" (label(s))
 
 - Then resolve each Theme (objectTypeId=32) referenced by Team Theme and:
@@ -45,23 +41,19 @@ Multi-values
 -----------
 All multi-values are de-duplicated and joined with '||'.
 
-Required env vars
------------------
-ATLASSIAN_EMAIL
-ATLASSIAN_API_TOKEN
-ASSETS_WORKSPACE_ID
+CUSTOM RULE (STEP 6 - 2026-05)
+------------------------------
+After generating the CSV, we scan all Teams and find those with:
+- zero direct members (no People referencing the team in "Team member of")
+- ONLY Contributors (no other team guest roles set)
 
-Optional env vars
------------------
-ATLASSIAN_SITE (default https://instance.atlassian.net)
-
-Usage
------
-python assets_export_people_enriched_v2.py \
-  --out "people-database.csv" \
-  --template "People Database - Template.csv"
-
-If you omit --template, columns are built from People attributes + extra columns.
+For each of these teams we append one synthetic row:
+- Name = "OnlyContributors#<n>"
+- Team member of = that team
+- Team Contributors = all contributors (|| joined)
+- Email/User/Key are set (if columns exist) to a unique placeholder value
+The JS will ignore these rows as "people" but will still use Team Contributors
+to populate the team in the org chart.
 """
 
 import os
@@ -69,8 +61,10 @@ import csv
 import time
 import base64
 import argparse
+import re
 import requests
 from typing import Any, Dict, List, Optional
+
 
 SITE = os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net").rstrip("/")
 WORKSPACE_ID = os.environ["ASSETS_WORKSPACE_ID"]
@@ -240,7 +234,6 @@ def values_from_attr_id(obj: dict, attr_id: str, *, split_commas: bool = True) -
         if not x:
             continue
         s = str(x).strip().replace('\r\n', '\n').replace('\r', '\n')
-        # normalize people-db patterns
         s = s.replace('\n,', '\n').replace(',\n', '\n')
         if '||' in s:
             parts = s.split('||')
@@ -248,7 +241,6 @@ def values_from_attr_id(obj: dict, attr_id: str, *, split_commas: bool = True) -
             parts = s.split('\n')
         elif split_commas and ',' in s:
             parts = s.split(',')
-
         else:
             parts = [s]
         for p in parts:
@@ -337,7 +329,7 @@ def flatten_object(obj: dict, attr_def_by_id: Dict[str, dict], attr_names: List[
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Export People enriched with Team->Theme->Stream and Role cascades (v2)')
+    parser = argparse.ArgumentParser(description='Export People enriched with Team->Theme->Stream and Role cascades (v2) + STEP 6')
     parser.add_argument('--out', default='people_enriched.csv')
     parser.add_argument('--template', default='')
 
@@ -389,7 +381,7 @@ def main():
     team_pm_id = resolve_attr_id(team_attr_defs, ['Product Manager', 'Team Product Manager', 'Team Product Manager'])
     team_sm_id = resolve_attr_id(team_attr_defs, ['Service Manager', 'Team Service Manager'])
 
-    # NEW v2: Team -> Theme
+    # Team -> Theme
     team_theme_id = resolve_attr_id(team_attr_defs, ['Theme', 'Team Theme', 'Product Theme'])
 
     theme_attr_defs = get_objecttype_attributes(theme_type, args.max_retries, args.backoff)
@@ -452,6 +444,11 @@ def main():
     people_attr_names = [a.get('name', f"attr_{a.get('id')}") for a in people_attr_defs]
     people_attr_by_id = {str(a.get('id')): a for a in people_attr_defs if a.get('id') is not None}
 
+    # Real column name for the People attribute "Team member of"
+    people_team_member_name = None
+    if people_team_member_id:
+        people_team_member_name = people_attr_by_id.get(str(people_team_member_id), {}).get('name')
+
     extra_cols = [
         'Team Description',
         'Team Email',
@@ -466,12 +463,10 @@ def main():
         'Team Scrum Master',
         'Team Product Manager',
         'Team Service Manager',
-        # NEW v2
         'Team Theme',
         'Team Theme Description',
         'Team Stream',
         'Team Stream Description',
-        # Role
         'Role Description',
         'Role Grants',
     ]
@@ -504,7 +499,6 @@ def main():
             if not t:
                 continue
 
-            # Team direct attributes
             if team_desc_id:
                 agg['Team Description'].extend(values_from_attr_id(t, team_desc_id, split_commas=False))
             if team_email_id:
@@ -532,7 +526,7 @@ def main():
             if team_sm_id:
                 agg['Team Service Manager'].extend(values_from_attr_id(t, team_sm_id))
 
-            # Team -> Theme -> Stream cascade
+            # Team -> Theme -> Stream
             theme_labels: List[str] = []
             if team_theme_id:
                 theme_labels = values_from_attr_id(t, team_theme_id)
@@ -578,10 +572,61 @@ def main():
             'Role Grants': join_dedup(grants_vals),
         }
 
+    def norm(s: str) -> str:
+        return ' '.join((s or '').strip().lower().split())
+
+    def slug(s: str) -> str:
+        s = (s or '').strip().lower()
+        s = re.sub(r'[^a-z0-9]+', '-', s)
+        return s.strip('-') or 'x'
+
+    # ------------------------------
+    # Pre-compute direct membership per team (from People.Team member of)
+    # ------------------------------
+    team_direct_count: Dict[str, int] = {}
+    if people_team_member_id:
+        for p in people:
+            direct_teams = values_from_attr_id(p, people_team_member_id)
+            for tl in direct_teams:
+                k = tl.strip().lower()
+                if not k:
+                    continue
+                team_direct_count[k] = team_direct_count.get(k, 0) + 1
+
+    # Canonical team label map
+    team_label_canon: Dict[str, str] = {}
+    for tl_lower, t in teams_by_label.items():
+        team_label_canon[tl_lower] = (str(t.get('label') or '').strip() or tl_lower)
+
+    # Helper: team has ONLY contributors (no other guest roles)
+    other_role_attr_ids = [
+        team_devmgr_id, team_arch_id, team_delivery_id, team_secchamp_id,
+        team_scrum_id, team_pm_id, team_sm_id
+    ]
+    other_role_attr_ids = [x for x in other_role_attr_ids if x]
+
+    def team_has_only_contributors(team_obj: dict) -> bool:
+        # must have contributors
+        if not team_contr_id:
+            return False
+        contribs = values_from_attr_id(team_obj, team_contr_id)
+        if not contribs:
+            return False
+        # must NOT have any other role set
+        for aid in other_role_attr_ids:
+            vals = values_from_attr_id(team_obj, aid)
+            if vals:
+                return False
+        return True
+
+    # ------------------------------
+    # Write CSV
+    # ------------------------------
     with open(args.out, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=columns)
         writer.writeheader()
 
+        # (A) Normal people rows
         for p in people:
             base = flatten_object(p, people_attr_by_id, people_attr_names)
             row = {c: '' for c in columns}
@@ -589,26 +634,10 @@ def main():
                 if k in row:
                     row[k] = v
 
-            # Teams
+            # Teams (DIRECT only)
             team_labels: List[str] = []
             if people_team_member_id:
                 team_labels = values_from_attr_id(p, people_team_member_id)
-
-            # ALSO: treat team contributors as direct members (for visualization purposes)
-            if people_team_member_id:
-                # scan all teams to see if this person is listed as Contributor
-                person_name = row.get('Name', '').strip().lower()
-
-                for team_label, team_obj in teams_by_label.items():
-                    if not team_contr_id:
-                        continue
-
-                    contributors = values_from_attr_id(team_obj, team_contr_id)
-                    contributors_norm = [c.strip().lower() for c in contributors]
-
-                    if person_name and person_name in contributors_norm:
-                        if team_label not in [t.lower() for t in team_labels]:
-                            team_labels.append(team_label)
             row.update(enrich_from_teams(team_labels))
 
             # Roles
@@ -618,6 +647,59 @@ def main():
             row.update(enrich_from_roles(role_labels))
 
             writer.writerow(row)
+
+        # (B) STEP 6 - OnlyContributors synthetic rows
+        print("\n[STEP 6] Generating OnlyContributors rows for teams with 0 direct members and only Contributors...", flush=True)
+
+        only_idx = 0
+        for tl_lower, team_obj in teams_by_label.items():
+            # zero direct members
+            if team_direct_count.get(tl_lower, 0) > 0:
+                continue
+
+            # only contributors
+            if not team_has_only_contributors(team_obj):
+                continue
+
+            contribs = values_from_attr_id(team_obj, team_contr_id)
+            if not contribs:
+                continue
+
+            only_idx += 1
+            team_label = team_label_canon.get(tl_lower, tl_lower)
+            team_key = slug(team_label)
+            oc_name = f"OnlyContributors#{only_idx}"
+
+            row = {c: '' for c in columns}
+
+            # Minimal identity fields (avoid "fully empty key" drop in JS)
+            if 'Name' in row:
+                row['Name'] = oc_name
+            if 'Status' in row and not row['Status']:
+                row['Status'] = 'Active'
+            if 'Email' in row:
+                row['Email'] = f"onlycontributors+{only_idx}.{team_key}@invalid.local"
+            if 'User' in row and not row['User']:
+                row['User'] = f"onlycontributors-{only_idx}-{team_key}"
+            if 'Key' in row and not row['Key']:
+                row['Key'] = f"ONLYCONTRIB-{only_idx}-{team_key}"
+
+            # Team membership (use real attribute name if present)
+            if people_team_member_name and people_team_member_name in row:
+                row[people_team_member_name] = team_label
+            elif 'Team member of' in row:
+                row['Team member of'] = team_label
+
+            # Enrich from this team to get Stream/Theme metadata + other team fields
+            row.update(enrich_from_teams([team_label]))
+
+            # Override Team Contributors with ALL contributors
+            if 'Team Contributors' in row:
+                row['Team Contributors'] = join_dedup(contribs)
+
+            writer.writerow(row)
+
+        print(f"[STEP 6] Added {only_idx} OnlyContributors rows.", flush=True)
 
     print(f"✅ Export completed: {args.out}", flush=True)
 
