@@ -2341,7 +2341,13 @@ function extractData(csvText) {
     const visiblePeopleForLegend = collectMembersFromOrganization(visibleOrganizationWithManagers);
 
 
-    const inARow = 6;
+    // const inARow = 6;
+
+    function getInARowForTeam(members) {
+        const count = members?.length || 0;
+        return count >= 36 ? 12 : 6;
+    }
+
     const dateValues = ["In team since"];
     const fieldsToShow = [
         "Role", "Company", "Location", "Room Link",
@@ -2449,7 +2455,13 @@ function extractData(csvText) {
                 return new Set((members || []).map(m => (m?.Name || '').trim()).filter(Boolean)).size;
             });
             const maxMembersInTheme = Math.max(0, ...memberCounts);
-            const themeMaxRows = Math.max(1, Math.ceil(maxMembersInTheme / inARow));
+            const themeMaxRows = Math.max(
+                1,
+                ...Object.values(thirdLevelItems).map(members => {
+                    const cols = getInARowForTeam(members);
+                    return Math.ceil((members?.length || 0) / cols);
+                })
+            );
 
             // Larghezza del theme (n° team * larghezza team + gap + etichetta)
             const themeWidth =
@@ -2658,6 +2670,7 @@ function extractData(csvText) {
 
                 // Team cards nel theme
                 Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
+                    const inARow = getInARowForTeam(members);
                     const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
                     const services    = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
                     const description =
