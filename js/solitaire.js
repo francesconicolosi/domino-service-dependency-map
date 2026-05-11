@@ -2408,10 +2408,6 @@ function extractData(csvText) {
             )
     );
 
-    const rowCount = Math.ceil(largestThirdLevelSize / inARow);
-    const thirdLevelBoxHeight = rowCount * cardBaseHeight * 1.2 + 80;
-    const secondLevelBoxHeight = thirdLevelBoxHeight * 1.2 + 100;
-
     let streamY = 40;
     let streamX = 40;
 
