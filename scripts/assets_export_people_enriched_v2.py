@@ -604,20 +604,40 @@ def main():
         team_scrum_id, team_pm_id, team_sm_id
     ]
     other_role_attr_ids = [x for x in other_role_attr_ids if x]
+    # Helper: team has ANY guest population (contributors OR any other guest role)
+    guest_population_attr_ids = [team_contr_id] + other_role_attr_ids
+    guest_population_attr_ids = [x for x in guest_population_attr_ids if x]
 
-    def team_has_only_contributors(team_obj: dict) -> bool:
-        # must have contributors
-        if not team_contr_id:
+    def team_has_any_guest_population(team_obj: dict) -> bool:
+        for aid in guest_population_attr_ids:
+            if values_from_attr_id(team_obj, aid):
+                return True
+        return False
+
+
+    # Helper: team has a valid Theme -> Stream cascade
+    def team_has_valid_theme_stream(team_obj: dict) -> bool:
+        if not team_theme_id or not theme_stream_id:
             return False
-        contribs = values_from_attr_id(team_obj, team_contr_id)
-        if not contribs:
+
+        theme_labels = values_from_attr_id(team_obj, team_theme_id)
+        if not theme_labels:
             return False
-        # must NOT have any other role set
-        for aid in other_role_attr_ids:
-            vals = values_from_attr_id(team_obj, aid)
-            if vals:
-                return False
-        return True
+
+        for th_label in theme_labels:
+            th = themes_by_label.get(th_label.strip().lower())
+            if not th:
+                continue
+
+            stream_labels = values_from_attr_id(th, theme_stream_id)
+            if not stream_labels:
+                continue
+
+            for st_label in stream_labels:
+                if streams_by_label.get(st_label.strip().lower()):
+                    return True
+
+        return False
 
     # ------------------------------
     # Write CSV
@@ -657,12 +677,12 @@ def main():
             if team_direct_count.get(tl_lower, 0) > 0:
                 continue
 
-            # only contributors
-            if not team_has_only_contributors(team_obj):
+            # must have contributors OR other guest roles
+            if not team_has_any_guest_population(team_obj):
                 continue
 
-            contribs = values_from_attr_id(team_obj, team_contr_id)
-            if not contribs:
+            # must have valid Theme -> Stream cascade
+            if not team_has_valid_theme_stream(team_obj):
                 continue
 
             only_idx += 1
@@ -694,7 +714,8 @@ def main():
             row.update(enrich_from_teams([team_label]))
 
             # Override Team Contributors with ALL contributors
-            if 'Team Contributors' in row:
+            contribs = values_from_attr_id(team_obj, team_contr_id) if team_contr_id else []
+            if contribs and 'Team Contributors' in row:
                 row['Team Contributors'] = join_dedup(contribs)
 
             writer.writerow(row)

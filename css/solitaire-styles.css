@@ -1435,3 +1435,12 @@ html, body {
 #canvas {
     touch-action: none;
 }
+
+.team-icon {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+g.draggable:hover .team-icon {
+    opacity: 1;
+}

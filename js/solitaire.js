@@ -10,7 +10,6 @@ import {
     clearFieldHighlights,
     clearSearchDimming,
     closeSideDrawer,
-    collectMembersFromOrganization,
     filterOrganizationByStreams,
     createFormattedLongTextElementsFrom,
     createHrefElement,
@@ -40,11 +39,10 @@ import {
     makeKeyColorScale,
     getLegendTitleFor,
     computeKeysAndCountsFromVisibleOrg,
-    computeStreamBoxWidthByCapacity,
     MAX_TEAMS_PER_ROW, splitValues, NEUTRAL_COLOR,
     ROLE_FIELD_WITH_MAPPING,
     COMPANY_FIELD, LOCATION_FIELD, emailField, buildExpandedLayoutMapFromDom,
-    isOnlyContributorsRow
+    isOnlyContributorsRow, hasTeamDrawerContent
 } from './utils.js';
 
 let lastSearch = '';
@@ -2292,11 +2290,11 @@ function extractData(csvText) {
         return;
     }
     colorKeyMappings = new Map();
-    const rows = parseCSV(csvText);
-    if (rows.length < 2) return;
+    const csvRows = parseCSV(csvText);
+    if (csvRows.length < 2) return;
 
-    const headers = rows[0].map(h => h.trim());
-    people = rows.slice(1).map(row => {
+    const headers = csvRows[0].map(h => h.trim());
+    people = csvRows.slice(1).map(row => {
         const obj = {};
         headers.forEach((h, i) => {
             obj[h] = normalizeWs(row[i] || '', h);
@@ -2307,7 +2305,7 @@ function extractData(csvText) {
     let lastUpdateISO = '';
     if (headers.includes('Updated')) {
         const idx = headers.indexOf('Updated');
-        const dates = rows.slice(1)
+        const dates = csvRows.slice(1)
             .map(r => r[idx]?.trim())
             .filter(Boolean)
             .map(d => new Date(d))
@@ -2322,7 +2320,7 @@ function extractData(csvText) {
     LS_KEY = `dsm-layout-v1::${datasetVersion}`;
 
 
-    getLatestUpdateFromCsv(headers, rows);
+    getLatestUpdateFromCsv(headers, csvRows);
 
     const organization = buildOrganization(people);
     const organizationWithManagers = addGuestManagersTo(organization);
@@ -2338,10 +2336,51 @@ function extractData(csvText) {
 
 
     visibleOrganizationWithManagers = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
-    const visiblePeopleForLegend = collectMembersFromOrganization(visibleOrganizationWithManagers);
 
+    // ===============================
+// Dynamic inARow per team (6, 12, 24, 48... ogni 36 membri)
+// ===============================
+    const BASE_IN_A_ROW = 6;
+    const TEAM_TIER_SIZE = 18;
 
-    const inARow = 6;
+    function computeInARowForTeam(memberCount) {
+        const n = Math.max(0, Number(memberCount) || 0);
+        if (n <= TEAM_TIER_SIZE) return BASE_IN_A_ROW;         // <=36 -> 6
+        const tier = Math.floor((n - 1) / TEAM_TIER_SIZE);     // 0..n
+        return BASE_IN_A_ROW * Math.pow(2, tier);              // 6,12,24,48...
+    }
+
+    function uniqueMemberCount(members) {
+        const arr = Array.isArray(members) ? members : [];
+        const set = new Set();
+        for (const m of arr) {
+            const name = normalizeWs(m?.Name ?? m?.User ?? '').trim();
+            if (name) set.add(name.toLowerCase());
+        }
+        return set.size || arr.length;
+    }
+
+    function computeTeamBoxWidth(teamInARow, memberWidth) {
+        const extraOffsetX =
+            teamInARow > 6
+                ? 80 + (100 * Math.floor(teamInARow / 24))
+                : 0;
+
+        return (Number(teamInARow) || BASE_IN_A_ROW) * (Number(memberWidth) || 0) + 100 + extraOffsetX;
+    }
+
+// calcola la width dello stream prendendo la riga più larga di theme
+    function computeStreamWidthFromRows(layoutRows, secondLevelBoxPadX, leftPad = 60, rightPad = 60) {
+        const rows = Array.isArray(layoutRows) ? layoutRows : [];
+        const maxRow = rows.reduce((maxW, r) => {
+            const themes = r?.themes || [];
+            const themesWidth = themes.reduce((acc, t) => acc + (Number(t?.themeWidth) || 0), 0);
+            const pads = themes.length > 1 ? (themes.length - 1) * (Number(secondLevelBoxPadX) || 0) : 0;
+            return Math.max(maxW, leftPad + themesWidth + pads + rightPad);
+        }, 0);
+        return Math.max(600, maxRow);
+    }
+
     const dateValues = ["In team since"];
     const fieldsToShow = [
         "Role", "Company", "Location", "Room Link",
@@ -2351,7 +2390,7 @@ function extractData(csvText) {
     const nFields = fieldsToShow.length + 0.5;
     const rowHeight = 11;
     const memberWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
-    const thirdLevelBoxWidth = inARow * memberWidth + 100, thirdLevelBoxPadX = 24;
+    const thirdLevelBoxPadX = 24;
     const secondLevelBoxPadX = 60;
     const firstLevelBoxPadY = 100;
 
@@ -2414,14 +2453,7 @@ function extractData(csvText) {
                 ?.join('\n\n') ?? '';
 
         // LARGHEZZA stream (come già fai)
-        const firstLevelBoxWidth = computeStreamBoxWidthByCapacity(
-            secondLevelItems,
-            secondLevelBoxPadX,
-            secondLevelNA,
-            thirdLevelBoxPadX,
-            thirdLevelBoxWidth,
-            SECOND_LEVEL_LABEL_EXTRA
-        );
+        let firstLevelBoxWidth = 600;
 
         // Gruppo stream
         const firstLevelGroup = streamLayer.append('g')
@@ -2431,16 +2463,26 @@ function extractData(csvText) {
         restoreGroupPosition(firstLevelGroup);
 
         // ---------- COSTRUZIONE RIGHE DI THEME ----------
-        const rows = [];
+        const layoutRows = [];
         let currentRow = { themes: [], used: 0 };
 
         for (const [secondLevel, thirdLevelItems] of Object.entries(secondLevelItems)) {
             if (secondLevel.includes(secondLevelNA)) continue;
 
-            const nTeams = Object.keys(thirdLevelItems || {}).length || 0;
+            const teamsMeta = Object.entries(thirdLevelItems || {}).map(([thirdLevel, members]) => {
+                const memberCount = uniqueMemberCount(members);
+                const teamInARow = computeInARowForTeam(memberCount);
+                const teamRows = Math.max(1, Math.ceil(memberCount / teamInARow));
+                const teamBoxWidth = computeTeamBoxWidth(teamInARow, memberWidth);
+
+                return { thirdLevel, members, memberCount, teamInARow, teamRows, teamBoxWidth };
+            });
+
+            const nTeams = teamsMeta.length;
+
             // Vai a capo se superi la capacità
             if (currentRow.used > 0 && (currentRow.used + nTeams) > MAX_TEAMS_PER_ROW) {
-                rows.push(currentRow);
+                layoutRows.push(currentRow);
                 currentRow = { themes: [], used: 0 };
             }
 
@@ -2449,27 +2491,30 @@ function extractData(csvText) {
                 return new Set((members || []).map(m => (m?.Name || '').trim()).filter(Boolean)).size;
             });
             const maxMembersInTheme = Math.max(0, ...memberCounts);
-            const themeMaxRows = Math.max(1, Math.ceil(maxMembersInTheme / inARow));
 
-            // Larghezza del theme (n° team * larghezza team + gap + etichetta)
-            const themeWidth =
-                nTeams * thirdLevelBoxWidth +
-                Math.max(0, nTeams - 1) * thirdLevelBoxPadX +
-                SECOND_LEVEL_LABEL_EXTRA;
+            const themeMaxRows = Math.max(1, ...teamsMeta.map(t => t.teamRows));
+
+            const themeTeamsWidth = teamsMeta.reduce((acc, t) => acc + t.teamBoxWidth, 0);
+            const themeInnerGaps = Math.max(0, nTeams - 1) * thirdLevelBoxPadX;
+
+            const themeWidth = themeTeamsWidth + themeInnerGaps + SECOND_LEVEL_LABEL_EXTRA;
 
             currentRow.themes.push({
                 secondLevel,
                 thirdLevelItems,
+                teamsMeta,       // ✅ IMPORTANTISSIMO: serve al rendering
                 nTeams,
                 themeMaxRows,
                 themeWidth
             });
             currentRow.used += nTeams;
         }
-        if (currentRow.themes.length) rows.push(currentRow);
+        if (currentRow.themes.length) layoutRows.push(currentRow);
+
+        firstLevelBoxWidth = computeStreamWidthFromRows(layoutRows, secondLevelBoxPadX);
 
         // ---------- ALTEZZE PER RIGA ----------
-        rows.forEach(r => {
+        layoutRows.forEach(r => {
             r.rowMaxMemberRows = Math.max(1, ...r.themes.map(t => t.themeMaxRows));
             //const teamBoxPadding  = r.rowMaxMemberRows > 1 ? 80 : 120; // tuoi valori
             //const themeBoxPadding = 100;                                // tuoi valori
@@ -2496,8 +2541,8 @@ function extractData(csvText) {
 
         // ---------- ALTEZZA STREAM (somma delle righe) ----------
         const firstLevelBoxHeight =
-            rows.reduce((acc, r) => acc + r.themeBoxHeight, 0) +
-            (rows.length > 1 ? (rows.length - 1) * secondLevelRowPadY : 0) +
+            layoutRows.reduce((acc, r) => acc + r.themeBoxHeight, 0) +
+            (layoutRows.length > 1 ? (layoutRows.length - 1) * secondLevelRowPadY : 0) +
             140;
 
         // Rettangolo stream
@@ -2596,12 +2641,14 @@ function extractData(csvText) {
         // ---------- RENDER THEME/TEAM CON ALTEZZE DI RIGA ----------
         let secondLevelYBase = streamY + 100;
 
-        rows.forEach((r) => {
+        let teamMaxCardBottom = 0;
+
+        layoutRows.forEach((r) => {
             let secondLevelX = 60; // reset a inizio riga
             const themeBoxHeightRow = r.themeBoxHeight;
             const teamBoxHeightRow  = r.teamBoxHeight;
 
-            r.themes.forEach(({ secondLevel, thirdLevelItems, nTeams, themeWidth }) => {
+            r.themes.forEach(({ secondLevel, thirdLevelItems, teamsMeta, nTeams, themeWidth }) => {
                 const secondLevelY = secondLevelYBase;
 
                 const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {}).flat();
@@ -2657,20 +2704,41 @@ function extractData(csvText) {
                 }
 
                 // Team cards nel theme
-                Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
+
+// Team cards nel theme (inARow dinamico PER TEAM)
+                const effectiveTeamsMeta = (Array.isArray(teamsMeta) && teamsMeta.length)
+                    ? teamsMeta
+                    : Object.entries(thirdLevelItems || {}).map(([thirdLevel, members]) => {
+                        const memberCount = Array.isArray(members) ? members.length : 0;
+                        // <=36 => 6; >36 => 12; >72 => 24; ecc.
+                        const tier = Math.floor((Math.max(0, memberCount) - 1) / 36);
+                        const teamInARow = 6 * Math.pow(2, tier);
+                        const teamRows = Math.max(1, Math.ceil(memberCount / teamInARow));
+                        const teamBoxWidth = teamInARow * memberWidth + 100;
+                        return { thirdLevel, members, teamInARow, teamRows, teamBoxWidth };
+                    });
+
+                let teamOffsetX = 50;
+
+                effectiveTeamsMeta.forEach((tm, teamIdx) => {
+                    const { thirdLevel, members, teamInARow, teamRows, teamBoxWidth } = tm;
                     const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
-                    const services    = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
+                    const services = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
                     const description =
                         aggregateInfoByHeader(originalMembers, headers, 'Team Description', false, splitNarrativeValues)
-                            ?.items
-                            ?.join('\n\n') ?? '';
-                    const channels    = aggregateInfoByHeader(originalMembers, headers, 'Team Channels', true)?.items;
-                    const email       = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
+                            ?.items?.join('\n\n') ?? '';
+                    const channels = aggregateInfoByHeader(originalMembers, headers, 'Team Channels', true)?.items;
+                    const email = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
 
-                    const teamLocalX = teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50;
+                    const hasInfo = hasTeamDrawerContent({
+                        description,
+                        services,
+                        channels,
+                        email
+                    });
+
+                    const teamLocalX = teamOffsetX;
                     const teamLocalY = 130;
-                    // quante righe di card ha QUESTO team
-                    const teamRows = Math.max(1, Math.ceil((members?.length || 0) / inARow));
 
                     const cardsTopInTeam = 70 + 45 + 130 - teamLocalY;
 
@@ -2693,7 +2761,7 @@ function extractData(csvText) {
                     // Box team (altezza di riga)
                     const thirdLevelRect = thirdLevelGroup.append('rect')
                         .attr('class', 'team-box')
-                        .attr('width', thirdLevelBoxWidth)
+                        .attr('width', teamBoxWidth)
                         .attr('height', teamBoxHeight)
                         .attr('rx', 20)
                         .attr('ry', 20);
@@ -2705,26 +2773,68 @@ function extractData(csvText) {
                         ? `${truncateString(thirdLevel)} - ⚙️ (${serviceCount})`
                         : truncateString(thirdLevel);
 
-                    thirdLevelGroup.append('text')
-                        .attr('x', thirdLevelBoxWidth / 2)
+                    const teamTitle = thirdLevelGroup.append('text')
+                        .attr('x', teamBoxWidth / 2)
                         .attr('y', 70)
                         .attr('text-anchor', 'middle')
-                        .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
                         .attr('class', 'team-title')
                         .text(titleText);
 
-                    thirdLevelGroup.select('rect.team-box')
-                        .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"` }));
-                    thirdLevelGroup.select('text.team-title')
-                        .style('cursor', 'pointer')
-                        .on('click', () => openDrawer({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"` }));
+                    if (hasInfo) {
+                        teamTitle
+                            .append('tspan')
+                            .attr('dx', 10)
+                            .attr('class', 'team-icon')
+                            .attr('data-tooltip', 'View team details')
+                            .attr('aria-label', 'View team details')
+                            .text(' ℹ️')
+                            .style('cursor', 'pointer')
+                            .on('click', (e) => {
+                                e.stopPropagation();
+                                openDrawer({
+                                    name: thirdLevel,
+                                    description,
+                                    elements: services,
+                                    channels,
+                                    email,
+                                    elementsBaseUrl: (s) =>
+                                        `domino.html?search=id%3A"${encodeURIComponent(s)}"`
+                                });
+                            });
+                    }
 
-                    // RENDER CARD MEMBRO (lascia il tuo codice esistente)
-                    members.forEach((member, mIdx) => {
-                        const col = mIdx % inARow;
-                        const row = Math.floor(mIdx / inARow);
-                        const cardX = 40 + secondLevelX + teamIdx * (thirdLevelBoxWidth + thirdLevelBoxPadX) + 50 + 20 + col * (memberWidth + cardPad);
+                    if (hasInfo) {
+                        thirdLevelGroup.select('rect.team-box')
+                            .style('cursor', 'pointer')
+                            .on('click', () => openDrawer({
+                                name: thirdLevel,
+                                description,
+                                elements: services,
+                                channels,
+                                email,
+                                elementsBaseUrl: (s) =>
+                                    `domino.html?search=id%3A"${encodeURIComponent(s)}"`
+                            }));
+
+                        thirdLevelGroup.select('text.team-title')
+                            .style('cursor', 'pointer')
+                            .on('click', () => openDrawer({
+                                name: thirdLevel,
+                                description,
+                                elements: services,
+                                channels,
+                                email,
+                                elementsBaseUrl: (s) =>
+                                    `domino.html?search=id%3A"${encodeURIComponent(s)}"`
+                            }));
+                    }
+
+                    // MEMBERS (usa teamInARow dinamico)
+                    (members || []).forEach((member, mIdx) => {
+                        const col = mIdx % teamInARow;
+                        const row = Math.floor(mIdx / teamInARow);
+
+                        const cardX = 40 + secondLevelX + teamLocalX + 20 + col * (memberWidth + cardPad);
                         const cardY = secondLevelY + 70 + 45 + row * (cardBaseHeight + 10) + 130;
                         const cardTopInTeam =
                             cardY - (secondLevelY + teamLocalY);
@@ -3187,6 +3297,8 @@ function extractData(csvText) {
                             }
                         });
                     });
+                    // ✅ Avanza X per il prossimo team (senza questo si sovrappongono)
+                    teamOffsetX += teamBoxWidth + thirdLevelBoxPadX;
                 });
 
                 // Avanza X per il prossimo theme della stessa riga

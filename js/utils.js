@@ -995,6 +995,15 @@ function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
     return n * thirdLevelBoxWidth + (n - 1) * thirdLevelBoxPadX + SECOND_LEVEL_LABEL_EXTRA;
 }
 
+export function hasTeamDrawerContent({ description, services, channels, email }) {
+    return Boolean(
+        (description && description.trim()) ||
+        (services?.items && services.items.length > 0) ||
+        (channels && channels.length > 0) ||
+        (email && email.trim())
+    );
+}
+
 export function isOnlyContributorsRow(member) {
     const n = (member?.Name ?? '').toString().trim();
     return /^OnlyContributors#\d+$/i.test(n);
