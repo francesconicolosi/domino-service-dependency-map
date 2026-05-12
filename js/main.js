@@ -469,8 +469,10 @@ function initSideDrawerEvents() {
     });
 
     document.getElementById('drawer-search-go')?.addEventListener('click', () => {
-        const q = e.target.value ? e.target.value.trim() : "";
-        handleQuery(q, false);
+        const q = document.getElementById('drawer-search-input')?.value?.trim();
+        if (q !== undefined) {
+            handleQuery(q, false);
+        }
         //closeSideDrawer();
     });
 
