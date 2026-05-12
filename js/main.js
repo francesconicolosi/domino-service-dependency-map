@@ -1072,8 +1072,23 @@ function createMap() {
         .attr('width', width)
         .attr('height', height)
         .call(zoom);
-    g = svg
-        .append('g');
+    const defs = svg.append('defs');
+
+    defs.append('clipPath')
+        .attr('id', 'map-clip')
+        .append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', width)
+        .attr('height', height);
+
+    // ✅ gruppo principale CLIPPATO
+// gruppo statico clippato
+    const viewport = svg.append('g')
+        .attr('clip-path', 'url(#map-clip)');
+
+// gruppo che verrà zoomato
+    g = viewport.append('g');
 
     g.append('defs').append('marker')
         .attr('id', 'arrow')
@@ -1234,6 +1249,19 @@ function createMap() {
         }
     });
 }
+
+
+window.addEventListener('resize', () => {
+    const mapEl = document.getElementById('map');
+    const w = mapEl.clientWidth;
+    const h = mapEl.clientHeight;
+
+    svg.attr('width', w).attr('height', h);
+
+    svg.select('#map-clip rect')
+        .attr('width', w)
+        .attr('height', h);
+});
 
 function createLegend(colorScale) {
     const types = colorScale.domain();

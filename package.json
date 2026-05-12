@@ -4,7 +4,9 @@
   "description": "",
   "main": "./js/main.js",
   "scripts": {
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.js",
+    "start": "http-server dist -p 8080 -c-1",
+    "dev": "concurrently \"webpack --watch\" \"http-server dist -p 8080 -c-1\""
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

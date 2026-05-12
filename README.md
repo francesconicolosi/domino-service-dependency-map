@@ -30,6 +30,48 @@ cd itsm
    ```bash
    npm run build
 
+## Local Development
+
+This project uses Webpack to bundle JavaScript and process HTML templates. The built files are served from the `dist/` directory.
+
+### Quick Start
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+2. **Development mode** (recommended for active development):
+
+   ```bash
+   pnpm dev
+   ```
+
+   This starts webpack in watch mode and serves the application on `http://localhost:8080`. Changes to source files will automatically trigger a rebuild.
+
+3. **Production build and serve**:
+
+   ```bash
+   pnpm build
+   pnpm start
+   ```
+
+### Available Scripts
+
+- `pnpm build` - Build the project with webpack (outputs to `dist/`)
+- `pnpm start` - Serve the built files from `dist/` on port 8080
+- `pnpm dev` - Run webpack in watch mode and serve files concurrently
+
+### Accessing the Applications
+
+Once the server is running, open your browser and navigate to:
+
+- **Domino** (Service Catalog): `http://localhost:8080/domino.html`
+- **Solitaire** (Org Chart): `http://localhost:8080/solitaire.html`
+
+The server runs with caching disabled (`-c-1`) for easier development.
+
 ## Usage
 1. Open the `domino.html` file in your browser (located in the `dist` folder).
 2. Upload a CSV file using the upload button.
