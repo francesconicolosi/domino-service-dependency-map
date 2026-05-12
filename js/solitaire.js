@@ -2773,6 +2773,7 @@ function extractData(csvText) {
                         .attr('x', teamBoxWidth / 2)
                         .attr('y', 70)
                         .attr('text-anchor', 'middle')
+                        .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
                         .attr('class', 'team-title')
                         .text(titleText);
 
