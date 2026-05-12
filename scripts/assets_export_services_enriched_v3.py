@@ -45,7 +45,7 @@ Required env vars
 
 Optional
 --------
-- ATLASSIAN_SITE (default https://instance.atlassian.net)
+- ATLASSIAN_SITE (default https://guccidigital.atlassian.net)
 
 Usage
 -----
@@ -62,7 +62,7 @@ import argparse
 import requests
 from typing import Any, Dict, List, Optional, Tuple
 
-SITE = os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net").rstrip("/")
+SITE = os.environ.get("ATLASSIAN_SITE", "https://guccidigital.atlassian.net").rstrip("/")
 WORKSPACE_ID = os.environ["ASSETS_WORKSPACE_ID"]
 EMAIL = os.environ["ATLASSIAN_EMAIL"]
 API_TOKEN = os.environ["ATLASSIAN_API_TOKEN"]
@@ -207,6 +207,27 @@ def resolve_attr_id(attr_defs: List[dict], aliases: List[str]) -> Optional[str]:
             return str(a.get('id'))
     return None
 
+def _extract_attr_value(v: dict) -> Optional[str]:
+    # Reference attribute
+    ref = v.get('referencedObject')
+    if ref:
+        return str(ref.get('label') or ref.get('objectKey') or '').strip() or None
+
+    # Standard value
+    if v.get('value') is not None:
+        return str(v.get('value')).strip() or None
+
+    # ✅ STATUS (FIX)
+    status = v.get('status')
+    if isinstance(status, dict):
+        return str(status.get('name') or '').strip() or None
+
+    # Fallback (Assets spesso usa questi)
+    for k in ('displayValue', 'searchValue'):
+        if v.get(k):
+            return str(v.get(k)).strip() or None
+
+    return None
 
 def values_from_attr_id(obj: dict, attr_id: str) -> List[str]:
     """Extract values for a given objectTypeAttributeId from an object.
@@ -315,12 +336,9 @@ def flatten_service(obj: dict, attr_def_by_id: Dict[str, dict], service_attr_nam
             continue
         vals: List[str] = []
         for v in a.get('objectAttributeValues', []) or []:
-            ref = v.get('referencedObject')
-            if ref:
-                vals.append(str(ref.get('label') or ref.get('objectKey') or ''))
-            else:
-                if v.get('value') is not None:
-                    vals.append(str(v.get('value')))
+            s = _extract_attr_value(v)
+            if s:
+                vals.append(s)
         row[name] = '||'.join([x for x in vals if x])
     return row
 

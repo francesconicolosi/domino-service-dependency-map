@@ -145,6 +145,229 @@ const height = document.getElementById('map').clientHeight;
 const searchableAttributesOnPeopleDb = ["Product Theme", "Owner"];
 const defaultSearchKey = "id";
 
+const LS_RELAXED_SEARCH = 'solitaire_relaxed_search';
+
+function isAdvancedMode() {
+    try {
+        const url = new URL(window.location.href);
+        const qp = (url.searchParams.get('mode') || url.searchParams.get('view') || url.searchParams.get('advanced') || '').toString();
+        if (qp && /^(advanced|1|true|yes)$/i.test(qp)) return true;
+    } catch (_) {}
+
+    if (document.body?.classList?.contains('advanced')) return true;
+
+    const toggle =
+        document.getElementById('advanced-mode') ||
+        document.getElementById('toggle-advanced') ||
+        document.getElementById('mode-advanced');
+    if (toggle && 'checked' in toggle) return !!toggle.checked;
+
+    return false;
+}
+
+function ensureUploadCsvAction() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput) return;
+
+    // ensure accept is correct even if HTML doesn't set it
+    if (!fileInput.getAttribute('accept')) fileInput.setAttribute('accept', '.csv,text/csv');
+
+    let btn = document.getElementById('act-upload-csv') || document.getElementById('act-upload');
+
+    if (!btn) {
+        const container =
+            document.getElementById('drawer-actions') ||
+            document.querySelector('.drawer-actions') ||
+            document.getElementById('actions') ||
+            document.querySelector('.actions') ||
+            document.querySelector('#drawer .drawer-actions');
+
+        if (!container) return;
+
+        btn = document.createElement('button');
+        btn.id = 'act-upload-csv';
+        btn.type = 'button';
+        btn.className = 'fade-link';
+        btn.textContent = 'Upload CSV';
+        container.appendChild(btn);
+    }
+
+    // bind click once
+    if (!btn.dataset.boundUploadCsv) {
+        btn.dataset.boundUploadCsv = '1';
+        btn.addEventListener('click', () => fileInput.click());
+    }
+
+    btn.style.display = isAdvancedMode() ? '' : 'none';
+}
+
+function initRelaxedSearchPersistence() {
+    const relaxed = document.getElementById('relaxed-search');
+    if (!relaxed) return;
+
+    const saved = localStorage.getItem(LS_RELAXED_SEARCH);
+    if (saved !== null) {
+        relaxed.checked = saved === '1' || saved === 'true';
+    }
+
+    if (!relaxed.dataset.boundRelaxedPersist) {
+        relaxed.dataset.boundRelaxedPersist = '1';
+        relaxed.addEventListener('change', () => {
+            localStorage.setItem(LS_RELAXED_SEARCH, relaxed.checked ? '1' : '0');
+            updateVisualization(nodeGraph, linkGraph, labels);
+        });
+    }
+}
+
+const AUTOCOMPLETE_ID = 'search-suggestions';
+const AUTOCOMPLETE_MAX_KEYS = 50;
+const AUTOCOMPLETE_MAX_VALUES_PER_KEY = 2000;
+const AUTOCOMPLETE_MAX_OPTIONS = 25;
+
+let autocompleteKeys = [];
+let autocompleteValuesByKey = new Map();
+
+function buildAutocompleteIndex() {
+    if (!nodes || !nodes.length) return;
+
+    // keys
+    const keys = new Set(['id']);
+    Object.keys(nodes[0] || {}).forEach(k => {
+        if (!k) return;
+        // skip internals
+        if (['index','x','y','vx','vy','fx','fy','color'].includes(k)) return;
+        keys.add(k === 'Service Name' ? 'id' : k);
+    });
+
+    autocompleteKeys = Array.from(keys).slice(0, AUTOCOMPLETE_MAX_KEYS);
+
+    // values per key (capped)
+    const m = new Map();
+    autocompleteKeys.forEach(k => {
+        const set = new Set();
+        if (k === 'id') {
+            for (const n of nodes) {
+                if (set.size >= AUTOCOMPLETE_MAX_VALUES_PER_KEY) break;
+                const v = (n?.id ?? '').toString().trim();
+                if (v) set.add(v);
+            }
+        } else {
+            for (const n of nodes) {
+                if (set.size >= AUTOCOMPLETE_MAX_VALUES_PER_KEY) break;
+                const raw = n?.[k];
+                if (typeof raw !== 'string' || !raw) continue;
+                const parts = splitValues(raw).map(s => (s ?? '').toString().trim()).filter(Boolean);
+                for (const p of parts) {
+                    if (set.size >= AUTOCOMPLETE_MAX_VALUES_PER_KEY) break;
+                    set.add(p);
+                }
+            }
+        }
+        m.set(k, Array.from(set).sort((a,b) => a.localeCompare(b, undefined, {sensitivity:'base'})));
+    });
+
+    autocompleteValuesByKey = m;
+}
+
+function initSearchAutocomplete() {
+    const input = document.getElementById('drawer-search-input');
+    if (!input) return;
+
+    let dl = document.getElementById(AUTOCOMPLETE_ID);
+    if (!dl) {
+        dl = document.createElement('datalist');
+        dl.id = AUTOCOMPLETE_ID;
+        document.body.appendChild(dl);
+    }
+
+    if (!input.getAttribute('list')) input.setAttribute('list', AUTOCOMPLETE_ID);
+
+    const update = () => refreshAutocompleteSuggestions(input.value || '');
+
+    if (!input.dataset.boundAutocomplete) {
+        input.dataset.boundAutocomplete = '1';
+        input.addEventListener('input', update);
+        input.addEventListener('focus', update);
+    }
+
+    update();
+}
+
+function refreshAutocompleteSuggestions(raw) {
+    const dl = document.getElementById(AUTOCOMPLETE_ID);
+    if (!dl) return;
+    dl.innerHTML = '';
+
+    const suggestions = computeSuggestions(raw).slice(0, AUTOCOMPLETE_MAX_OPTIONS);
+    suggestions.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        dl.appendChild(opt);
+    });
+}
+
+function computeSuggestions(raw) {
+    const value = (raw ?? '').toString();
+
+    // If there's no ':' yet, we are completing the attribute/key (e.g. "id")
+    if (!value.includes(':')) {
+        const leading = (value.match(/^\s*/)?.[0] ?? '');
+        const trimmed = value.trimStart();
+        const bang = trimmed.startsWith('!') ? '!' : '';
+        const keyPrefix = (bang ? trimmed.slice(1) : trimmed).trim();
+        const keys = autocompleteKeys.length ? autocompleteKeys : ['id'];
+        return keys
+            .filter(k => k.toLowerCase().startsWith(keyPrefix.toLowerCase()))
+            .map(k => `${leading}${bang}${k}:`);
+    }
+
+    // One key:value expression, with comma-separated values (e.g. id:plp,crm)
+    const colonPos = value.indexOf(':');
+    const keyTokenOriginal = value.slice(0, colonPos); // preserves user spacing/!
+    const keyToken = keyTokenOriginal.trim();
+    const key = keyToken.replace(/^!/, '');
+
+    const valuePartFull = value.slice(colonPos + 1);
+
+    // split multiple values by comma, autocomplete only the last one
+    const vParts = valuePartFull.split(',');
+    const lastValRaw = (vParts.pop() ?? '');
+    const preValsRaw = vParts.join(',');
+
+    // preserve spaces after the last comma
+    const lastLeadingWs = (lastValRaw.match(/^\s*/)?.[0] ?? '');
+
+    // detect quote mode (if user started using quotes, keep quoting for suggestions)
+    const quotedMode = valuePartFull.includes('"');
+
+    const lastValTrim = lastValRaw.trim();
+    const lastValClean = lastValTrim.replace(/^"/, '').replace(/"$/, '');
+
+    const values = autocompleteValuesByKey.get(key) || [];
+    const filtered = values.filter(v => v.toLowerCase().startsWith(lastValClean.toLowerCase()));
+
+    const prefix = `${keyTokenOriginal}:${preValsRaw}${preValsRaw ? ',' : ''}${lastLeadingWs}`;
+    const renderValue = (v) => quotedMode ? `"${v}"` : v;
+
+    const out = filtered.map(v => prefix + renderValue(v));
+
+    // if exact match -> suggest comma (to add another service / value)
+    if (lastValClean && values.some(v => v.toLowerCase() === lastValClean.toLowerCase()) && !value.trimEnd().endsWith(',')) {
+        out.unshift(value.trimEnd() + ',');
+    }
+
+    // if user just typed comma after a value, immediately suggest next values too
+    if (value.trimEnd().endsWith(',')) {
+        const prefixAfterComma = `${keyTokenOriginal}:${preValsRaw}${preValsRaw ? ',' : ''}`;
+        const vAll = values.slice(0, AUTOCOMPLETE_MAX_OPTIONS)
+            .map(v => prefixAfterComma + renderValue(v));
+        out.unshift(...vAll);
+    }
+
+    return out;
+}
+
+
 const serviceInfoEnhancers = [
     function generateIssueTrackingTool(node) {
         const url = computeTrackingSoftwareValue(node);
@@ -218,6 +441,9 @@ function handleQuery(q, showDrawer = true) {
 
 function initSideDrawerEvents() {
     initCommonActions();
+    initRelaxedSearchPersistence();
+    initSearchAutocomplete();
+    ensureUploadCsvAction();
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
         clickedNode = null;
@@ -258,6 +484,16 @@ function initSideDrawerEvents() {
             //closeSideDrawer();
         }
     });
+
+    // keep Upload CSV CTA in sync if an advanced toggle exists
+    const advToggle =
+        document.getElementById('advanced-mode') ||
+        document.getElementById('toggle-advanced') ||
+        document.getElementById('mode-advanced');
+    if (advToggle && !advToggle.dataset.boundUploadCta) {
+        advToggle.dataset.boundUploadCta = '1';
+        advToggle.addEventListener('change', () => ensureUploadCsvAction());
+    }
 }
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
@@ -275,6 +511,37 @@ window.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 document.getElementById('overlay').addEventListener('click', closeDrawer);
+
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    const isDrawerOpen = drawer?.classList.contains('open');
+
+    // 1) Se drawer aperto → chiudi drawer
+    if (isDrawerOpen) {
+        closeDrawer();
+        e.preventDefault();
+        return;
+    }
+
+    // 2) Se drawer chiuso → reset ricerca
+    const searchInput = document.getElementById('drawer-search-input');
+    const hadSearch =
+        typeof searchTerm === 'string' &&
+        searchTerm.trim() !== '';
+
+    if (hadSearch) {
+        searchTerm = '';
+        if (searchInput) searchInput.value = '';
+        setSearchQuery('');
+        updateVisualization(nodeGraph, linkGraph, labels);
+        fitGraphToViewport(0.9);
+        e.preventDefault();
+    }
+});
+
 
 function closeDrawer() {
     document.getElementById('drawer').classList.remove('open');
@@ -431,6 +698,7 @@ function processData(data) {
 
     createMap();
     createLegend(colorScale);
+    buildAutocompleteIndex();
 }
 
 function getTermToCompare(term) {

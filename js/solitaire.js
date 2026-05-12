@@ -1485,10 +1485,14 @@ function getUrlParamsSnapshot() {
         params.has('stream') &&
         String(params.get('stream') ?? '').trim() !== '';
 
+    // ⚠️ Parametri che NON devono contare come “ricerca in corso”
+    const IGNORE_KEYS = new Set(['advanced', 'mode', 'view', 'source', 'utm_source', 'utm_medium', 'utm_campaign']);
+
     const otherKeysWithValue = [];
 
     for (const [key, value] of params.entries()) {
         if (key === 'stream') continue;
+        if (IGNORE_KEYS.has(key)) continue;
 
         if (String(value ?? '').trim() !== '') {
             otherKeysWithValue.push(key);
@@ -1514,13 +1518,17 @@ async function handleClearAction(source = '') {
 
     const { hasStream, hasOtherValues } = getUrlParamsSnapshot();
 
-    if (hasOtherValues) {
-        stripUrlParamsExceptStream();
+    const searchInput = document.getElementById('drawer-search-input');
+    const hasActiveSearch = !!(searchInput && searchInput.value && searchInput.value.trim() !== '');
+
+    // 1) Se c’è una ricerca attiva (anche con stream isolato) → 1ª ESC pulisce SOLO la ricerca
+    if (hasOtherValues || hasActiveSearch) {
+        stripUrlParamsExceptStream(); // mantiene stream, toglie search e affini
         clearSearch();
         return;
     }
 
-
+    // 2) Se NON ci sono ricerche in corso e c’è stream isolato → proponi rimozione stream
     if (hasStream) {
         const result = await createModal({
             title: 'Remove the Stream filter?',
