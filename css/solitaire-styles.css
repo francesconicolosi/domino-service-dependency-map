@@ -1,7 +1,3 @@
-@font-face {
-    font-family: "Sans 3";
-    src: url('SourceSans3-VariableFont_wght.ttf');
-}
 
 hr {
     border: none;
@@ -67,6 +63,11 @@ hr {
     stroke-width: 1.5px;
     rx: 3;
     ry: 3;
+}
+
+.resize-hit {
+    fill: transparent;
+    pointer-events: all;
 }
 
 .resize-hit {
@@ -163,6 +164,7 @@ input:checked + .slider::before {
     transform: translateX(26px);
 }
 
+
 .toast-container {
     position: fixed;
     top: 70px;
@@ -257,14 +259,32 @@ input:checked + .slider::before {
     transform: translateX(-100%);
     transition: transform 280ms ease;
     z-index: 4000;
+    overflow: hidden;
+}
+
+/* Two-panel sliding container inside the single drawer */
+.drawer-panels {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 280ms ease;
+}
+
+#side-drawer.sub-open .drawer-panels {
+    transform: translateX(-50%);
+}
+
+.drawer-panel {
+    width: 50%;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 #side-drawer.open {
     transform: translateX(0);
 }
-
 
 @media (max-width: 768px) {
     #side-drawer {
@@ -319,34 +339,11 @@ input:checked + .slider::before {
     color: white;
 }
 
-.drawer-search {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-}
-
-
-.drawer-search input {
-    flex: 1;
-    padding: 8px 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-}
-
-.drawer-search button {
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    background: #f8f8f8;
-    cursor: pointer;
-}
-
 .drawer-footer {
     border-top: 1px solid #eee;
     padding: 10px 12px;
     color: #666;
 }
-
 
 body.side-drawer-open {
     overflow: hidden;
@@ -360,7 +357,7 @@ input[type="text"] {
     border: none;
     border-bottom: 2px solid black;
     font-size: 16px;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
 }
 
 input[type="text"]::placeholder {
@@ -392,7 +389,7 @@ button {
 }
 
 h1, h3, text, label, button, a, footer {
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
 }
 
 button:hover, .custom-file-upload:hover {
@@ -410,7 +407,7 @@ html, body {
     overflow: hidden;
     width: 100%;
     height: 100%;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font)
 }
 
 svg {
@@ -449,19 +446,14 @@ svg {
 .theme-title {
     font-size: 65px;
     font-weight: bold;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
     fill: #4a4a9a;
-}
-
-.drawer-footer {
-    font-size: 18px;
-    text-align: center;
 }
 
 .team-title {
     font-size: 50px;
     font-weight: bold;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
     fill: #333;
 }
 
@@ -484,7 +476,7 @@ svg {
 }
 
 .info {
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
     font-size: 12px;
     color: #333;
     text-align: center;
@@ -502,7 +494,6 @@ svg {
     margin-bottom: 4px;
     text-align: center;
 }
-
 
 #drawer {
     position: fixed;
@@ -528,11 +519,6 @@ svg {
     }
 }
 
-#drawer .content {
-    padding: 16px 20px;
-    overflow: auto;
-}
-
 #drawer.open {
     transform: translateX(0);
 }
@@ -543,6 +529,11 @@ svg {
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+#drawer .content {
+    padding: 16px 20px;
+    overflow: auto;
 }
 
 #drawer {
@@ -575,6 +566,11 @@ svg {
     pointer-events: none;
     transition: opacity .28s ease;
     z-index: 9998;
+}
+
+.drawer-footer {
+    font-size: 18px;
+    text-align: center;
 }
 
 #drawer-overlay.visible {
@@ -664,6 +660,7 @@ body.drawer-open {
     color: #333;
     border: 1px solid rgba(0, 0, 0, 0.12);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
     position: relative;
     display: block;
     touch-action: manipulation;
@@ -683,12 +680,10 @@ body.drawer-open {
     height: 100%;
     line-height: 1;
     font-size: 14px;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
-
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji',
+    'Twemoji Mozilla', 'EmojiOne Color', system-ui, sans-serif;
     transform: translateY(var(--emoji-nudge, 0px));
-    line-height: 1;
 }
-
 
 @media (max-width: 1024px), (pointer: coarse) {
     .contact-fab .icon {
@@ -705,15 +700,15 @@ body.drawer-open {
     .contact-fab .icon {
         font-size: 16px;
     }
-
-    .contact-fabs.contact-fabs--left { gap: 3px !important; }
 }
+
 
 .contact-fab:hover {
     background-color: black;
     color: white;
     border-color: black;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30);
+    transform: translateY(-1px);
 }
 
 .contact-fab:focus-visible {
@@ -721,7 +716,7 @@ body.drawer-open {
     outline-offset: 2px;
 }
 
-.solitaire-tooltip {
+.app-tooltip {
     position: fixed;
     z-index: 2147483647;
     background: #000;
@@ -738,11 +733,11 @@ body.drawer-open {
     box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
 }
 
-.solitaire-tooltip.show {
+.app-tooltip.show {
     opacity: 1;
 }
 
-.solitaire-tooltip::after {
+.app-tooltip::after {
     content: "";
     position: absolute;
     left: 50%;
@@ -787,7 +782,8 @@ body.drawer-open {
 
 .contact-fabs-svg .fab-emoji {
     font-size: 14px;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',
+    'Twemoji Mozilla','EmojiOne Color', system-ui, sans-serif;
     pointer-events: none;
 }
 
@@ -812,7 +808,7 @@ body.drawer-open {
     width: calc(100% - 32px);
     box-shadow: 0 12px 30px rgba(0,0,0,.25);
     padding: 20px 22px;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
 }
 
 .simple-modal h3 {
@@ -832,8 +828,6 @@ body.drawer-open {
     justify-content: flex-end;
 }
 
-
-
 .stream-title {
     font-size: 67px;
     font-weight: bold;
@@ -845,28 +839,24 @@ svg text.stream-title {
     font-size: 67px;
 }
 
-.stream-title .stream-icon {
-    font-size: 67px;
-    font-weight: bold;
-    fill: #222;
-    cursor: pointer;
+g[data-key^="stream::"] .stream-icon {
     opacity: 0;
     pointer-events: none;
     transition: opacity 180ms ease;
 }
 
-g[data-key^="stream::"]:hover .stream-title .stream-icon {
+g[data-key^="stream::"]:hover .stream-icon {
     opacity: 1;
     pointer-events: auto;
 }
 
-.theme-title .theme-icon {
+g[data-key^="theme::"] .theme-icon {
     opacity: 0;
     pointer-events: none;
     transition: opacity 180ms ease;
 }
 
-g[data-key^="theme::"]:hover .theme-title .theme-icon {
+g[data-key^="theme::"]:hover .theme-icon {
     opacity: 1;
     pointer-events: auto;
 }
@@ -893,13 +883,12 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
     outline-offset: 2px;
 }
 
-.stream-icon {
-    transition: 120ms ease;
+g[data-key^="stream::"] .stream-icon {
+    transition: opacity 120ms ease, transform 120ms ease;
 }
 
-.stream-icon:hover {
-    opacity: 1;
-    transform: translateY(-1px);
+g[data-key^="stream::"] .stream-icon:hover {
+    opacity: 1 !important;
 }
 
 .contact-fabs.contact-fabs--left {
@@ -926,7 +915,7 @@ g[data-key^="theme::"]:hover .theme-title .theme-icon {
 
 .service-hit-highlight {
     display: inline-block;
-    border: 4px solid #e10600; /* rosso, spessore 4px */
+    border: 4px solid #e10600;
     border-radius: 6px;
     padding: 2px 6px;
     margin: 2px 0;
@@ -977,6 +966,9 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     pointer-events: auto;
 }
 
+@media (max-width: 480px) {
+    .contact-fabs.contact-fabs--left { gap: 3px !important; }
+}
 
 .profile-photo,
 .magnifier-icon,
@@ -992,17 +984,11 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     fill: #000;
 }
 
+
 .photo-wrapper {
     pointer-events: all;
 }
 .photo-wrapper image {
-    pointer-events: none;
-}
-
-.multi-team-photo-badge text {
-    font-family: Segoe UI, system-ui, -apple-system, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
-}
-.multi-team-photo-badge {
     pointer-events: none;
 }
 
@@ -1021,6 +1007,10 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     -webkit-backdrop-filter: saturate(180%) blur(6px);
     backdrop-filter: saturate(180%) blur(6px);
 }
+#legend-root.legend.legend--anchor-bl { bottom: 16px;  left: max(16px, env(safe-area-inset-left)); top: auto;   right: auto; }
+#legend-root.legend.legend--anchor-br { bottom: 16px;  right: 16px;                                top: auto;   left: auto;  }
+#legend-root.legend.legend--anchor-tl { top:    70px;  left: max(16px, env(safe-area-inset-left)); bottom: auto; right: auto; }
+#legend-root.legend.legend--anchor-tr { top:    70px;  right: 16px;                                bottom: auto; left: auto;  }
 
 #legend-root .legend__title{
     letter-spacing: .04em;
@@ -1066,6 +1056,13 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     margin-left: auto;
     color: #666;
     font-variant-numeric: tabular-nums;
+}
+
+.multi-team-photo-badge text {
+    font-family: Segoe UI, system-ui, -apple-system, Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+.multi-team-photo-badge {
+    pointer-events: none;
 }
 
 .legend__item {
@@ -1120,11 +1117,12 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
 #legend-root .legend__title {
     pointer-events: auto !important;
 }
-#legend-root .legend__title.is-dragging {
+
+#legend-root .legend__title {
     cursor: move !important;
 }
 
-#legend-root .legend__title {
+#legend-root .legend__title.is-dragging {
     cursor: move !important;
 }
 
@@ -1157,7 +1155,6 @@ body.side-drawer-open #legend-root {
         pointer-events: none !important;
     }
 }
-
 
 .drawer-accordion{
     display:flex;
@@ -1211,6 +1208,7 @@ body.side-drawer-open #legend-root {
     margin: 6px 0;
 }
 
+/* --- Legend header con bottone "_" --- */
 #legend-root .legend__header{
     display:flex;
     align-items:center;
@@ -1354,11 +1352,13 @@ body.side-drawer-open #legend-root {
     width: max-content;
     min-width: unset;
     max-width: 280px;
+
     background: rgba(255,255,255,0.96);
     border: 1px solid rgba(0,0,0,0.14);
     border-radius: 10px;
     box-shadow: 0 10px 26px rgba(0,0,0,0.18);
     padding: 6px;
+
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
@@ -1374,7 +1374,7 @@ body.side-drawer-open #legend-root {
     border: none;
     background: transparent;
     border-radius: 8px;
-    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
+    font-family: var(--brand-font);
     font-size: 14px;
     cursor: pointer;
 }
@@ -1394,7 +1394,6 @@ g.draggable.multi-selected rect:first-of-type{
     stroke: #111 !important;
     stroke-width: 4px !important;
 }
-
 /* Scenario actions: two compact rows */
 .actions .scenario-actions {
     padding: 0;
@@ -1416,12 +1415,10 @@ g.draggable.multi-selected rect:first-of-type{
     white-space: nowrap;
 }
 
-/* Mobile fine tuning */
 @media (max-width: 420px) {
     .actions .scenario-row {
         gap: 6px;
     }
-
     .actions .scenario-row button {
         padding: 6px 6px;
         font-size: 0.78rem;
@@ -1436,11 +1433,226 @@ html, body {
     touch-action: none;
 }
 
-.team-icon {
+g[data-key^="team::"] .team-icon {
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease;
 }
 
-g.draggable:hover .team-icon {
+g[data-key^="team::"]:hover .team-icon {
     opacity: 1;
+    pointer-events: auto;
 }
+
+/* GPU-promote the zoom viewport so transform changes stay on the compositor */
+#viewport {
+    will-change: transform;
+}
+
+/* Suppress drop-shadows during active zoom/pan — shadows are invisible during
+   fast motion and their filter cost forces software repaints every frame */
+#canvas.is-zooming .stream-box,
+#canvas.is-zooming .theme-box,
+#canvas.is-zooming .team-box,
+#canvas.is-zooming .profile-box {
+    filter: none;
+}
+/* In dark mode the profile-box carries a brightness filter (not a shadow) — keep it during zoom */
+html[data-theme="dark"] #canvas.is-zooming .profile-box { filter: brightness(0.45); }
+html[data-theme="dark"] #canvas.is-zooming .profile-box--neutral { fill: #1c1c1e; filter: none; }
+
+/* Suppress hit-testing on card sub-elements during zoom/pan — prevents the
+   browser from traversing hundreds of child nodes on every touch-move frame */
+#canvas.is-zooming .profile-name,
+#canvas.is-zooming .info,
+#canvas.is-zooming .contact-fabs-svg,
+#canvas.is-zooming .contact-fabs {
+    pointer-events: none;
+}
+
+/* Resize handles are not useful on touch-only devices — hide them via media
+   query as a belt-and-suspenders complement to the JS-side isMobileDevice guard */
+@media (hover: none) {
+    .resize-handles { display: none; }
+}
+
+/* Gesture-LOD: hide card detail elements during user-initiated pan/zoom on
+   touch devices. Only active when zoomed in (k ≥ 0.5) with > 100 members.
+   Set on zoom.start for genuine touch gestures; cleared on zoom.end.
+   Programmatic zooms (search, fit-to-content) never set this class. */
+@media (hover: none) {
+    #canvas.lod-gesture-active .profile-name,
+    #canvas.lod-gesture-active .info,
+    #canvas.lod-gesture-active .contact-fabs-svg,
+    #canvas.lod-gesture-active .contact-fabs,
+    #canvas.lod-gesture-active .photo-wrapper {
+        display: none;
+    }
+}
+
+/* Icon buttons used for × close and ‹ back in drawer headers */
+.drawer-icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    color: #666;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.drawer-icon-btn:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+/* Sub-panel header: ‹ title × — title fills the middle and wraps if long */
+.drawer-panel--sub .drawer-header h1 {
+    flex: 1;
+    margin: 0 8px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* ============================================================
+   DARK MODE — Apple-inspired palette
+   Base:      #1c1c1e  (macOS system background, exact match)
+   Elevated:  #252528  (cards, inputs)
+   Button:    #2e2e32  (interactive surfaces)
+   Hover:     #3a3a3e
+   Borders:   rgba(255,255,255, 0.07–0.14)  (translucent, no harsh lines)
+   Text:      #f5f5f7 / rgba(245,245,247, 0.65) / 0.35
+   Accent:    #0a84ff  (Apple system blue)
+   ============================================================ */
+
+/* — Surfaces — */
+html[data-theme="dark"] body      { background: #111113; color: #f5f5f7; }
+html[data-theme="dark"] .top-bar  { background: #1c1c1e; border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
+html[data-theme="dark"] #side-drawer { background: #1c1c1e; }
+html[data-theme="dark"] svg        { background-color: #111113; }
+
+/* — Org-chart SVG shapes — */
+html[data-theme="dark"] .stream-box { fill: #131318; stroke: rgba(255,255,255,0.06); }
+html[data-theme="dark"] .theme-box  { fill: #16162a; stroke: rgba(99,102,241,0.22); }
+html[data-theme="dark"] .team-box   { fill: #1e1e24; stroke: rgba(255,255,255,0.08); }
+
+/* — Text inside SVG — */
+html[data-theme="dark"] .stream-title { fill: #f5f5f7; }
+html[data-theme="dark"] .theme-title  { fill: #a5b4fc; }
+html[data-theme="dark"] .team-title   { fill: #e5e5ea; }
+html[data-theme="dark"] text          { fill: rgba(245,245,247,0.80); }
+
+/* — Member cards — */
+html[data-theme="dark"] .profile-box { filter: brightness(0.45); }
+/* Neutral cards: brightness(0.45) yields grey — map to near-black instead */
+html[data-theme="dark"] .profile-box--neutral { fill: #1c1c1e; filter: none; }
+html[data-theme="dark"] .contact-fab circle,
+html[data-theme="dark"] .contact-fabs-svg circle { fill: #2e2e32; stroke: rgba(255,255,255,0.12); }
+
+/* — Placeholder avatar icon — */
+.avatar-placeholder circle,
+.avatar-placeholder path { fill: #333; }
+html[data-theme="dark"] .avatar-placeholder circle,
+html[data-theme="dark"] .avatar-placeholder path { fill: #f5f5f7; }
+
+/* — Card info text (HTML inside foreignObject, not SVG) — */
+html[data-theme="dark"] .info         { color: #f5f5f7; }
+html[data-theme="dark"] .profile-name { color: #f5f5f7; }
+
+/* — All buttons: global dark default, then icon-only exceptions — */
+html[data-theme="dark"] button {
+    background: #2e2e32;
+    border-color: rgba(255,255,255,0.10);
+    color: #f5f5f7;
+}
+html[data-theme="dark"] button:hover {
+    background: rgba(245,245,247,0.92);
+    color: #111;
+}
+/* Icon-only buttons (hamburger, ×, ‹) stay transparent */
+html[data-theme="dark"] .drawer-icon-btn,
+html[data-theme="dark"] .toggle-icon button,
+html[data-theme="dark"] #drawer header button { background: transparent; border-color: transparent; box-shadow: none; color: rgba(245,245,247,0.65); }
+html[data-theme="dark"] .drawer-icon-btn:hover,
+html[data-theme="dark"] .toggle-icon button:hover,
+html[data-theme="dark"] #drawer header button:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
+
+/* Drawer action buttons need ID-level specificity (#side-drawer .actions button) */
+html[data-theme="dark"] #side-drawer .actions button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] #side-drawer .actions button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
+
+/* — Switch labels — */
+html[data-theme="dark"] .switch-label { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+
+/* — Drawer chrome — */
+html[data-theme="dark"] .drawer-header { background: #1c1c1e; border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
+html[data-theme="dark"] .drawer-footer { color: rgba(245,245,247,0.45); border-top-color: rgba(255,255,255,0.07); }
+html[data-theme="dark"] #drawer        { background: #1c1c1e; box-shadow: -2px 0 24px rgba(0,0,0,0.55); }
+html[data-theme="dark"] #drawer header { border-bottom-color: rgba(255,255,255,0.07); }
+html[data-theme="dark"] #drawer .content li.empty { color: rgba(245,245,247,0.35); }
+
+/* — Search bar — */
+html[data-theme="dark"] .top-search input,
+html[data-theme="dark"] #drawer-search-input { background: #252528; border-color: rgba(255,255,255,0.12); color: #f5f5f7; }
+html[data-theme="dark"] .top-search input::placeholder,
+html[data-theme="dark"] #drawer-search-input::placeholder { color: rgba(245,245,247,0.35); }
+html[data-theme="dark"] .top-search button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .top-search button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
+
+/* — Legend (1 ID + 2 classes in original rule — match specificity) — */
+html[data-theme="dark"] #legend-root.legend.legend--generic {
+    background: rgba(28,28,30,0.96);
+    border-color: rgba(255,255,255,0.12);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+}
+html[data-theme="dark"] #legend-root .legend__title { color: rgba(245,245,247,0.50); }
+html[data-theme="dark"] #legend-root .legend__item  { color: #f5f5f7; }
+html[data-theme="dark"] #legend-root .legend__count { color: rgba(245,245,247,0.45); }
+html[data-theme="dark"] .legend-item-label { color: #f5f5f7; }
+html[data-theme="dark"] #legend-root .legend__swatch { filter: brightness(0.45); }
+html[data-theme="dark"] #legend-root .legend__swatch--white { background-color: #1c1c1e !important; border-color: rgba(255,255,255,0.35); filter: none; }
+html[data-theme="dark"] #legend-root .legend__collapse { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); }
+html[data-theme="dark"] #legend-root .legend__collapse:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.14); }
+html[data-theme="dark"] #legend-root .legend__collapse .chevron { border-color: rgba(245,245,247,0.60); }
+html[data-theme="dark"] #legend-root .legend__collapse:hover .chevron,
+html[data-theme="dark"] #legend-root .legend__collapse:focus-visible .chevron { border-color: #f5f5f7; }
+
+/* — Modal — */
+html[data-theme="dark"] .modal-box          { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.65); }
+html[data-theme="dark"] .modal-btn          { background: #2e2e32; color: #f5f5f7; border-color: rgba(255,255,255,0.10); }
+html[data-theme="dark"] .modal-btn:hover    { background: #3a3a3e; }
+html[data-theme="dark"] .modal-btn--primary { background: #0a84ff; color: #fff; border-color: transparent; }
+html[data-theme="dark"] .modal-btn--primary:hover { background: #0070d8; }
+
+/* — Tooltip — */
+html[data-theme="dark"] .app-tooltip { background: rgba(30,30,32,0.96); color: #f5f5f7; border: 1px solid rgba(255,255,255,0.12); }
+
+/* — Context menu — */
+html[data-theme="dark"] #canvas-context-menu { background: #1c1c1e; border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 32px rgba(0,0,0,0.50); color: #f5f5f7; }
+html[data-theme="dark"] #canvas-context-menu button { background: transparent; border-color: transparent; color: #f5f5f7; }
+html[data-theme="dark"] #canvas-context-menu button:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
+
+/* — File upload label — */
+html[data-theme="dark"] .custom-file-upload { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .custom-file-upload:hover { background: rgba(245,245,247,0.92); color: #111; }
+
+/* — Canvas logo (SVG path + tagline text inside #logoLayer) — */
+#logoLayer path        { fill: var(--_g-logo-fill-color); }
+#logoLayer .logo-tagline { fill: #333; }
+html[data-theme="dark"] #logoLayer .logo-tagline { fill: rgba(245,245,247,0.45); }
+
+/* — Footer — */
+html[data-theme="dark"] footer { color: rgba(245,245,247,0.35); }
+
+/* — SVG icon paths (stroke is #333 in light mode) — */
+html[data-theme="dark"] .stream-icon path,
+html[data-theme="dark"] .theme-icon path,
+html[data-theme="dark"] .team-icon path { stroke: rgba(245,245,247,0.60); }
+html[data-theme="dark"] .stream-icon circle[fill="#333"],
+html[data-theme="dark"] .theme-icon circle[fill="#333"],
+html[data-theme="dark"] .team-icon circle[fill="#333"] { fill: rgba(245,245,247,0.60); }

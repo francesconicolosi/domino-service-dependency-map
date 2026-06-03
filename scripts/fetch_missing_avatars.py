@@ -203,7 +203,7 @@ def main():
                         help="CSV column containing email (default: Email)")
     parser.add_argument("--force-col", default=FORCE_COL_DEFAULT,
                         help=f"CSV column containing force flag (default: {FORCE_COL_DEFAULT})")
-    parser.add_argument("--site", default=os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net"),
+    parser.add_argument("--site", default=os.environ.get("ATLASSIAN_SITE", "https://itsm.atlassian.net"),
                         help="Atlassian site base url (default from ATLASSIAN_SITE)")
     parser.add_argument("--atlassian-email", default=os.environ.get("ATLASSIAN_EMAIL", ""),
                         help="Atlassian email (default from ATLASSIAN_EMAIL)")

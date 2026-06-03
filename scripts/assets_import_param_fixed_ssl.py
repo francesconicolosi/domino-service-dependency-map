@@ -24,7 +24,7 @@ ASSETS_WORKSPACE_ID
 
 Env (optional)
 --------------
-ATLASSIAN_SITE (default https://instance.atlassian.net)
+ATLASSIAN_SITE (default https://itsm.atlas.net)
 DRY_RUN=1
 ONLY_KEY="<value>"
 STOP_AFTER=N
@@ -55,7 +55,7 @@ try:
 except Exception:
     certifi = None
 
-SITE = os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net").rstrip("/")
+SITE = os.environ.get("ATLASSIAN_SITE", "https://itsm.atlassian.net").rstrip("/")
 WORKSPACE_ID = os.environ["ASSETS_WORKSPACE_ID"]
 EMAIL = os.environ["ATLASSIAN_EMAIL"]
 API_TOKEN = os.environ["ATLASSIAN_API_TOKEN"]

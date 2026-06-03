@@ -1,0 +1,27 @@
+/*
+ * brand-specific/brand.css
+ *
+ */
+
+@font-face {
+    font-family: "Brand Font";
+    src: url('../css/SourceSans3-VariableFont_wght.ttf');
+}
+
+:root {
+    --brand-font: "Source Sense", Arial, sans-serif;
+    --_g-logo-fill-color: #111113;
+}
+
+html[data-theme="dark"] {
+    --_g-logo-fill-color: #f5f5f7;
+}
+
+#brand-logo {
+    padding-top: 20px;
+    width: 18%;
+}
+
+#brand-logo path {
+    fill: var(--_g-logo-fill-color);
+}

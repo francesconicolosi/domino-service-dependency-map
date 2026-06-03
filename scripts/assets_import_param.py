@@ -14,7 +14,7 @@ AUTH (required env vars)
 - ASSETS_WORKSPACE_ID
 
 OPTIONAL env vars
-- ATLASSIAN_SITE (default: https://instance.atlassian.net)
+- ATLASSIAN_SITE (default: https://itsm.atlassian.net)
 - DRY_RUN=1
 - ONLY_KEY="<value>"   (process only one object key value from the CSV)
 - STOP_AFTER=N
@@ -48,7 +48,7 @@ import argparse
 import requests
 from typing import Dict, List, Optional, Any, Tuple
 
-SITE = os.environ.get("ATLASSIAN_SITE", "https://instance.atlassian.net").rstrip("/")
+SITE = os.environ.get("ATLASSIAN_SITE", "https://itsm.atlassian.net").rstrip("/")
 WORKSPACE_ID = os.environ["ASSETS_WORKSPACE_ID"]
 EMAIL = os.environ["ATLASSIAN_EMAIL"]
 API_TOKEN = os.environ["ATLASSIAN_API_TOKEN"]

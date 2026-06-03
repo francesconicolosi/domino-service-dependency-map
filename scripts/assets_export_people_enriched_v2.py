@@ -389,7 +389,11 @@ def main():
     theme_stream_id = resolve_attr_id(theme_attr_defs, ['Stream', 'Team Stream'])
 
     stream_attr_defs = get_objecttype_attributes(stream_type, args.max_retries, args.backoff)
-    stream_desc_id = resolve_attr_id(stream_attr_defs, ['Description', 'Stream Description', 'Team Stream Description'])
+    stream_desc_id  = resolve_attr_id(stream_attr_defs, ['Description', 'Stream Description', 'Team Stream Description'])
+    stream_boost_id = resolve_attr_id(stream_attr_defs, ['Visual Boost'])
+
+    team_boost_id  = resolve_attr_id(team_attr_defs,  ['Visual Boost'])
+    theme_boost_id = resolve_attr_id(theme_attr_defs, ['Visual Boost'])
 
     role_attr_defs = get_objecttype_attributes(role_type, args.max_retries, args.backoff)
     role_desc_id = resolve_attr_id(role_attr_defs, ['Description', 'Role Description'])
@@ -467,6 +471,9 @@ def main():
         'Team Theme Description',
         'Team Stream',
         'Team Stream Description',
+        'Team Visual Boost',
+        'Team Theme Visual Boost',
+        'Team Stream Visual Boost',
         'Role Description',
         'Role Grants',
     ]
@@ -492,6 +499,9 @@ def main():
             'Team Theme Description': [],
             'Team Stream': [],
             'Team Stream Description': [],
+            'Team Visual Boost': [],
+            'Team Theme Visual Boost': [],
+            'Team Stream Visual Boost': [],
         }
 
         for tl in team_labels:
@@ -525,6 +535,8 @@ def main():
                 agg['Team Product Manager'].extend(values_from_attr_id(t, team_pm_id))
             if team_sm_id:
                 agg['Team Service Manager'].extend(values_from_attr_id(t, team_sm_id))
+            if team_boost_id:
+                agg['Team Visual Boost'].extend(values_from_attr_id(t, team_boost_id))
 
             # Team -> Theme -> Stream
             theme_labels: List[str] = []
@@ -539,6 +551,8 @@ def main():
 
                 if theme_desc_id:
                     agg['Team Theme Description'].extend(values_from_attr_id(th, theme_desc_id, split_commas=False))
+                if theme_boost_id:
+                    agg['Team Theme Visual Boost'].extend(values_from_attr_id(th, theme_boost_id))
 
                 stream_labels: List[str] = []
                 if theme_stream_id:
@@ -551,6 +565,8 @@ def main():
                         continue
                     if stream_desc_id:
                         agg['Team Stream Description'].extend(values_from_attr_id(st, stream_desc_id, split_commas=False))
+                    if stream_boost_id:
+                        agg['Team Stream Visual Boost'].extend(values_from_attr_id(st, stream_boost_id))
 
         return {k: join_dedup(v) for k, v in agg.items()}
 
@@ -680,7 +696,7 @@ def main():
             # must have contributors OR other guest roles
             if not team_has_any_guest_population(team_obj):
                 continue
-
+        
             # must have valid Theme -> Stream cascade
             if not team_has_valid_theme_stream(team_obj):
                 continue

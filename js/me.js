@@ -195,7 +195,6 @@ setInterval(updateClock, 1000); updateClock();
     const container = document.getElementById('dosOutput');
     if (!container) return;
 
-    // Testo da digitare (puoi personalizzarlo facilmente)
     const lines = [
         "Microsoft(R) MS-DOS(R) Version 6.22",
         "Copyright (C) 1981-1994 Microsoft Corp.",
@@ -210,7 +209,7 @@ setInterval(updateClock, 1000); updateClock();
         " Stack: Jira/Confluence, OMS, SAP<>Hybris, monitoring & automation",
         " Motto: \"If it moves, measure it. If it breaks, fix the process.\"",
         "",
-        "C:\\>launch GUCCI_SERVICES.EXE /stability /perf /automation",
+        "C:\\>launch NYCOSOFT_SERVICES.EXE /stability /perf /automation",
         " Initializing.................. OK",
         " Subsystems.................... OK",
         " Ready."

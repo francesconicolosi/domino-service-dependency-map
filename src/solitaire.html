@@ -7,52 +7,90 @@
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
   />
   <title>Solitaire: Visual People Database</title>
+  <link rel="stylesheet" href="./brand-specific/brand.css">
   <link rel="stylesheet" href="./css/solitaire-styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="assets/solitaire.svg">
 </head>
 <body>
+
 <div id="side-overlay" tabindex="-1"></div>
 
 <aside id="side-drawer" aria-hidden="true" aria-labelledby="side-title" role="dialog">
-  <header class="drawer-header">
-    <h1>♤ Solitaire: Visual People Database</h1>
-    <button id="side-close" aria-label="Close">×</button>
-  </header>
+  <div class="drawer-panels">
 
-  <nav class="content">
-    <ul class="actions">
-      <li><button id="act-about">ℹ️ About</button></li>
-      <li><button id="act-upload">📤 Upload CSV</button></li>
-        <label class="switch-label">
-          🎨 Legenda by Role
-          <input type="radio" id="toggle-color-role" checked>
-          <span class="slider"></span>
-        </label>
-      </li>
-      <li>
-        <label class="switch-label">
-          🏢 Legenda by Company
-          <input type="radio" id="toggle-color-company">
-          <span class="slider"></span>
-        </label>
-      </li>
-      <li>
-        <label class="switch-label">
-          📍 Legenda by Location
-          <input type="radio" id="toggle-color-location">
-          <span class="slider"></span>
-        </label>
-      </li>
+    <div class="drawer-panel drawer-panel--main">
+      <header class="drawer-header">
+        <h1>♤ Solitaire: Visual People Database</h1>
+        <button id="side-close" class="drawer-icon-btn" aria-label="Close">×</button>
+      </header>
+      <nav class="content">
+        <ul class="actions">
+          <li><button id="act-about">ℹ️ About</button></li>
+          <li><button id="act-upload">📤 Upload CSV</button></li>
+          <li><button id="act-legend">🎨 Legenda ›</button></li>
+          <li><button id="act-scenario">🗂️ Display ›</button></li>
+          <li><button id="act-report">📝 Report a change</button></li>
+          <li><button id="act-switch" onclick="window.location.href='./domino.html'">⚅ Domino</button></li>
+        </ul>
+      </nav>
+      <footer class="drawer-footer">
+        <small id="side-last-update"></small>
+        <small id="build-info" style="opacity:0.55;display:block;margin-top:2px"></small>
+      </footer>
+    </div>
 
-      <li><button id="act-report">📝 Report a change</button></li>
-      <li><button id="act-switch" onclick="window.location.href='./domino.html'">⚅ Domino</button></li>
-    </ul>
-  </nav>
+    <div class="drawer-panel drawer-panel--sub">
+      <header class="drawer-header">
+        <button id="sub-back" class="drawer-icon-btn" aria-label="Back">‹</button>
+        <h1 id="sub-drawer-title"></h1>
+        <button id="sub-close" class="drawer-icon-btn" aria-label="Close">×</button>
+      </header>
+      <nav class="content">
+        <ul id="sub-content-legend" class="actions" style="display:none">
+          <li>
+            <label class="switch-label">
+              🎨 Role
+              <input type="radio" name="legend-mode" id="toggle-color-role" checked>
+              <span class="slider"></span>
+            </label>
+          </li>
+          <li>
+            <label class="switch-label">
+              🏢 Company
+              <input type="radio" name="legend-mode" id="toggle-color-company">
+              <span class="slider"></span>
+            </label>
+          </li>
+          <li>
+            <label class="switch-label">
+              📍 Location
+              <input type="radio" name="legend-mode" id="toggle-color-location">
+              <span class="slider"></span>
+            </label>
+          </li>
+        </ul>
+        <ul id="sub-content-scenario" class="actions" style="display:none">
+          <li><button id="act-fit">↺ Fit to content</button></li>
+          <li><hr style="border:none;border-top:1px solid #ddd;margin:4px 0"></li>
+          <li>
+            <label class="switch-label">
+              🌙 Dark Mode
+              <input type="checkbox" id="toggle-dark-mode">
+              <span class="slider"></span>
+            </label>
+          </li>
+          <li><button id="act-collapse-all">⬆ Collapse All Streams</button></li>
+          <li><button id="act-expand-all">⬇ Expand All Streams</button></li>
+          <li><hr style="border:none;border-top:1px solid #ddd;margin:4px 0"></li>
+          <li><button id="act-scenario-save">💾 Save Scenario</button></li>
+          <li><button id="act-scenario-import">📥 Import Scenario</button></li>
+          <li><button id="act-scenario-export">📤 Export Scenario</button></li>
+          <li><button id="act-scenario-reset">♻️ Reset Scenario</button></li>
+        </ul>
+      </nav>
+    </div>
 
-  <footer class="drawer-footer">
-    <small id="side-last-update"></small>
-  </footer>
+  </div>
 </aside>
 
 <div class="top-bar">
@@ -76,13 +114,17 @@
 <aside id="drawer" aria-hidden="true" aria-labelledby="drawer-title" role="dialog">
   <header>
     <h3 id="drawer-title">Managed Services</h3>
-    <button id="drawer-close" aria-label="Close">×</button>
+    <button id="drawer-close" aria-label="Chiudi">×</button>
   </header>
   <div class="content">
     <p id="drawer-description" class="drawer-description"></p>
     <ul id="drawer-list"></ul>
   </div>
 </aside>
+<footer>
+  <svg id="brand-logo"></svg>
+  <p>Digital Service Management</p>
+</footer>
 
 </body>
 </html>

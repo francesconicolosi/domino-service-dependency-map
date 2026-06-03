@@ -1,16 +1,18 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: {
-        main: './js/main.js',
-        second: './js/solitaire.js',
+        main: './js/domino/init.js',
+        second: './js/solitaire/init.js',
         third: './js/me.js'
     },
     output: {
-        filename: '[name].bundle.js',
+        filename: '[name].[contenthash].bundle.js',
         path: path.resolve(__dirname, 'dist'),
+        clean: true,
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -63,13 +65,23 @@ module.exports = {
         }),
         new CopyWebpackPlugin({
             patterns: [
+                { from: 'brand-specific/brand.css', to: 'brand-specific/brand.css' },
+                { from: 'assets', to: 'assets' },
                 {from: 'css', to: 'css'},
-                {from: 'src/sample_services.csv', to: 'sample_services.csv'},
-                {from: 'src/sample-people-database.csv', to: 'sample-people-database.csv'},
+                {from: 'src/service-catalog.csv', to: 'service-catalog.csv'},
+                {from: 'src/people-database.csv', to: 'people-database.csv'},
                 {from: 'src/robots.txt', to: 'robots.txt'},
                 {from: 'src/sitemap.xml', to: 'sitemap.xml'},
                 { from: 'assets', to: 'assets' },
             ],
+        }),
+        new webpack.DefinePlugin({
+            __APP_BUILD__: JSON.stringify(process.env.APP_BUILD || 'dev'),
+            __BUILD_DATE__: JSON.stringify(process.env.BUILD_DATE || (() => {
+                const d = new Date();
+                return d.toLocaleString('sv', { timeZone: 'Europe/Rome' }).slice(0, 16).replace('T', ' ') + ' CEST';
+            })()),
+            __FEATURE_LOD__: JSON.stringify(process.env.FEATURE_LOD !== 'false'),
         }),
     ],
     module: {
