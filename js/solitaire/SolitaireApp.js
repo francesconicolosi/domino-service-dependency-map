@@ -54,6 +54,7 @@ export class SolitaireApp {
         if (buildInfoEl) buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
         this._enableAppPinchZoomOnly();
         this._setupGlobalTooltip();
+        this.search.initChipBar();
         this._initSearchInput();
         this._initImportScenario();
         this._initFileInput();
@@ -81,6 +82,7 @@ export class SolitaireApp {
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
                                 this.search.search(this.searchParam);
+                                this.search._refreshChips(this.searchParam);
                             });
                         });
                     } else if (this.missingParam) {

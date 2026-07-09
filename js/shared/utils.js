@@ -58,6 +58,31 @@ export function splitNarrativeValues(raw) {
         .filter(Boolean);
 }
 
+// ─── Search key-value helpers (shared by Domino SearchEngine + Solitaire) ──
+
+export function normalizeForCompare(v) {
+    return (v ?? '').toString().replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+}
+
+export function parseActiveKeyValueSearch(term) {
+    if (!term || !term.includes(':')) return null;
+    const raw = term.trim();
+    if (raw.startsWith('!')) return null;
+    const idx = raw.indexOf(':');
+    const key = raw.slice(0, idx).trim();
+    const valuePart = raw.slice(idx + 1).trim();
+    const quoted = valuePart.includes('"');
+    const clean = valuePart.replaceAll('"', '');
+    const values = splitValues(clean).map(v => v.trim()).filter(Boolean);
+    return { key, values, quoted };
+}
+
+export function buildKeyValueSearch(key, values, quoted) {
+    if (!key || !values || !values.length) return '';
+    const body = quoted ? values.map(v => `"${v}"`).join(',') : values.join(',');
+    return `${key}:${body}`;
+}
+
 // ─── Date helpers ──────────────────────────────────────────────────────────
 
 export function isDateTimeValue(value) {

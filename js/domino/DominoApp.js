@@ -38,6 +38,7 @@ export class DominoApp {
         const dmToggle = document.getElementById('toggle-dark-mode');
         if (dmToggle) dmToggle.checked = theme === 'dark';
 
+        this.search.initChipBar();
         this._initSideDrawerEvents();
         this._initFileUpload();
         this._initKeyboardShortcut();
@@ -64,11 +65,7 @@ export class DominoApp {
 
         document.getElementById('act-clear')?.addEventListener('click', () => {
             this.graph.clickedNode = null;
-            this.search.searchTerm = '';
-            const input = document.getElementById('drawer-search-input');
-            if (input) input.value = '';
-            setSearchQuery('');
-            this.graph.updateVisualization();
+            this.search.updateSearchAndRefresh('');
             this.graph.fitGraphToViewport(0.9);
             closeSideDrawer();
         });
@@ -206,6 +203,7 @@ export class DominoApp {
                     if (searchParam) {
                         this.search.searchTerm = searchParam;
                         if (searchInput) searchInput.value = searchParam;
+                        this.search._refreshChips();
                     }
                     return response.text();
                 })

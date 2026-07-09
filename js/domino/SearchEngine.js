@@ -1,4 +1,5 @@
-import { splitValues, setSearchQuery } from '../shared/utils.js';
+import { splitValues, setSearchQuery, normalizeForCompare, parseActiveKeyValueSearch, buildKeyValueSearch } from '../shared/utils.js';
+import { ChipBar } from '../shared/ChipBar.js';
 
 const DEFAULT_SEARCH_KEY = 'id';
 const LS_RELAXED_SEARCH = 'solitaire_relaxed_search';
@@ -10,33 +11,45 @@ export class SearchEngine {
         this.hideStoppedServices = true;
         this.currentSearchedNodes = new Set();
         this.currentNodes = [];
+        this._chipBar = null;
     }
 
-    getTermToCompare(term) {
-        return term.replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
-    }
-
+    // Kept as instance method for callers that use search.normalizeForCompare(...)
     normalizeForCompare(v) {
-        return (v ?? '').toString().replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+        return normalizeForCompare(v);
     }
 
+    // Kept as instance methods so DetailDrawer / GraphRenderer can call search.parseActiveKeyValueSearch(...)
     parseActiveKeyValueSearch(term) {
-        if (!term || !term.includes(':')) return null;
-        const raw = term.trim();
-        if (raw.startsWith('!')) return null;
-        const idx = raw.indexOf(':');
-        const key = raw.slice(0, idx).trim();
-        const valuePart = raw.slice(idx + 1).trim();
-        const quoted = valuePart.includes('"');
-        const clean = valuePart.replaceAll('"', '');
-        const values = splitValues(clean).map(v => v.trim()).filter(Boolean);
-        return { key, values, quoted };
+        return parseActiveKeyValueSearch(term);
     }
 
     buildKeyValueSearch(key, values, quoted) {
-        if (!key || !values || !values.length) return '';
-        const body = quoted ? values.map(v => `"${v}"`).join(',') : values.join(',');
-        return `${key}:${body}`;
+        return buildKeyValueSearch(key, values, quoted);
+    }
+
+    // ─── Chip bar ─────────────────────────────────────────────────────────────
+
+    initChipBar() {
+        const field = document.getElementById('search-field');
+        const input = document.getElementById('drawer-search-input');
+        if (!field || !input) return;
+        this._chipBar = new ChipBar(field, input, (term) => this.updateSearchAndRefresh(term));
+    }
+
+    _refreshChips() {
+        this._chipBar?.render(
+            this.searchTerm,
+            parseActiveKeyValueSearch,
+            buildKeyValueSearch,
+            normalizeForCompare
+        );
+    }
+
+    // ─── Matching ─────────────────────────────────────────────────────────────
+
+    getTermToCompare(term) {
+        return term.replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
     }
 
     isSearchResultWithKeyValue(node) {
@@ -91,6 +104,7 @@ export class SearchEngine {
         if (this.app.graph.clickedNode) {
             this.app.drawer.showNodeDetails(this.app.graph.clickedNode, true);
         }
+        this._refreshChips();
     }
 
     handleQuery(q, showDrawer = true) {
@@ -101,6 +115,7 @@ export class SearchEngine {
         setSearchQuery(q);
         this.app.graph.updateVisualization(showDrawer);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        this._refreshChips();
     }
 
     initRelaxedSearchPersistence() {

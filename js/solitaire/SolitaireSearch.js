@@ -1,4 +1,5 @@
-import { normalizeWs, setSearchQuery, setQueryParam, removeQueryParam } from '../shared/utils.js';
+import { normalizeWs, setSearchQuery, setQueryParam, removeQueryParam, normalizeForCompare, parseActiveKeyValueSearch, buildKeyValueSearch } from '../shared/utils.js';
+import { ChipBar } from '../shared/ChipBar.js';
 import {
     applySearchDimmingForMatches,
     clearFieldHighlights,
@@ -18,6 +19,32 @@ export class SolitaireSearch {
         this._savedCollapsedKeys = null;   // user's original collapsed state at search start
         this._allMatchDescs = null;        // descriptors for ALL matches across all streams
         this._currentVisibleStream = null; // which originally-collapsed stream is currently expanded
+        this._chipBar = null;
+        this._lastQueryKey = null;         // tracks query+field+missing for cycling continuity
+    }
+
+    // ─── Chip bar ─────────────────────────────────────────────────────────────
+
+    initChipBar() {
+        const field = document.getElementById('search-field');
+        const input = document.getElementById('drawer-search-input');
+        if (!field || !input) return;
+        this._chipBar = new ChipBar(field, input, (term) => {
+            if (!term) {
+                this.clear();
+            } else {
+                this.app.search.search(term);
+            }
+        });
+    }
+
+    _refreshChips(searchTerm) {
+        this._chipBar?.render(
+            searchTerm || '',
+            parseActiveKeyValueSearch,
+            buildKeyValueSearch,
+            normalizeForCompare
+        );
     }
 
     // ─── Descriptor helpers ───────────────────────────────────────────────────
@@ -157,6 +184,8 @@ export class SolitaireSearch {
         if (searchInput) searchInput.value = '';
         setSearchQuery('');
         removeQueryParam('missing');
+        this._lastQueryKey = null;
+        this._refreshChips('');
         clearSearchDimming();
         clearFieldHighlights();
         app.renderer.fitToContent(0.9);
@@ -196,7 +225,8 @@ export class SolitaireSearch {
             this._savedCollapsedKeys = renderer._getCollapsedKeys?.() ?? new Set();
         }
 
-        const isNewQuery = q !== this.lastSearch || missing;
+        const queryKey = `${q}|${normalizedField}|${missing ? '1' : '0'}`;
+        const isNewQuery = queryKey !== this._lastQueryKey;
 
         if (isNewQuery) {
             // Restore localStorage to the user's original state before finding matches
@@ -213,6 +243,7 @@ export class SolitaireSearch {
             }
 
             this.lastSearch = q;
+            this._lastQueryKey = queryKey;
             this.currentIndex = 0;
         } else {
             if (!this._allMatchDescs?.length) return;
@@ -233,9 +264,11 @@ export class SolitaireSearch {
         if (!missing) {
             setSearchQuery(q);
             removeQueryParam('missing');
+            this._refreshChips(q);
         } else {
             removeQueryParam('search');
             setQueryParam('missing', opts.field || '');
+            this._refreshChips('');
         }
 
         // Field highlight on current result

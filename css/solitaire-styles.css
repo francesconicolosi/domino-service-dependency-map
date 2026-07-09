@@ -216,13 +216,68 @@ input:checked + .slider::before {
     flex: 1;
 }
 
-.top-search input {
+.search-field {
     flex: 1;
-    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 4px 8px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    font-size: 16px;
+    background: #fff;
+    cursor: text;
+    min-height: 38px;
 }
+
+.search-field input {
+    border: none;
+    outline: none;
+    flex: 1;
+    min-width: 80px;
+    font-size: 15px;
+    background: transparent;
+    padding: 2px 0;
+}
+
+.search-chip-key {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.search-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: #f1f3f4;
+    color: #202124;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.search-chip-text {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-chip-close {
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    opacity: 0.55;
+    padding: 0 1px;
+}
+
+.search-chip-close:hover { opacity: 1; }
 
 .top-search button {
     padding: 8px 10px;
@@ -1596,12 +1651,17 @@ html[data-theme="dark"] #drawer header { border-bottom-color: rgba(255,255,255,0
 html[data-theme="dark"] #drawer .content li.empty { color: rgba(245,245,247,0.35); }
 
 /* — Search bar — */
+html[data-theme="dark"] .search-field { background: #252528; border-color: rgba(255,255,255,0.12); }
+html[data-theme="dark"] .search-field input { color: #f5f5f7; background: transparent; }
+html[data-theme="dark"] .search-field input::placeholder { color: rgba(245,245,247,0.35); }
 html[data-theme="dark"] .top-search input,
 html[data-theme="dark"] #drawer-search-input { background: #252528; border-color: rgba(255,255,255,0.12); color: #f5f5f7; }
 html[data-theme="dark"] .top-search input::placeholder,
 html[data-theme="dark"] #drawer-search-input::placeholder { color: rgba(245,245,247,0.35); }
 html[data-theme="dark"] .top-search button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
 html[data-theme="dark"] .top-search button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .search-chip-key { background: #1e3a5f; color: #7aadff; }
+html[data-theme="dark"] .search-chip { background: #3c3c40; color: #f5f5f7; }
 
 /* — Legend (1 ID + 2 classes in original rule — match specificity) — */
 html[data-theme="dark"] #legend-root.legend.legend--generic {
