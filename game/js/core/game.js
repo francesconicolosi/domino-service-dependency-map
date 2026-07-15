@@ -25,7 +25,7 @@ class Game {
 
     // Rilevamento mobile/touch: su mobile la modalità 2P è nascosta
     this.isMobile = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ||
-                    (typeof window !== 'undefined' && 'ontouchstart' in window);
+        (typeof window !== 'undefined' && 'ontouchstart' in window);
 
     this.levels = [LEVEL_1, LEVEL_2];
     this.currentLevel = 0;
@@ -182,40 +182,51 @@ class Game {
 
   menuOptionCount() { return this.isMobile ? 1 : 2; }
 
-  /** Logica della camera: singola (P1 conduce) o split dinamico. */
+  /** Logica della camera: singola (P1 conduce) o split dinamico.
+
+   ISTERESI anti-tremolio: la condizione di split (P2 fuori
+   dall'inquadratura) e quella di merge (P2 ben DENTRO
+   l'inquadratura, con margine di 36px) non si sovrappongono
+   mai. Senza questo margine, a certe distanze le due condizioni
+   erano vere insieme e lo schermo entrava/usciva dallo split
+   ogni frame (il "glitch" tremolante). */
   updateCameras() {
     const p1 = this.players[0];
     const p2 = this.players[1];
 
     // La camera principale segue SEMPRE il giocatore 1
+    // (o il 2, se l'1 è fuori partita)
     this.camera.follow(p1.gone && p2 && !p2.gone ? p2 : p1);
 
     if (!this.twoPlayers || !p2 || p1.gone || p2.gone) {
       this.split = false;
+      this.camP1 = this.camP2 = null;
       return;
     }
 
-    const dx = Math.abs(p1.cx - p2.cx);
-    const dy = Math.abs(p1.cy - p2.cy);
-
     if (!this.split) {
-      // P2 è uscito dall'inquadratura della camera di P1?
-      const off =
-        p2.cx < this.camera.x + 8 || p2.cx > this.camera.x + CONFIG.SCREEN_W - 8 ||
-        p2.cy < this.camera.y - 8 || p2.cy > this.camera.y + CONFIG.SCREEN_H + 8;
-      if (off) this.enterSplit();
+      // Split se P2 è USCITO dall'inquadratura (margine 0)
+      if (!this.p2InSingleView(p2, 0)) this.enterSplit();
     } else {
-      // I giocatori si sono riavvicinati abbastanza da stare in un
-      // unico schermo? (con margine per evitare flip-flop continui)
-      if (dx < CONFIG.SCREEN_W * 0.55 && dy < CONFIG.SCREEN_H * 0.55) {
+      this.camP1.follow(this.players[0]);
+      this.camP2.follow(this.players[1]);
+      // Merge solo se P2 è BEN DENTRO l'inquadratura (margine 36px):
+      // la differenza tra le due soglie evita il flip-flop
+      if (this.p2InSingleView(p2, 36)) {
         this.split = false;
         this.camP1 = this.camP2 = null;
-        this.camera.follow(this.players[0], true);
-      } else {
-        this.camP1.follow(this.players[0]);
-        this.camP2.follow(this.players[1]);
       }
     }
+  }
+
+  /** true se il giocatore p sta dentro l'inquadratura della camera
+   principale (che segue P1), con un margine interno dato. */
+  p2InSingleView(p, margin) {
+    const cx = this.camera.x, cy = this.camera.y;
+    return p.cx > cx + margin &&
+        p.cx < cx + CONFIG.SCREEN_W - margin &&
+        p.cy > cy + margin &&
+        p.cy < cy + CONFIG.SCREEN_H - margin;
   }
 
   /** Attiva lo split screen creando le due mezze-camere. */

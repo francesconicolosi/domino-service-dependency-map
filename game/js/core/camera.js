@@ -18,6 +18,11 @@ class Camera {
     this.viewW = viewW;
     this.viewH = viewH;
     this.shake = 0;
+    // Offset di tremolio: calcolato UNA volta per frame (in follow),
+    // così tutti i layer disegnati nello stesso frame condividono lo
+    // stesso offset e l'immagine non si "strappa".
+    this._shakeX = 0;
+    this._shakeY = 0;
 
     if (vertical) this.y = Math.max(0, levelHeight - viewH);
   }
@@ -41,11 +46,21 @@ class Camera {
     }
     this.x = Math.max(0, Math.min(this.x, this.levelWidth  - this.viewW));
     this.y = Math.max(0, Math.min(this.y, Math.max(0, this.levelHeight - this.viewH)));
-    if (this.shake > 0) this.shake *= 0.85;
+
+    // Campiona il tremolio UNA volta per frame
+    if (this.shake > 0.1) {
+      this._shakeX = (Math.random() - 0.5) * this.shake;
+      this._shakeY = (Math.random() - 0.5) * this.shake;
+      this.shake *= 0.85;
+    } else {
+      this._shakeX = 0;
+      this._shakeY = 0;
+      this.shake = 0;
+    }
   }
 
   addShake(amount) { this.shake = Math.min(6, this.shake + amount); }
 
-  get ox() { return Math.round(this.x + (Math.random() - 0.5) * this.shake); }
-  get oy() { return Math.round(this.y + (Math.random() - 0.5) * this.shake); }
+  get ox() { return Math.round(this.x + this._shakeX); }
+  get oy() { return Math.round(this.y + this._shakeY); }
 }
