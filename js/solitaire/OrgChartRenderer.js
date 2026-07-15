@@ -15,6 +15,7 @@ import {
     ROLE_FIELD_WITH_MAPPING,
     COMPANY_FIELD,
     LOCATION_FIELD,
+    BUSINESS_FUNCTION_FIELD,
     NEUTRAL_COLOR,
     emailField,
     firstLevelNA,
@@ -29,6 +30,7 @@ import {
 } from './orgUtils.js';
 import { highlightGroup as highlightGroupUtils } from './search.js';
 import { BRAND } from '../../brand-specific/brand.js';
+
 
 
 const THEME_BOTTOM_PADDING = 40;
@@ -103,6 +105,10 @@ export const byBoost = (boostMap, prefix = '') => ([a], [b]) => {
     return a.localeCompare(b, 'en', { sensitivity: 'base' });
 };
 
+function communityTooltip(group) {
+    return `People sharing a part-time focus on an interest or short-term mission, rather than a full-time daily ${group}.`;
+}
+
 export class OrgChartRenderer {
     constructor(app) {
         this.app = app;
@@ -155,6 +161,7 @@ export class OrgChartRenderer {
                 if (event.type === 'wheel') return !event.ctrlKey;
                 if (event.type === 'mousedown') {
                     if (event.button !== 0) return false;
+                    if (event.composedPath?.()?.some(el => el.tagName?.toLowerCase?.() === 'foreignobject')) return false;
                     if (app.interaction.mode === 'free-pan') return true;
                     if (app.interaction.mode === 'select') return false;
                     return false;
@@ -217,6 +224,9 @@ export class OrgChartRenderer {
             });
 
         this.svg.call(this.zoom);
+        // Sync viewport transform with D3's cached __zoom so fitElementToView
+        // reads consistent screen coordinates after re-render.
+        this.viewport.attr('transform', d3.zoomTransform(this.svg.node()));
         this.installTrackpadPinchZoom(this.svg, this.zoom);
 
         const svgNode = this.svg.node();
@@ -237,6 +247,7 @@ export class OrgChartRenderer {
             window.__panClickBlockerAttached = true;
             svgNode.addEventListener('click', (e) => {
                 if (!app.interaction.isDraggable && Date.now() < app.interaction.suppressClicksUntil) {
+                    if (e.composedPath?.().some(el => el.tagName?.toLowerCase?.() === 'foreignobject')) return;
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
@@ -637,10 +648,10 @@ export class OrgChartRenderer {
         this._memberCount = 0;
 
         const dateValues = ['In team since'];
-        const fieldsToShow = ['Role', 'Company', 'Location', 'Room', ...dateValues];
+        const fieldsToShow = ['Role', BUSINESS_FUNCTION_FIELD, 'Company', 'Location', 'Room', ...dateValues];
 
         const nFields = fieldsToShow.length + 0.5;
-        const rowHeight = 11;
+        const rowHeight = 10;
         const memberWidth = 160, cardPad = 10, cardBaseHeight = nFields * 4 * rowHeight;
         const thirdLevelBoxPadX = 24;
         const secondLevelBoxPadX = 60;
@@ -674,7 +685,8 @@ export class OrgChartRenderer {
             const firstLevelGroup = this.streamLayer.append('g')
                 .attr('class', 'draggable')
                 .attr('transform', `translate(${streamX},${streamY})`)
-                .attr('data-key', `stream::${normalizeKey(firstLevel)}`);
+                .attr('data-key', `stream::${normalizeKey(firstLevel)}`)
+                .attr('data-description', firstLevelDescription || '');
             app.scenario.restoreGroupPosition(firstLevelGroup);
 
             const layoutRows = [];
@@ -732,8 +744,16 @@ export class OrgChartRenderer {
                 140;
             const firstLevelBoxHeight = isCollapsed ? STREAM_COLLAPSED_HEIGHT : fullHeight;
 
+            const isStreamCommunity = Object.values(organization[firstLevel] || {})
+                .every(themeMap =>
+                    Object.values(themeMap).every(teamMembers =>
+                        teamMembers.some(m => !m.guestRole && m['Team Community'] === 'true')
+                    )
+                );
+
             const streamRect = firstLevelGroup.append('rect')
-                .attr('class', 'stream-box')
+                .attr('class', isStreamCommunity ? 'stream-box stream-box--community' : 'stream-box')
+                .attr('data-community', isStreamCommunity ? 'true' : null)
                 .attr('width', firstLevelBoxWidth)
                 .attr('height', firstLevelBoxHeight)
                 .attr('data-full-height', fullHeight)
@@ -745,11 +765,22 @@ export class OrgChartRenderer {
             const iconY  = isCollapsed ? STREAM_COLLAPSED_ICON_Y  : STREAM_ICON_Y;
 
             const titleText = firstLevelGroup.append('text')
-                .attr('x', 50).attr('y', titleY)
+                .attr('x', isStreamCommunity ? 130 : 50).attr('y', titleY)
                 .attr('text-anchor', 'start')
+                .attr('data-full-name', firstLevel)
                 .attr('class', 'stream-title');
 
             titleText.text(firstLevel);
+
+            if (isStreamCommunity) {
+                firstLevelGroup.append('text')
+                    .attr('class', 'community-badge community-badge--stream')
+                    .attr('x', 50).attr('y', titleY)
+                    .attr('text-anchor', 'start')
+                    .attr('data-tooltip', communityTooltip("stream"))
+                    .attr('aria-label', 'Community')
+                    .text('🤝');
+            }
 
             // SVG icon buttons — right-aligned, visible on stream hover.
             // Collapse/expand chevron (always present).
@@ -761,9 +792,9 @@ export class OrgChartRenderer {
                 collapseIconX, iconY,
                 ICON_CHEVRON_DOWN
             );
-            if (isCollapsed) {
-                collapseG.attr('transform', `translate(${collapseIconX}, ${iconY}) rotate(90)`);
-            }
+            collapseG.attr('transform', isCollapsed
+                ? `translate(${collapseIconX}, ${iconY}) rotate(-90)`
+                : `translate(${collapseIconX}, ${iconY}) rotate(180)`);
             collapseG.on('click', (e) => {
                 e.stopPropagation();
                 this.toggleCollapseStream(streamKey);
@@ -804,6 +835,7 @@ export class OrgChartRenderer {
             }
 
             if (firstLevelDescription !== '') {
+                const openStreamDrawer = () => app.drawer.open({ name: firstLevel, description: firstLevelDescription, _permalinkSearch: `stream:${firstLevel}`, _showDetails: true });
                 _appendIconG(
                     firstLevelGroup,
                     'stream-icon stream-icon--desc',
@@ -812,15 +844,15 @@ export class OrgChartRenderer {
                     ICON_INFO, ICON_INFO_DOT_CY
                 ).on('click', (e) => {
                     e.stopPropagation();
-                    app.drawer.open({ name: firstLevel, description: firstLevelDescription });
+                    openStreamDrawer();
                 });
 
                 firstLevelGroup.select('rect.stream-box')
                     .style('cursor', 'pointer')
-                    .on('click', () => app.drawer.open({ name: firstLevel, description: firstLevelDescription }));
+                    .on('click', openStreamDrawer);
                 firstLevelGroup.select('text.stream-title')
                     .style('cursor', 'pointer')
-                    .on('click', () => app.drawer.open({ name: firstLevel, description: firstLevelDescription }));
+                    .on('click', openStreamDrawer);
             }
 
             let secondLevelYBase = streamY + 100;
@@ -841,11 +873,16 @@ export class OrgChartRenderer {
                     const secondLevelGroup = this.themeLayer.append('g')
                         .attr('class', 'draggable')
                         .attr('transform', `translate(${streamX + secondLevelX},${secondLevelY})`)
-                        .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`);
+                        .attr('data-key', `theme::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}`)
+                        .attr('data-description', secondLevelDescription || '');
                     app.scenario.restoreGroupPosition(secondLevelGroup);
 
+                    const isThemeCommunity = Object.values(organization[firstLevel]?.[secondLevel] || {})
+                        .every(teamMembers => teamMembers.some(m => !m.guestRole && m['Team Community'] === 'true'));
+
                     const secondLevelRect = secondLevelGroup.append('rect')
-                        .attr('class', 'theme-box')
+                        .attr('class', isThemeCommunity ? 'theme-box theme-box--community' : 'theme-box')
+                        .attr('data-community', isThemeCommunity ? 'true' : null)
                         .attr('width', themeWidth).attr('height', themeBoxHeightRow)
                         .attr('rx', 30).attr('ry', 30);
                     this.makeResizable(secondLevelGroup, secondLevelRect, { minWidth: 400, minHeight: 250 });
@@ -853,10 +890,21 @@ export class OrgChartRenderer {
                     secondLevelGroup.append('text')
                         .attr('x', themeWidth / 2).attr('y', 85)
                         .attr('text-anchor', 'middle')
+                        .attr('data-full-name', secondLevel)
                         .attr('class', 'theme-title')
                         .text(app.db.truncate(secondLevel));
 
+                    if (isThemeCommunity) {
+                        secondLevelGroup.append('text')
+                            .attr('class', 'community-badge community-badge--theme')
+                            .attr('x', 40).attr('y', 85)
+                            .attr('text-anchor', 'start')
+                            .attr('data-tooltip', communityTooltip("theme"))
+                            .text('🤝');
+                    }
+
                     if (secondLevelDescription !== '') {
+                        const openThemeDrawer = () => app.drawer.open({ name: secondLevel, description: secondLevelDescription, _permalinkSearch: `theme:${secondLevel}`, _showDetails: true });
                         _appendIconG(
                             secondLevelGroup,
                             'theme-icon theme-icon--desc',
@@ -865,15 +913,15 @@ export class OrgChartRenderer {
                             ICON_INFO, ICON_INFO_DOT_CY
                         ).on('click', (e) => {
                             e.stopPropagation();
-                            app.drawer.open({ name: secondLevel, description: secondLevelDescription });
+                            openThemeDrawer();
                         });
 
                         secondLevelGroup.select('rect.theme-box')
                             .style('cursor', 'pointer')
-                            .on('click', () => app.drawer.open({ name: secondLevel, description: secondLevelDescription }));
+                            .on('click', openThemeDrawer);
                         secondLevelGroup.select('text.theme-title')
                             .style('cursor', 'pointer')
-                            .on('click', () => app.drawer.open({ name: secondLevel, description: secondLevelDescription }));
+                            .on('click', openThemeDrawer);
                     }
 
                     const effectiveTeamsMeta = (Array.isArray(teamsMeta) && teamsMeta.length)
@@ -907,14 +955,17 @@ export class OrgChartRenderer {
                         const lastCardBottomInTeam = cardsTopInTeam + (teamRows - 1) * (cardBaseHeight + CARD_GAP_Y) + cardBaseHeight;
                         const teamBoxHeight = Math.max(TEAM_MIN_HEIGHT, lastCardBottomInTeam + TEAM_BOTTOM_PADDING_BASE);
 
+                        const isCommunity = originalMembers.some(m => !m.guestRole && m['Team Community'] === 'true');
+
                         const thirdLevelGroup = this.teamLayer.append('g')
                             .attr('class', 'draggable')
                             .attr('transform', `translate(${streamX + secondLevelX + teamLocalX},${secondLevelY + teamLocalY})`)
-                            .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`);
+                            .attr('data-key', `team::${normalizeKey(firstLevel)}::${normalizeKey(secondLevel)}::${normalizeKey(thirdLevel)}`)
+                            .attr('data-community', isCommunity ? 'true' : null);
                         app.scenario.restoreGroupPosition(thirdLevelGroup);
 
                         const thirdLevelRect = thirdLevelGroup.append('rect')
-                            .attr('class', 'team-box')
+                            .attr('class', isCommunity ? 'team-box team-box--community' : 'team-box')
                             .attr('width', teamBoxWidth).attr('height', teamBoxHeight)
                             .attr('rx', 20).attr('ry', 20);
                         this.makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
@@ -927,12 +978,25 @@ export class OrgChartRenderer {
                         const teamTitle = thirdLevelGroup.append('text')
                             .attr('x', teamBoxWidth / 2).attr('y', 70)
                             .attr('text-anchor', 'middle')
+                            .attr('data-full-name', thirdLevel)
                             .attr('data-services', services?.items?.filter(Boolean).join(', ') || '')
+                            .attr('data-team-description', description || '')
+                            .attr('data-team-email', email || '')
+                            .attr('data-team-channels', JSON.stringify(channels || []))
                             .attr('class', 'team-title')
                             .text(titleLabel);
 
+                        if (isCommunity) {
+                            thirdLevelGroup.append('text')
+                                .attr('class', 'community-badge community-badge--team')
+                                .attr('x', 30).attr('y', 70)
+                                .attr('text-anchor', 'start')
+                                .attr('data-tooltip', communityTooltip("team"))
+                                .text('🤝');
+                        }
+
                         if (hasInfo) {
-                            const openTeamDrawer = () => app.drawer.open({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"` });
+                            const openTeamDrawer = () => app.drawer.open({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"`, _permalinkSearch: `team:${thirdLevel}`, _showDetails: true });
 
                             _appendIconG(
                                 thirdLevelGroup,
@@ -961,6 +1025,8 @@ export class OrgChartRenderer {
                                 .attr('data-role', (member[ROLE_FIELD_WITH_MAPPING] || '').toString().trim())
                                 .attr('data-company', (member[COMPANY_FIELD] || '').toString().trim())
                                 .attr('data-location', (member[LOCATION_FIELD] || '').toString().trim())
+                                .attr('data-function', (member[BUSINESS_FUNCTION_FIELD] || '').toString().trim())
+                                .attr('data-room', (member['Room'] || '').toString().trim())
                                 .attr('class', 'draggable')
                                 .attr('transform', `translate(${cardX},${cardY})`)
                                 .attr('data-cx', cardX)
@@ -970,7 +1036,8 @@ export class OrgChartRenderer {
                             const colorKey =
                                 app.legend.colorBy === ROLE_FIELD_WITH_MAPPING ? group.attr('data-role') :
                                     app.legend.colorBy === COMPANY_FIELD ? group.attr('data-company') :
-                                        group.attr('data-location');
+                                        app.legend.colorBy === BUSINESS_FUNCTION_FIELD ? group.attr('data-function') :
+                                            group.attr('data-location');
 
                             app.legend.colorKeyMappings.set(
                                 app.legend.colorBy,
@@ -1237,9 +1304,38 @@ export class OrgChartRenderer {
                                         const parsed = new Date(value);
                                         if (!isNaN(parsed)) finalValue = formatMonthYear(parsed);
                                     }
-                                    infoDiv.append('div')
-                                        .attr('class', key.toLowerCase() + '-field')
-                                        .html(`<strong>${key}:</strong> ${finalValue}`);
+                                    const fieldKey = key.toLowerCase().replace(/\s+/g, '-');
+                                    const isRole = key === 'Role';
+                                    const isFunction = key === 'Function';
+                                    const el = infoDiv.append('div')
+                                        .attr('class', `${fieldKey}-field${(isRole || isFunction) ? ' field--clickable' : ''}`);
+                                    if (isRole) {
+                                        el.html(`<strong>${key}:</strong> <span class="field__link">${finalValue}</span>`);
+                                        // Use native addEventListener — D3 .on() is unreliable inside foreignObject HTML
+                                        el.node().addEventListener('click', (e) => {
+                                            e.stopPropagation();
+                                            const roleInfo = app.db.roleDetailsMapping.get(finalValue) || {};
+                                            app.drawer.open({
+                                                name: finalValue,
+                                                description: roleInfo.description || '',
+                                                _permalinkSearch: `role:${finalValue}`,
+                                            });
+                                        });
+                                    } else if (isFunction) {
+                                        el.html(`<strong>${key}:</strong> <span class="field__link">${finalValue}</span>`);
+                                        el.node().addEventListener('click', (e) => {
+                                            e.stopPropagation();
+                                            const fnInfo = app.db.functionDetailsMapping?.get(finalValue) || {};
+                                            if (!fnInfo.description) return;
+                                            app.drawer.open({
+                                                name: finalValue,
+                                                description: fnInfo.description,
+                                                _permalinkSearch: `function:${finalValue}`,
+                                            });
+                                        });
+                                    } else {
+                                        el.html(`<strong>${key}:</strong> ${finalValue}`);
+                                    }
                                 }
                             });
                         });
@@ -1305,8 +1401,13 @@ export class OrgChartRenderer {
             isCollapsed ? this._expandInPlace(streamKey) : this._collapseInPlace(streamKey);
         } else {
             this.app.loadAndRender(this.app.db.cachedCsvText);
-            this.app.renderer.fitToContent(0.9);
         }
+        // Defer fitElementToView one RAF so it runs after placeBrandLogo's RAF
+        // (which calls fitToContent and would otherwise cancel the zoom transition).
+        requestAnimationFrame(() => {
+            const streamGroup = this.svg.select(`g[data-key="${streamKey}"]`);
+            if (!streamGroup.empty()) this.fitElementToView(streamGroup.node(), 0);
+        });
     }
 
     _setStreamHeaderY(streamGroup, titleY, iconY, collapseRotated) {
@@ -1317,8 +1418,8 @@ export class OrgChartRenderer {
             const isCollapse = g.classed('stream-icon--collapse');
             if (isCollapse) {
                 g.attr('transform', collapseRotated
-                    ? `translate(${cx}, ${iconY}) rotate(90)`
-                    : `translate(${cx}, ${iconY})`);
+                    ? `translate(${cx}, ${iconY}) rotate(-90)`
+                    : `translate(${cx}, ${iconY}) rotate(180)`);
                 g.attr('data-tooltip', collapseRotated ? 'Expand stream' : 'Collapse stream')
                  .attr('aria-label',   collapseRotated ? 'Expand stream' : 'Collapse stream');
             } else {

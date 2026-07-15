@@ -28,6 +28,79 @@ export function collectMembersFromOrganization(filteredOrg) {
     return out;
 }
 
+export function filterOrganizationByQuickFilter(org, constraints) {
+    if (!constraints) return org;
+    const {
+        visibleStreams, visibleThemes, visibleTeams, visiblePeople,
+        hiddenStreams,  hiddenThemes,  hiddenTeams,  hiddenPeople,
+        // legacy aliases — support old keys so callers using {streams,...} still work
+        streams, themes, teams,
+        communityFilter,
+    } = constraints;
+
+    const vsStreams  = visibleStreams  ?? streams  ?? null;
+    const vsThemes   = visibleThemes   ?? themes   ?? null;
+    const vsTeams    = visibleTeams    ?? teams    ?? null;
+    const vsPeople   = visiblePeople   ?? null;
+    const hdStreams   = hiddenStreams   ?? null;
+    const hdThemes   = hiddenThemes    ?? null;
+    const hdTeams    = hiddenTeams     ?? null;
+    const hdPeople   = hiddenPeople    ?? null;
+
+    if (!vsStreams && !vsThemes && !vsTeams && !vsPeople &&
+        !hdStreams && !hdThemes && !hdTeams && !hdPeople &&
+        !communityFilter) return org;
+
+    // Case-insensitive + normalizeKey matching
+    const inSet = (set, value) =>
+        set.has(value) || set.has(value.toLowerCase()) || set.has(normalizeKey(value));
+
+    const passVisible = (set, value) => !set || inSet(set, value);
+    const passHidden  = (set, value) => !set || !inSet(set, value);
+
+    const result = {};
+    for (const [stream, themeMap] of Object.entries(org || {})) {
+        if (!passVisible(vsStreams, stream)) continue;
+        if (!passHidden(hdStreams,  stream)) continue;
+
+        const filteredThemes = {};
+        for (const [theme, teamMap] of Object.entries(themeMap || {})) {
+            if (!passVisible(vsThemes, theme)) continue;
+            if (!passHidden(hdThemes,  theme)) continue;
+
+            const filteredTeams = {};
+            for (const [team, members] of Object.entries(teamMap || {})) {
+                if (!passVisible(vsTeams, team)) continue;
+                if (!passHidden(hdTeams,  team)) continue;
+
+                if (communityFilter) {
+                    const isCommunity = (members || []).some(m => !m.guestRole && m['Team Community'] === 'true');
+                    if (communityFilter === 'communities-only' && !isCommunity) continue;
+                    if (communityFilter === 'teams-only'       &&  isCommunity) continue;
+                }
+
+                // Member-level filtering (only when people constraints are set)
+                const filteredMembers = (vsPeople || hdPeople)
+                    ? (members || []).filter(m => {
+                        const name = (m?.Name ?? '').trim();
+                        return passVisible(vsPeople, name) && passHidden(hdPeople, name);
+                    })
+                    : members;
+
+                if (!filteredMembers || filteredMembers.length === 0) continue;
+                filteredTeams[team] = filteredMembers;
+            }
+            if (Object.keys(filteredTeams).length > 0) {
+                filteredThemes[theme] = filteredTeams;
+            }
+        }
+        if (Object.keys(filteredThemes).length > 0) {
+            result[stream] = filteredThemes;
+        }
+    }
+    return result;
+}
+
 export function filterOrganizationByStreams(org, allowed) {
     if (!allowed || allowed.size === 0) return org;
     const out = {};
@@ -69,6 +142,8 @@ export function countTeamsForMemberInOrg(member, org, emailFieldParam = emailFie
 }
 
 export function getNameFromTitleEl(teamTitleEl) {
+    const full = teamTitleEl?.getAttribute?.('data-full-name');
+    if (full) return full.trim();
     const raw = teamTitleEl?.textContent || '';
     return raw.replace(/\s*-\s*⚙️.*$/, '').trim();
 }

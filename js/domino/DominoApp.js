@@ -3,7 +3,7 @@ import { getQueryParam, setSearchQuery, initCommonActions, closeSideDrawer, enab
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
 import { ServiceCatalogStore } from './ServiceCatalogStore.js';
 import { SearchEngine } from './SearchEngine.js';
-import { AutocompleteEngine } from './AutocompleteEngine.js';
+import { AutocompleteEngine } from '../shared/AutocompleteEngine.js';
 import { GraphRenderer } from './GraphRenderer.js';
 import { ListView } from './ListView.js';
 import { DetailDrawer } from './DetailDrawer.js';
@@ -14,6 +14,7 @@ export class DominoApp {
         this.store = new ServiceCatalogStore();
         this.search = new SearchEngine(this);
         this.autocomplete = new AutocompleteEngine(this);
+        this.autocomplete.allowMultiField = true;
         this.graph = new GraphRenderer(this);
         this.legend = new DominoLegend(this);
         this.listView = new ListView(this);
@@ -38,8 +39,8 @@ export class DominoApp {
         const dmToggle = document.getElementById('toggle-dark-mode');
         if (dmToggle) dmToggle.checked = theme === 'dark';
 
-        this.search.initChipBar();
         this._initSideDrawerEvents();
+        this.search.initChipBar();
         this._initFileUpload();
         this._initKeyboardShortcut();
         this._initLoadEvent();
@@ -48,7 +49,7 @@ export class DominoApp {
     _initSideDrawerEvents() {
         initCommonActions();
         this.search.initRelaxedSearchPersistence();
-        this.autocomplete.init();
+        this.search.initShowConnectionsPersistence();
         this._ensureUploadCsvAction();
 
         document.getElementById('act-introduce')?.addEventListener('click', () => {
@@ -65,7 +66,11 @@ export class DominoApp {
 
         document.getElementById('act-clear')?.addEventListener('click', () => {
             this.graph.clickedNode = null;
-            this.search.updateSearchAndRefresh('');
+            this.search.searchTerm = '';
+            const input = document.getElementById('drawer-search-input');
+            if (input) input.value = '';
+            setSearchQuery('');
+            this.graph.updateVisualization();
             this.graph.fitGraphToViewport(0.9);
             closeSideDrawer();
         });
@@ -160,7 +165,7 @@ export class DominoApp {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const data = d3.csvParse(e.target.result);
-                this._processAndRender(data);
+                this._processAndRender(data, this.store.jiraCards || []);
                 this.graph.updateVisualization();
             };
             reader.readAsText(file);
@@ -171,12 +176,19 @@ export class DominoApp {
         enableGlobalFindShortcut({ inputSelector: '#drawer-search-input' });
     }
 
-    _processAndRender(data) {
+    _processAndRender(data, jiraCardsData = null) {
         const colorScale = this.store.processData(data);
         if (!colorScale) return;
+
+        // Process Jira cards BEFORE createMap(), because badges are created while SVG nodes are rendered.
+        if (Array.isArray(jiraCardsData)) {
+            this.store.processJiraCards(jiraCardsData);
+        }
+
         this.graph.createMap();
         this.legend.render(colorScale);
         this.autocomplete.buildIndex();
+        this.autocomplete.init();
     }
 
     _initLoadEvent() {
@@ -198,18 +210,23 @@ export class DominoApp {
             const searchParam = getQueryParam('search');
             const searchInput = document.getElementById('drawer-search-input');
 
-            fetch(BRAND.csv.domino)
-                .then(response => {
+            Promise.all([
+                fetch(BRAND.csv.domino).then(response => response.text()),
+                fetch(BRAND.csv.jiraCards || './jira-cards.csv')
+                    .then(response => response.ok ? response.text() : '')
+                    .catch(() => ''),
+            ])
+                .then(([csvData, jiraCardsCsv]) => {
                     if (searchParam) {
                         this.search.searchTerm = searchParam;
                         if (searchInput) searchInput.value = searchParam;
                         this.search._refreshChips();
                     }
-                    return response.text();
-                })
-                .then(csvData => {
+
+                    const stripComments = s => s.replace(/^#[^\n]*\n/gm, '');
                     const data = d3.csvParse(csvData);
-                    this._processAndRender(data);
+                    const jiraCardsData = jiraCardsCsv ? d3.csvParse(stripComments(jiraCardsCsv)) : [];
+                    this._processAndRender(data, jiraCardsData);
 
                     const afterInit = () => {
                         const wantListView = Boolean(listViewParam);

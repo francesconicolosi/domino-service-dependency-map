@@ -67,6 +67,12 @@ M 271.125 27.303 Q 271.125 34.953 273.825 40.691 Q 276.525 46.428 281.4 49.616 Q
 
         /** Domino service-catalog data (relative to the HTML page, i.e. inside dist/) */
         domino: 'service-catalog.csv',
+
+        /** Jira cards CSV for Domino badge overlay (optional — set null to disable) */
+        jiraCards: './jira-cards.csv',
+
+        /** Quick-filter presets CSV for Solitaire (optional — set null to disable) */
+        customFilters: './custom-filters.csv',
     },
 
     /** Jira-specific config (used by js/domino/jira.js) */

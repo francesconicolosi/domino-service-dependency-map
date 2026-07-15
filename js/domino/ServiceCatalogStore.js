@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { getFormattedDate, splitValues } from '../shared/utils.js';
+import { getFormattedDate, splitValues, parseSectionMeta } from '../shared/utils.js';
 
 export class ServiceCatalogStore {
     constructor() {
@@ -7,6 +7,8 @@ export class ServiceCatalogStore {
         this.links = [];
         this.activeServiceNodes = [];
         this.activeServiceNodeIds = new Set();
+        this.jiraCards = [];
+        this.jiraCardsByService = new Map();
         this.hasLoaded = false;
     }
 
@@ -62,6 +64,8 @@ export class ServiceCatalogStore {
             data.columns = [...data.columns, 'Used by'];
         }
 
+        this._applyJiraCardsToNodes();
+
         this.activeServiceNodes = this.nodes.filter(d =>
             d.Status !== 'Stopped' && d.Status !== 'Decommissioned' && !d['Decommission Date']
         );
@@ -70,11 +74,126 @@ export class ServiceCatalogStore {
         return colorScale;
     }
 
+
+    processJiraCards(data = []) {
+        this.jiraCards = Array.isArray(data) ? data : [];
+        this._buildJiraCardIndex();
+        this._applyJiraCardsToNodes();
+    }
+
+    _buildJiraCardIndex() {
+        this.jiraCardsByService = new Map();
+
+        const splitImpactedServices = (value) => splitValues(value)
+            .flatMap(v => String(v || '').split(/[,;\n]/g))
+            .map(v => v.trim())
+            .filter(Boolean);
+
+        this.jiraCards.forEach(row => {
+            if (!this._isOpenJiraCard(row)) return;
+
+            const issueKind = this._getJiraCardKind(row);
+            if (!issueKind) return;
+
+            const impactedServices = splitImpactedServices(row.AffectedServices || row['Affected Services'] || row.Service || row.Services);
+            if (!impactedServices.length) return;
+
+            const { clean: summary, roi, topPriority: metaPriority } = parseSectionMeta(row.Summary || '');
+            const card = {
+                key: row.Key || row.key || '',
+                issueType: row.IssueType || row['Issue Type'] || '',
+                requestType: row.RequestType || row['Request Type'] || '',
+                created: row.Created || '',
+                summary,
+                roi,
+                metaPriority,
+                status: row.Status || '',
+                impactedServices,
+                jiraUrl: row.JiraUrl || row.URL || row.Url || '',
+                kind: issueKind,
+            };
+
+            impactedServices.forEach(serviceName => {
+                const normalized = this._normalizeServiceName(serviceName);
+                if (!normalized) return;
+                if (!this.jiraCardsByService.has(normalized)) {
+                    this.jiraCardsByService.set(normalized, { incidents: [], requests: [] });
+                }
+                const bucket = this.jiraCardsByService.get(normalized);
+                if (issueKind === 'incident') bucket.incidents.push(card);
+                if (issueKind === 'request') bucket.requests.push(card);
+            });
+        });
+    }
+
+    _applyJiraCardsToNodes() {
+        if (!Array.isArray(this.nodes) || !this.nodes.length) return;
+
+        this.nodes.forEach(node => {
+            const bucket = this._findJiraCardsForNode(node);
+            const incidents = bucket?.incidents || [];
+            const requests = bucket?.requests || [];
+
+            node.__jiraCards = { incidents, requests };
+            node.__openIncidentCount = incidents.length;
+            node.__openServiceRequestCount = requests.length;
+        });
+    }
+
+    _findJiraCardsForNode(node) {
+        const candidates = [
+            node?.id,
+            node?.['Service Name'],
+            node?.Name,
+            node?.Key,
+        ].filter(Boolean);
+
+        for (const candidate of candidates) {
+            const normalized = this._normalizeServiceName(candidate);
+            if (this.jiraCardsByService.has(normalized)) return this.jiraCardsByService.get(normalized);
+        }
+
+        return { incidents: [], requests: [] };
+    }
+
+    _getJiraCardKind(row) {
+        const issueType = String(row?.IssueType || row?.['Issue Type'] || '').toLowerCase();
+        const requestType = String(row?.RequestType || row?.['Request Type'] || '').toLowerCase();
+
+        if (issueType.includes('incident') || requestType.includes('incident')) return 'incident';
+        if (issueType.includes('service request') || requestType.includes('service request') || requestType.includes('generic service request')) return 'request';
+        return null;
+    }
+
+    _isOpenJiraCard(row) {
+        const status = String(row?.Status || '').trim().toLowerCase();
+        if (!status) return true;
+        return !/^(closed|resolved|done|cancelled|canceled|rejected)$/i.test(status);
+    }
+
+    _normalizeServiceName(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[\u2018\u2019]/g, "'")
+            .replace(/[\u201c\u201d]/g, '"')
+            .replace(/\s+/g, ' ');
+    }
+
+    allColumnKeys() {
+        if (!this.nodes?.length) return [];
+        return Object.keys(this.nodes[0]).filter(
+            k => !k.startsWith('__') && k !== 'color' && k !== 'index'
+        );
+    }
+
     reset() {
         this.nodes = [];
         this.links = [];
         this.activeServiceNodes = [];
         this.activeServiceNodeIds = new Set();
+        this.jiraCards = [];
+        this.jiraCardsByService = new Map();
         this.hasLoaded = false;
     }
 }

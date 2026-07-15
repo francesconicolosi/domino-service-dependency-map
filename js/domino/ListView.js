@@ -15,6 +15,7 @@ export class ListView {
         this.legendEl = null;
         this.btnList = null;
         this.btnGraph = null;
+        this.btnExport = null;
     }
 
     initDOM() {
@@ -23,11 +24,24 @@ export class ListView {
         this.legendEl = document.getElementById('legend');
         this.btnList = document.getElementById('view-list');
         this.btnGraph = document.getElementById('view-graph');
+        this.btnExport = document.getElementById('act-export-excel');
 
         window.currentColumnKeys = this.columnKeys;
 
         this.btnList?.addEventListener('click', () => this.toListView());
         this.btnGraph?.addEventListener('click', () => this.toGraphView());
+        this.btnExport?.addEventListener('click', () => this._openExportModal());
+
+        document.getElementById('export-visible-cols')?.addEventListener('click', () => {
+            this._closeExportModal(); this.exportToExcel(false);
+        });
+        document.getElementById('export-all-cols')?.addEventListener('click', () => {
+            this._closeExportModal(); this.exportToExcel(true);
+        });
+        document.getElementById('export-cancel')?.addEventListener('click', () => this._closeExportModal());
+        document.getElementById('export-modal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) this._closeExportModal();
+        });
     }
 
     normalizeColumnToken(token) {
@@ -101,6 +115,7 @@ export class ListView {
         this.listViewEl.style.display = 'block';
         this.btnList.style.display = 'none';
         this.btnGraph.style.display = 'inline-block';
+        if (this.btnExport) this.btnExport.style.display = '';
         this.syncListViewParamInUrl();
         this.syncSortParamInUrl();
         this.renderListFromSearch();
@@ -112,6 +127,7 @@ export class ListView {
         this.listViewEl.style.display = 'none';
         this.btnGraph.style.display = 'none';
         this.btnList.style.display = 'inline-block';
+        if (this.btnExport) this.btnExport.style.display = 'none';
         const url = new URL(window.location.href);
         url.searchParams.delete('listView');
         url.searchParams.delete('sort');
@@ -268,5 +284,46 @@ export class ListView {
 
         table.appendChild(tbody);
         listViewEl.appendChild(table);
+    }
+
+    // ─── Export ──────────────────────────────────────────────────────────────
+
+    _openExportModal()  { document.getElementById('export-modal').style.display = ''; }
+    _closeExportModal() { document.getElementById('export-modal').style.display = 'none'; }
+
+    _getExportRows() {
+        const { search } = this.app;
+        if (!search.currentNodes) return [];
+        let results = search.currentNodes.filter(n => search.currentSearchedNodes?.has?.(n.id));
+        const noSearch = !search.searchTerm;
+        if (noSearch && results.length === 0) results = [...search.currentNodes];
+        if (this.sortKey) {
+            results = results.slice().sort((a, b) => {
+                const va = this.getComparableValue(a, this.sortKey);
+                const vb = this.getComparableValue(b, this.sortKey);
+                let cmp = 0;
+                if (this.sortKey === 'Decommission Date' && typeof va === 'number' && typeof vb === 'number') {
+                    cmp = va === vb ? 0 : va < vb ? -1 : 1;
+                } else {
+                    cmp = String(va).localeCompare(String(vb), undefined, { sensitivity: 'base', numeric: true });
+                }
+                return this.sortDir === 'asc' ? cmp : -cmp;
+            });
+        }
+        return results;
+    }
+
+    exportToExcel(allColumns) {
+        const keys = allColumns ? this.app.store.allColumnKeys() : this.columnKeys;
+        const rows = this._getExportRows();
+        const data = rows.map(n =>
+            Object.fromEntries(keys.map(k => [k, getCellValue(n, k) ?? '']))
+        );
+        /* global XLSX */
+        const ws = XLSX.utils.json_to_sheet(data, { header: keys });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Services');
+        const date = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `domino-export-${date}.xlsx`);
     }
 }

@@ -1,4 +1,4 @@
-import { splitValues } from '../shared/utils.js';
+import { splitValues } from './utils.js';
 
 const AUTOCOMPLETE_ID = 'search-suggestions';
 const MAX_KEYS = 50;
@@ -6,14 +6,31 @@ const MAX_VALUES_PER_KEY = 2000;
 const MAX_OPTIONS = 25;
 
 export class AutocompleteEngine {
-    constructor(app) {
-        this.app = app;
-        this.keys = [];
-        this.valuesByKey = new Map();
+    // Can be constructed two ways:
+    //   new AutocompleteEngine(keys, valuesByKey, opts)  — pre-built index (Solitaire, new Domino)
+    //   new AutocompleteEngine(app)                      — legacy: call buildIndex() after construction
+    // opts.allowMultiValue (default true) — when false, comma-based multi-value suggestions are disabled
+    constructor(keysOrApp, valuesByKey, opts = {}) {
+        if (keysOrApp && typeof keysOrApp === 'object' && !Array.isArray(keysOrApp) && keysOrApp.store) {
+            // Legacy app-based construction
+            this._app = keysOrApp;
+            this.keys = [];
+            this.valuesByKey = new Map();
+            this.allowMultiValue = true;
+            this.allowMultiField = opts.allowMultiField === true;
+        } else {
+            this._app = null;
+            this.keys = keysOrApp ?? [];
+            this.valuesByKey = valuesByKey ?? new Map();
+            this.allowMultiValue = opts.allowMultiValue !== false;
+            this.allowMultiField = opts.allowMultiField === true;
+        }
     }
 
+    // Legacy method used by Domino tests and old DominoApp usage
     buildIndex() {
-        const { nodes } = this.app.store;
+        if (!this._app) return;
+        const { nodes } = this._app.store;
         if (!nodes || !nodes.length) return;
 
         const keys = new Set(['id']);
@@ -49,7 +66,22 @@ export class AutocompleteEngine {
         this.valuesByKey = m;
     }
 
-    computeSuggestions(raw) {
+    _splitMultiFieldInput(value) {
+        let inQuote = false;
+        let lastAmp = -1;
+        for (let i = 0; i < value.length; i++) {
+            const ch = value[i];
+            if (ch === '"') inQuote = !inQuote;
+            if (ch === '&' && !inQuote) lastAmp = i;
+        }
+        if (lastAmp === -1) return { prefix: '', current: value };
+        return {
+            prefix: value.slice(0, lastAmp + 1),
+            current: value.slice(lastAmp + 1),
+        };
+    }
+
+    _computeSingleClauseSuggestions(raw) {
         const value = (raw ?? '').toString();
         if (!value.includes(':')) {
             const leading = (value.match(/^\s*/)?.[0] ?? '');
@@ -57,38 +89,70 @@ export class AutocompleteEngine {
             const bang = trimmed.startsWith('!') ? '!' : '';
             const keyPrefix = (bang ? trimmed.slice(1) : trimmed).trim();
             const keys = this.keys.length ? this.keys : ['id'];
-            return keys
+            const keySuggestions = keys
                 .filter(k => k.toLowerCase().startsWith(keyPrefix.toLowerCase()))
                 .map(k => `${leading}${bang}${k}:`);
+            const idValues = this.valuesByKey.get('id') || [];
+            const nameSuggestions = keyPrefix
+                ? idValues
+                    .filter(v => v.toLowerCase().startsWith(keyPrefix.toLowerCase()))
+                    .map(v => `${leading}${bang}${v}`)
+                : [];
+            return [...nameSuggestions, ...keySuggestions];
         }
 
         const colonPos = value.indexOf(':');
         const keyTokenOriginal = value.slice(0, colonPos);
         const key = keyTokenOriginal.trim().replace(/^!/, '');
         const valuePartFull = value.slice(colonPos + 1);
-        const vParts = valuePartFull.split(',');
+        const vParts = this.allowMultiValue ? valuePartFull.split(',') : [valuePartFull];
         const lastValRaw = (vParts.pop() ?? '');
-        const preValsRaw = vParts.join(',');
+        const preValsRaw = this.allowMultiValue ? vParts.join(',') : '';
         const lastLeadingWs = (lastValRaw.match(/^\s*/)?.[0] ?? '');
         const quotedMode = valuePartFull.includes('"');
         const lastValClean = lastValRaw.trim().replace(/^"/, '').replace(/"$/, '');
         const values = this.valuesByKey.get(key) || [];
         const filtered = values.filter(v => v.toLowerCase().startsWith(lastValClean.toLowerCase()));
-
         const prefix = `${keyTokenOriginal}:${preValsRaw}${preValsRaw ? ',' : ''}${lastLeadingWs}`;
         const renderValue = (v) => quotedMode ? `"${v}"` : v;
         const out = filtered.map(v => prefix + renderValue(v));
 
-        if (lastValClean && values.some(v => v.toLowerCase() === lastValClean.toLowerCase()) && !value.trimEnd().endsWith(',')) {
-            out.unshift(value.trimEnd() + ',');
-        }
-        if (value.trimEnd().endsWith(',')) {
-            const prefixAfterComma = `${keyTokenOriginal}:${preValsRaw}${preValsRaw ? ',' : ''}`;
-            out.unshift(...values.slice(0, MAX_OPTIONS).map(v => prefixAfterComma + renderValue(v)));
+        if (this.allowMultiValue) {
+            if (lastValClean && values.some(v => v.toLowerCase() === lastValClean.toLowerCase()) && !value.trimEnd().endsWith(',')) {
+                out.unshift(value.trimEnd() + ',');
+            }
+            if (value.trimEnd().endsWith(',')) {
+                const prefixAfterComma = `${keyTokenOriginal}:${preValsRaw}${preValsRaw ? ',' : ''}`;
+                out.unshift(...values.slice(0, MAX_OPTIONS).map(v => prefixAfterComma + renderValue(v)));
+            }
         }
         return out;
     }
 
+    computeSuggestions(raw) {
+        const value = (raw ?? '').toString();
+
+        if (!this.allowMultiField) {
+            return this._computeSingleClauseSuggestions(value);
+        }
+
+        const { prefix, current } = this._splitMultiFieldInput(value);
+        const out = [];
+        const currentSuggestions = this._computeSingleClauseSuggestions(current)
+            .map(s => `${prefix}${s}`);
+        out.push(...currentSuggestions);
+
+        const trimmed = value.trimEnd();
+        const currentTrimmed = current.trimEnd();
+        const hasKeyValue = currentTrimmed.includes(':') && currentTrimmed.slice(currentTrimmed.indexOf(':') + 1).trim().length > 0;
+        if (hasKeyValue && !trimmed.endsWith('&')) {
+            // Suggest adding another field once the current field has at least one value.
+            out.unshift(`${trimmed}&`);
+        }
+
+        // Remove duplicates while keeping ranking.
+        return Array.from(new Set(out));
+    }
     refreshSuggestions(raw) {
         const dl = document.getElementById(AUTOCOMPLETE_ID);
         if (!dl) return;

@@ -107,99 +107,55 @@ input:checked + .slider::before {
   transform: translateY(0);
 }
 
+/* .top-search shell + chip styles are in search-bar.css (shared with Solitaire) */
+
 .top-bar {
   display: flex;
-  align-items: center;
-  justify-content: flex-start; /* puoi usare space-between se vuoi separare */
-  padding: 10px 16px;
+  flex-direction: column;
+  padding: 0 16px;
   background: #fff;
-  border-bottom: 1px solid #eee;
-  gap: 12px; /* spazio tra hamburger e ricerca */
+  box-shadow: 0 1px 0 #eee;
 }
 
-#hamburger-btn {
-  font-size: 24px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.top-search {
+.top-bar__row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1; /* occupa spazio disponibile */
+  padding: 8px 0;
 }
 
-.search-field {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fff;
-  cursor: text;
-  min-height: 38px;
-}
-
-.search-field input {
-  border: none;
-  outline: none;
-  flex: 1;
-  min-width: 80px;
-  font-size: 15px;
-  background: transparent;
-  padding: 2px 0;
-}
-
-.search-chip-key {
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #e8f0fe;
-  color: #1a73e8;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.search-chip {
+.top-bar__hamburger,
+.top-bar__action {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: #f1f3f4;
-  color: #202124;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.search-chip-text {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.search-chip-close {
-  cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  opacity: 0.55;
-  padding: 0 1px;
-}
-
-.search-chip-close:hover { opacity: 1; }
-
-.top-search button {
+  justify-content: center;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #ddd;
   background: #f8f8f8;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.10);
   cursor: pointer;
+  color: #333;
+  font-size: 15px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.top-bar__hamburger:hover,
+.top-bar__action:hover {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
+@media (max-width: 600px) {
+  .top-bar { padding: 0 8px; }
+  .top-bar__row { gap: 6px; padding: 6px 0; }
+  .top-bar__hamburger { padding: 0; width: 34px; height: 34px; font-size: 16px; }
+  .top-search { min-width: 0; padding: 0 4px; }
+  .top-search input { font-size: 13px; }
+  .top-search input::placeholder { opacity: 0; }
+  .top-search input:focus::placeholder { opacity: 0.5; }
 }
 
 #side-overlay {
@@ -443,7 +399,7 @@ input[type="file"] {
 }
 
 
-input[type="text"] {
+input[type="text"]:not(#drawer-search-input) {
   width: 100%;
   padding: 10px;
   margin: 8px 0;
@@ -747,6 +703,10 @@ circle {
 /* Apple-inspired palette — matches Solitaire exactly */
 html[data-theme="dark"] body     { background: #070b18; color: #f5f5f7; }
 html[data-theme="dark"] .top-bar { background: #0d1120; border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
+html[data-theme="dark"] .top-bar__hamburger,
+html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .top-bar__hamburger:hover,
+html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; border-color: rgba(255,255,255,0.20); }
 
 /* Side drawer */
 html[data-theme="dark"] #side-drawer   { background: #0d1120; }

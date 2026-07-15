@@ -6,11 +6,13 @@ import {
     getQueryParam,
     initCommonActions,
     setSearchQuery,
+    splitValues,
     applyTheme,
     loadSavedTheme,
 } from '../shared/utils.js';
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
-import { ROLE_FIELD_WITH_MAPPING } from './constants.js';
+import { ROLE_FIELD_WITH_MAPPING, BUSINESS_FUNCTION_FIELD } from './constants.js';
+import { AutocompleteEngine } from '../shared/AutocompleteEngine.js';
 import { PeopleDatabase } from './PeopleDatabase.js';
 import { OrgChartRenderer } from './OrgChartRenderer.js';
 import { InteractionController } from './InteractionController.js';
@@ -19,6 +21,7 @@ import { SolitaireSearch } from './SolitaireSearch.js';
 import { ColorLegend } from './ColorLegend.js';
 import { TeamDetailDrawer } from './TeamDetailDrawer.js';
 import { ContextMenu } from './ContextMenu.js';
+import { QuickFilters } from './QuickFilters.js';
 
 export class SolitaireApp {
     constructor() {
@@ -31,6 +34,9 @@ export class SolitaireApp {
         this.drawer = new TeamDetailDrawer(this);
         this.contextMenu = new ContextMenu(this);
 
+        this.quickFilters = new QuickFilters(this);
+
+        this.autocomplete = null;
         this.visibleOrg = null;
         this.searchParam = null;
         this.isAdvanced = (() => {
@@ -40,13 +46,13 @@ export class SolitaireApp {
     }
 
     init() {
-        // DOM is ready when init() is called (invoked from DOMContentLoaded in index.js)
         renderBrandLogo();
         const theme = loadSavedTheme();
         const dmToggle = document.getElementById('toggle-dark-mode');
         if (dmToggle) dmToggle.checked = theme === 'dark';
 
         this._initSideDrawerEvents();
+        this.search.initChipBar();
         this.drawer.initEvents();
         this.interaction.setupLongPress();
         this._handleAdvancedMode();
@@ -54,7 +60,6 @@ export class SolitaireApp {
         if (buildInfoEl) buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
         this._enableAppPinchZoomOnly();
         this._setupGlobalTooltip();
-        this.search.initChipBar();
         this._initSearchInput();
         this._initImportScenario();
         this._initFileInput();
@@ -72,33 +77,34 @@ export class SolitaireApp {
         });
 
         window.addEventListener('load', () => {
-            fetch(BRAND.csv.solitaire)
-                .then(r => r.text())
-                .then(csvData => {
+            const peopleFetch = fetch(BRAND.csv.solitaire).then(r => r.text());
+            const filtersFetch = BRAND.csv.customFilters
+                ? fetch(BRAND.csv.customFilters).then(r => r.text()).catch(() => '')
+                : Promise.resolve('');
+
+            Promise.all([peopleFetch, filtersFetch])
+                .then(([csvData, filtersCsv]) => {
+                    if (filtersCsv) {
+                        this.quickFilters.load(filtersCsv);
+                        this.quickFilters.render();
+                        this.quickFilters.initEvents();
+                    }
                     this.loadAndRender(csvData);
                     this.searchParam = getQueryParam('search');
-                    this.missingParam = getQueryParam('missing');
                     if (this.searchParam) {
+                        const inp = document.getElementById('drawer-search-input');
+                        if (inp) inp.value = this.searchParam;
+                        this.search._refreshChips(this.searchParam);
+                        const openDetail = getQueryParam('showDetails') === 'true';
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
                                 this.search.search(this.searchParam);
-                                this.search._refreshChips(this.searchParam);
-                            });
-                        });
-                    } else if (this.missingParam) {
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                this.legend.setMode(this.missingParam);
-                                this.search.search('', {
-                                    field: this.missingParam,
-                                    missing: true,
-                                    noZoom: true,
-                                });
+                                if (openDetail) this._openDetailFromSearch(this.searchParam);
                             });
                         });
                     }
                 })
-                .catch(err => console.error('Error loading the CSV file:', err));
+                .catch(err => console.error('Error loading CSV files:', err));
         });
     }
 
@@ -108,6 +114,74 @@ export class SolitaireApp {
         this.renderer.reset();
         this.renderer.render(data);
         this.interaction.applyDraggableToggleState();
+        this._buildAutocompleteIndex();
+    }
+
+    _buildAutocompleteIndex() {
+        if (!this.db.people || !this.db.people.length) return;
+
+        const keys = ['name', 'role', 'company', 'location', 'function', 'room', 'service'];
+        const m = new Map();
+        const sortFn = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+
+        // Read directly from rendered card DOM — the only source guaranteed to
+        // match what is actually visible after all filters are applied.
+        const cards = Array.from(document.querySelectorAll('g[data-key^="card::"]'))
+            .filter(g => g.style.display !== 'none');
+
+        const fromAttr = (attr) => {
+            const set = new Set();
+            cards.forEach(g => {
+                const raw = g.getAttribute(attr) || '';
+                splitValues(raw).map(s => s.trim()).filter(Boolean).forEach(v => set.add(v));
+            });
+            return [...set].sort(sortFn);
+        };
+
+        // Name comes from the .profile-name text content inside each card
+        const nameSet = new Set();
+        cards.forEach(g => {
+            const el = g.querySelector('.profile-name');
+            const v = (el?.textContent || '').trim();
+            if (v) nameSet.add(v);
+        });
+        m.set('name', [...nameSet].sort(sortFn));
+
+        m.set('role',     fromAttr('data-role'));
+        m.set('company',  fromAttr('data-company'));
+        m.set('location', fromAttr('data-location'));
+        m.set('function', fromAttr('data-function'));
+        m.set('room',     fromAttr('data-room'));
+
+        // Services from visible team-title elements
+        const serviceSet = new Set();
+        document.querySelectorAll('[data-services]').forEach(el => {
+            (el.getAttribute('data-services') || '').split(',').forEach(s => {
+                if (s.trim()) serviceSet.add(s.trim());
+            });
+        });
+        m.set('service', [...serviceSet].sort(sortFn));
+
+        // Collect stream, theme, team names from the visible org structure
+        const org = this.visibleOrg || {};
+        const streamSet = new Set();
+        const themeSet  = new Set();
+        const teamSet   = new Set();
+        for (const [stream, themes] of Object.entries(org)) {
+            if (stream) streamSet.add(stream);
+            for (const [theme, teams] of Object.entries(themes || {})) {
+                if (theme) themeSet.add(theme);
+                for (const team of Object.keys(teams || {})) {
+                    if (team) teamSet.add(team);
+                }
+            }
+        }
+        m.set('stream', [...streamSet].sort(sortFn));
+        m.set('theme',  [...themeSet].sort(sortFn));
+        m.set('team',   [...teamSet].sort(sortFn));
+
+        this.autocomplete = new AutocompleteEngine([...keys, 'stream', 'theme', 'team'], m, { allowMultiValue: false });
+        this.autocomplete.init();
     }
 
     setStreamFilter(streamKeys) {
@@ -318,18 +392,37 @@ export class SolitaireApp {
         const positionTip = (anchor, placement = 'right') => {
             const el = ensureTip();
             const rect = anchor.getBoundingClientRect();
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
             let x = rect.right + 8;
             let y = rect.top + rect.height / 2;
             el.style.transform = 'translate(0, -50%)';
             if (placement === 'top') {
                 x = rect.left + rect.width / 2; y = rect.top - 8;
-                el.style.transform = 'translate(-50%, -8px)';
+                el.style.transform = 'translate(-50%, -100%)';
             } else if (placement === 'bottom') {
                 x = rect.left + rect.width / 2; y = rect.bottom + 8;
-                el.style.transform = 'translate(-50%, 8px)';
+                el.style.transform = 'translate(-50%, 0)';
             } else if (placement === 'left') {
                 x = rect.left - 8; y = rect.top + rect.height / 2;
                 el.style.transform = 'translate(-100%, -50%)';
+            }
+            // Clamp so the tooltip never bleeds outside the viewport.
+            // getBoundingClientRect on a fixed element needs the tip to be shown first,
+            // so we use max-width (220px) as a conservative estimate for clamping.
+            const TIP_W = 220;
+            const TIP_H = 80; // generous estimate for multi-line
+            const MARGIN = 8;
+            if (placement === 'bottom' || placement === 'top') {
+                // centre-aligned: clamp so tip stays inside left/right edges
+                const minX = TIP_W / 2 + MARGIN;
+                const maxX = vw - TIP_W / 2 - MARGIN;
+                x = Math.max(minX, Math.min(maxX, x));
+            }
+            if (placement === 'bottom' && y + TIP_H > vh - MARGIN) {
+                // flip to top if not enough space below
+                y = rect.top - 8;
+                el.style.transform = 'translate(-50%, -100%)';
             }
             el.style.left = `${Math.round(x)}px`;
             el.style.top = `${Math.round(y)}px`;
@@ -352,16 +445,17 @@ export class SolitaireApp {
                 if (!a) return;
                 const text = a.getAttribute('data-tooltip') || a.getAttribute('aria-label') || '';
                 if (!text) return;
+                const placement = a.getAttribute('data-tooltip-placement') || 'right';
                 clearTimeout(hideTimer);
                 hideTimer = null;
                 if (isVisible() && currentAnchor !== a) {
                     currentAnchor = a;
-                    showTip(text, a, 'right');
+                    showTip(text, a, placement);
                     return;
                 }
                 currentAnchor = a;
                 clearTimeout(showTimer);
-                showTimer = setTimeout(() => showTip(text, a, 'right'), SHOW_DELAY);
+                showTimer = setTimeout(() => showTip(text, a, placement), SHOW_DELAY);
             }, true);
 
             document.addEventListener('mouseout', (e) => {
@@ -383,7 +477,7 @@ export class SolitaireApp {
     _initSearchInput() {
         document.getElementById('drawer-search-input')?.addEventListener('keydown', (e) => {
             if (e.key !== 'Enter') return;
-            const query = e.target.value.trim().toLowerCase();
+            const query = e.target.value.trim();
             if (query) {
                 this.search.search(query);
             } else {
@@ -416,6 +510,7 @@ export class SolitaireApp {
             reader.readAsText(file, 'UTF-8');
         });
     }
+
 
     _initToggleDraggable() {
         document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
@@ -479,7 +574,7 @@ export class SolitaireApp {
         });
 
         document.getElementById('drawer-search-go')?.addEventListener('click', () => {
-            const q = document.getElementById('drawer-search-input')?.value?.trim().toLowerCase();
+            const q = document.getElementById('drawer-search-input')?.value?.trim();
             if (q) this.search.search(q);
         });
 
@@ -488,7 +583,7 @@ export class SolitaireApp {
 
     _initSubDrawerEvents() {
         const openSub = (panelId, title) => {
-            document.querySelectorAll('#sub-content-legend, #sub-content-scenario').forEach(el => { el.style.display = 'none'; });
+            document.querySelectorAll('#sub-content-legend, #sub-content-display, #sub-content-scenario').forEach(el => { el.style.display = 'none'; });
             const panel = document.getElementById(panelId);
             if (panel) panel.style.display = '';
             const titleEl = document.getElementById('sub-drawer-title');
@@ -503,7 +598,10 @@ export class SolitaireApp {
             openSub('sub-content-legend', '🎨 Legenda');
         });
         document.getElementById('act-scenario')?.addEventListener('click', () => {
-            openSub('sub-content-scenario', '🗂️ Display');
+            openSub('sub-content-display', '🖥️ Display');
+        });
+        document.getElementById('act-scenario-mgr')?.addEventListener('click', () => {
+            openSub('sub-content-scenario', '🗂️ Scenario');
         });
         document.getElementById('sub-back')?.addEventListener('click', closeSub);
         document.getElementById('sub-close')?.addEventListener('click', closeSideDrawer);
@@ -516,6 +614,9 @@ export class SolitaireApp {
         });
         document.getElementById('toggle-color-location')?.addEventListener('change', (e) => {
             if (e.target.checked) this.legend.setMode('Location');
+        });
+        document.getElementById('toggle-color-function')?.addEventListener('change', (e) => {
+            if (e.target.checked) this.legend.setMode(BUSINESS_FUNCTION_FIELD);
         });
 
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
@@ -542,5 +643,53 @@ export class SolitaireApp {
         document.getElementById('act-scenario-reset')?.addEventListener('click', () => {
             this.scenario.handleAction('reset');
         });
+    }
+
+    _openDetailFromSearch(searchParam) {
+        const colonIdx = (searchParam ?? '').indexOf(':');
+        if (colonIdx < 0) return;
+        const field = searchParam.slice(0, colonIdx).trim().toLowerCase();
+        const rawValue = searchParam.slice(colonIdx + 1).replace(/^"|"$/g, '').trim();
+        const valueLower = rawValue.toLowerCase();
+
+        if (field === 'stream') {
+            const titleEl = Array.from(document.querySelectorAll('text.stream-title[data-full-name]'))
+                .find(el => (el.getAttribute('data-full-name') || '').toLowerCase() === valueLower);
+            if (!titleEl) return;
+            const group = titleEl.closest('g[data-key^="stream::"]');
+            const description = group?.getAttribute('data-description') ?? '';
+            this.drawer.open({ name: rawValue, description, _permalinkSearch: searchParam, _showDetails: true });
+
+        } else if (field === 'theme') {
+            const titleEl = Array.from(document.querySelectorAll('text.theme-title[data-full-name]'))
+                .find(el => (el.getAttribute('data-full-name') || '').toLowerCase() === valueLower);
+            if (!titleEl) return;
+            const group = titleEl.closest('g[data-key^="theme::"]');
+            const description = group?.getAttribute('data-description') ?? '';
+            this.drawer.open({ name: rawValue, description, _permalinkSearch: searchParam, _showDetails: true });
+
+        } else if (field === 'team') {
+            const teamTitleEl = Array.from(document.querySelectorAll('text.team-title[data-full-name]'))
+                .find(el => (el.getAttribute('data-full-name') || '').toLowerCase() === valueLower);
+            if (!teamTitleEl) return;
+            const description = teamTitleEl.getAttribute('data-team-description') || '';
+            const email = teamTitleEl.getAttribute('data-team-email') || '';
+            const channels = (() => {
+                try { return JSON.parse(teamTitleEl.getAttribute('data-team-channels') || '[]'); }
+                catch { return []; }
+            })();
+            const services = (teamTitleEl.getAttribute('data-services') || '')
+                .split(',').map(s => s.trim()).filter(Boolean);
+            this.drawer.open({
+                name: rawValue,
+                description,
+                elements: services.length ? { items: services } : undefined,
+                channels,
+                email,
+                elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"`,
+                _permalinkSearch: searchParam,
+                _showDetails: true,
+            });
+        }
     }
 }

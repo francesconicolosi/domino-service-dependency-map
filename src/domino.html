@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Domino: Digital Service Catalog</title>
     <link rel="stylesheet" href="./brand-specific/brand.css">
+    <link rel="stylesheet" href="./css/search-bar.css">
     <link rel="stylesheet" href="./css/styles.css">
     <link rel="icon" type="image/svg+xml" href="assets/domino.svg">
 </head>
@@ -38,6 +39,13 @@
                     <span class="slider"></span>
                 </label>
             </li>
+            <li>
+                <label class="switch-label">
+                    🔗 Show Connections
+                    <input type="checkbox" id="toggle-show-connections" checked>
+                    <span class="slider"></span>
+                </label>
+            </li>
 
 
             <li>
@@ -51,6 +59,8 @@
             <li><button id="act-introduce">➕ Introduce New Service</button></li>
             <li><button id="act-update">✏️ Update Service Info</button></li>
             <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Solitaire</button></li>
+            <li><button id="act-switch-hub" onclick="window.location.href='./index.html'">🏠 Portfolio Index</button></li>
+
         </ul>
     </nav>
 
@@ -61,15 +71,18 @@
 </aside>
 
 <div class="top-bar">
-    <span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
-    <div class="top-search">
-        <div class="search-field" id="search-field">
-            <input type="text" id="drawer-search-input" placeholder='Search… (field:"value" | field:value | value)' />
+    <div class="top-bar__row top-bar__row--search">
+        <button class="top-bar__hamburger" id="toggle-cta" aria-label="Menu">☰</button>
+        <div class="top-search">
+            <button class="top-search__icon" id="drawer-search-go" title="Search" aria-label="Search">🔍</button>
+            <div class="search-field" id="search-field">
+                <input type="text" id="drawer-search-input" placeholder='Search… (field:"value" | field:value | value)' />
+            </div>
+            <button class="top-search__clear" id="act-clear" title="Clear search" aria-label="Clear search">✕</button>
         </div>
-        <button id="drawer-search-go">🔎</button>
-        <button id="view-list" title="Vista elenco (tabella)">📋</button>
-        <button id="view-graph" title="Vista grafo" style="display:none;">🕸️</button>
-        <button id="act-clear">❌</button>
+        <button class="top-bar__action" id="view-list" title="List view">📋</button>
+        <button class="top-bar__action" id="view-graph" title="Graph view" style="display:none;">🕸️</button>
+        <button class="top-bar__action" id="act-export-excel" title="Export to Excel" style="display:none;">📥</button>
     </div>
 </div>
 
@@ -94,9 +107,20 @@
 </div>
 
 
+<div id="export-modal" class="export-modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div class="modal-box export-modal-box">
+        <h3 id="export-modal-title">Export to Excel</h3>
+        <p>Choose which columns to include:</p>
+        <button id="export-visible-cols">Visible columns only</button>
+        <button id="export-all-cols">All columns</button>
+        <button id="export-cancel" class="export-cancel">Cancel</button>
+    </div>
+</div>
+
 <footer>
     <svg id="brand-logo"></svg>
     <p>Digital Service Management</p>
 </footer>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </body>
 </html>

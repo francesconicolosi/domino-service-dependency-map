@@ -3,12 +3,13 @@ import { labelForKey, isListViewVisible, refreshDrawerColumnIcons, descriptionFi
 import { computeJiraIssuesValue } from './jira.js';
 import { BRAND } from '../../brand-specific/brand.js';
 
-const SEARCHABLE_ATTRS_ON_PEOPLE_DB = ['Product Theme', 'Owner', 'Responsible Teams', 'Accounts administered by', 'Accounts approved by', 'Accessed by'];
+const SEARCHABLE_ATTRS_ON_PEOPLE_DB = ['Theme', 'Stream', 'Owner', 'Service Manager', 'Responsible Teams', 'Accounts administered by', 'Accounts approved by', 'Accessed by'];
 const PRIORITY_KEYS = ['Key', 'id', 'Description', 'Depends on', 'Used by'];
 
 export class DetailDrawer {
     constructor(app) {
         this.app = app;
+        this.currentNode = null;
     }
 
     initDOM() {
@@ -41,8 +42,14 @@ export class DetailDrawer {
         document.getElementById('overlay')?.classList.remove('open');
     }
 
-    getPeopleDbLink(value) {
-        return `<a href="solitaire.html?search=${encodeURIComponent(value.toLowerCase()).replace(/%20/g, '+')}" target="_blank">${value}</a>`;
+    getPeopleDbLink(value, fieldKey = null) {
+        const query = fieldKey
+            ? `${fieldKey}:"${value}"`
+            : value.toLowerCase();
+        const encoded = fieldKey
+            ? encodeURIComponent(query)
+            : encodeURIComponent(query).replace(/%20/g, '+');
+        return `<a href="solitaire.html?search=${encoded}" target="_blank">${value}</a>`;
     }
 
     renderValueCell(key, raw, searchTerm) {
@@ -64,15 +71,6 @@ export class DetailDrawer {
             renderUrlPartsIntoCell(parts, td);
             return td;
         }
-        if (SEARCHABLE_ATTRS_ON_PEOPLE_DB.includes(key)) {
-            td.innerHTML = `<i>${
-                parts.length > 1
-                    ? `<ul>${parts.map(v => `<li>${this.getPeopleDbLink(v)}</li>`).join('')}</ul>`
-                    : this.getPeopleDbLink(parts[0] || '')
-            }</i>`;
-            return td;
-        }
-
         const active = search.parseActiveKeyValueSearch(searchTerm);
         const isSameKey = !!active && active.key === key;
         const activeVals = new Set((active?.values || []).map(v => search.normalizeForCompare(v)));
@@ -84,6 +82,24 @@ export class DetailDrawer {
             const sym = inSearch ? '−' : '+';
             return ` <a class="fade-link search-toggle ${cls}" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">${sym}</a>`;
         };
+
+        if (SEARCHABLE_ATTRS_ON_PEOPLE_DB.includes(key)) {
+            const SOLITAIRE_FIELD_MAP = { 'Theme': 'theme', 'Stream': 'stream', 'Responsible Teams': 'team' };
+            const solitaireField = SOLITAIRE_FIELD_MAP[key] ?? 'name';
+            if (parts.length > 1) {
+                const ul = document.createElement('ul');
+                parts.forEach(v => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i>${this.getPeopleDbLink(v, solitaireField)} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
+                    ul.appendChild(li);
+                });
+                td.appendChild(ul);
+            } else {
+                const v = parts[0] || '';
+                td.innerHTML = `<i>${this.getPeopleDbLink(v, solitaireField)} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
+            }
+            return td;
+        }
 
         if (parts.length > 1) {
             const ul = document.createElement('ul');
@@ -125,6 +141,7 @@ export class DetailDrawer {
     }
 
     showNodeDetails(node, openDrawer = true) {
+        this.currentNode = node;
         const { search, listView } = this.app;
         const keyRaw = String(node['Key'] ?? '').trim();
         const serviceRaw = String(node['Service Name'] ?? '').trim();

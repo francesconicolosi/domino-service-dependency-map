@@ -1,4 +1,4 @@
-import { AutocompleteEngine } from '../../js/domino/AutocompleteEngine.js';
+import { AutocompleteEngine } from '../../js/shared/AutocompleteEngine.js';
 
 function makeApp(nodes = []) {
     return { store: { nodes } };

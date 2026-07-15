@@ -1,0 +1,145 @@
+/* ============================================================
+   Skibidi Toilet vs Siren Head — stile pagina
+   Il canvas interno è 320x224 (risoluzione Genesis/Mega Drive)
+   e viene scalato mantenendo i pixel netti.
+   Su mobile: modalità orizzontale obbligatoria + pulsanti touch.
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;              /* niente scroll/zoom da gesti */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  background: #14101c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+}
+
+#wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#crt {
+  position: relative;
+  /* Scala: non supera né la larghezza né l'altezza dello schermo */
+  width: min(960px, 96vw, calc(92vh * 320 / 224));
+}
+
+#game {
+  width: 100%;
+  display: block;
+  background: #000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border: 4px solid #2c2438;
+  border-radius: 6px;
+}
+
+/* Scanline stile CRT */
+#scanlines {
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0)   0px,
+    rgba(0,0,0,0)   2px,
+    rgba(0,0,0,.18) 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+#hint {
+  color: #7a6f96;
+  font-size: 12px;
+  letter-spacing: .5px;
+  text-align: center;
+  padding: 0 8px;
+}
+
+/* ------------------------------------------------------------
+   CONTROLLI TOUCH — visibili solo su dispositivi touch
+   (la classe .touch viene aggiunta a <body> da main.js)
+   ------------------------------------------------------------ */
+#touch { display: none; }
+
+body.touch #touch {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;            /* solo i bottoni ricevono i tocchi */
+  z-index: 10;
+}
+
+body.touch #hint { display: none; }
+
+.tside {
+  position: absolute;
+  bottom: 14px;
+  display: flex;
+  gap: 14px;
+  pointer-events: none;
+}
+.tside.left  { left: 16px; }
+.tside.right { right: 16px; }
+
+.tbtn {
+  pointer-events: auto;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(140,130,180,0.22);
+  border: 2px solid rgba(200,190,240,0.45);
+  color: rgba(240,236,255,0.9);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.tbtn.big { width: 72px; height: 72px; font-size: 26px; }
+.tbtn:active { background: rgba(200,190,240,0.4); }
+
+/* ------------------------------------------------------------
+   OVERLAY "RUOTA IL TELEFONO" — solo mobile in verticale
+   ------------------------------------------------------------ */
+#rotate { display: none; }
+
+@media (orientation: portrait) {
+  body.touch #rotate {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #14101c;
+    color: #e8e0ff;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 20px;
+    line-height: 1.6;
+  }
+  body.touch #rotate .icon {
+    font-size: 54px;
+    margin-bottom: 12px;
+    animation: spin 2s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(90deg); }
+  100% { transform: rotate(90deg); }
+}

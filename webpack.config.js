@@ -70,9 +70,12 @@ module.exports = {
                 {from: 'css', to: 'css'},
                 {from: 'src/service-catalog.csv', to: 'service-catalog.csv'},
                 {from: 'src/people-database.csv', to: 'people-database.csv'},
+                {from: 'src/jira-cards.csv', to: 'jira-cards.csv'},
+                {from: 'src/custom-filters.csv', to: 'custom-filters.csv'},
                 {from: 'src/robots.txt', to: 'robots.txt'},
                 {from: 'src/sitemap.xml', to: 'sitemap.xml'},
                 { from: 'assets', to: 'assets' },
+                { from: 'game', to: 'game' },
             ],
         }),
         new webpack.DefinePlugin({

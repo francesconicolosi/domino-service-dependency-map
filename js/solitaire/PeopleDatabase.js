@@ -22,6 +22,7 @@ import {
 import {
     buildCompositeKey,
     filterOrganizationByStreams,
+    filterOrganizationByQuickFilter,
     getAllowedStreamsSet,
     isOnlyContributorsRow,
 } from './orgUtils.js';
@@ -43,6 +44,7 @@ export class PeopleDatabase {
         this.people = [];
         this.cachedCsvText = null;
         this.roleDetailsMapping = new Map();
+        this.functionDetailsMapping = new Map();
         this.guestRolesMap = GUEST_ROLES_MAP;
         this.guestRoleColumns = Array.from(GUEST_ROLES_MAP.keys());
     }
@@ -55,6 +57,7 @@ export class PeopleDatabase {
 
         this.app.legend.colorKeyMappings = new Map();
         this.roleDetailsMapping = new Map();
+        this.functionDetailsMapping = new Map();
         this.cachedCsvText = csvText;
 
         const csvRows = parseCSV(csvText);
@@ -101,14 +104,18 @@ export class PeopleDatabase {
             ? allStreamNames.filter(s => filteredStreams.has(s) || filteredStreams.has(normalizeKey(s)))
             : allStreamNames;
 
-        const visibleOrg = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
+        const streamFilteredOrg = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
+        const qfConstraints = this.app.quickFilters?.getConstraints?.() ?? null;
+        const visibleOrg = qfConstraints
+            ? filterOrganizationByQuickFilter(streamFilteredOrg, qfConstraints)
+            : streamFilteredOrg;
         this.app.visibleOrg = visibleOrg;
 
         return {
             people: this.people,
             organization,
-            organizationWithManagers,
-            filteredStreams,
+            organizationWithManagers: visibleOrg,
+            filteredStreams: qfConstraints ? null : filteredStreams,
             visibleStreamNames,
             headers,
             visibleOrg,
@@ -185,6 +192,13 @@ export class PeopleDatabase {
                             this.roleDetailsMapping.set(person.Role, {
                                 grants: person['Role Grants'],
                                 description: person['Role Description'],
+                            });
+                        }
+
+                        const fn = (person['Function'] || '').trim();
+                        if (fn && !this.functionDetailsMapping.has(fn)) {
+                            this.functionDetailsMapping.set(fn, {
+                                description: person['Function Description'] || '',
                             });
                         }
 

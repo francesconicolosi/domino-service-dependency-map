@@ -5,6 +5,27 @@
 
 // ─── String / value helpers ────────────────────────────────────────────────
 
+/**
+ * Parse §[...] metadata appended by Jira automation to summary strings.
+ * e.g. "Title§[TopPriority P2/Critical,RoiUSCA]" → { clean: "Title", roi: "USCA", topPriority: "P2/Critical" }
+ */
+export function parseSectionMeta(raw) {
+    if (!raw) return { clean: raw || '', roi: null, topPriority: null };
+    const match = raw.match(/§\[([^\]]*)\]/);
+    if (!match) return { clean: raw, roi: null, topPriority: null };
+    const after = raw.slice(match.index + match[0].length).trim();
+    const clean = (raw.slice(0, match.index).trim() + (after ? ' ' + after : '')).trim();
+    const tokens = match[1].split(',').map(t => t.trim());
+    let roi = null, topPriority = null;
+    for (const t of tokens) {
+        const roiM = t.match(/^Roi(.+)$/i);
+        if (roiM) { roi = roiM[1]; continue; }
+        const tpM = t.match(/^TopPriority\s+(.+)$/i);
+        if (tpM) { topPriority = tpM[1]; }
+    }
+    return { clean, roi, topPriority };
+}
+
 const fullNormalizeWs = (s) => (s ?? '')
     .toString()
     .replace(/\s+/g, ' ')
@@ -56,31 +77,6 @@ export function splitNarrativeValues(raw) {
         .split(/\s*\|\|\s*/)
         .map(x => x.trim())
         .filter(Boolean);
-}
-
-// ─── Search key-value helpers (shared by Domino SearchEngine + Solitaire) ──
-
-export function normalizeForCompare(v) {
-    return (v ?? '').toString().replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
-}
-
-export function parseActiveKeyValueSearch(term) {
-    if (!term || !term.includes(':')) return null;
-    const raw = term.trim();
-    if (raw.startsWith('!')) return null;
-    const idx = raw.indexOf(':');
-    const key = raw.slice(0, idx).trim();
-    const valuePart = raw.slice(idx + 1).trim();
-    const quoted = valuePart.includes('"');
-    const clean = valuePart.replaceAll('"', '');
-    const values = splitValues(clean).map(v => v.trim()).filter(Boolean);
-    return { key, values, quoted };
-}
-
-export function buildKeyValueSearch(key, values, quoted) {
-    if (!key || !values || !values.length) return '';
-    const body = quoted ? values.map(v => `"${v}"`).join(',') : values.join(',');
-    return `${key}:${body}`;
 }
 
 // ─── Date helpers ──────────────────────────────────────────────────────────
@@ -302,7 +298,7 @@ export function createFormattedElementsFrom(lines) {
 export function createFormattedLongTextElementsFrom(longText) {
     if (!longText) return [];
     const normalized = longText.replace(/\s*\|\|\s*/g, '\n\n');
-    const lines = normalized
+    const rawLines = normalized
         .split(/\r?\n/)
         .reduce((acc, line) => {
             const isEmpty = !line.trim();
@@ -311,7 +307,81 @@ export function createFormattedLongTextElementsFrom(longText) {
             acc.push(line);
             return acc;
         }, []);
-    return createFormattedElementsFrom(lines);
+
+    // Group consecutive lines into typed lists or paragraphs
+    const result = [];
+    let currentList = null;
+    let currentListType = null; // 'bullet' | 'task'
+
+    const flushList = () => {
+        if (currentList) { result.push(currentList); currentList = null; currentListType = null; }
+    };
+
+    for (const line of rawLines) {
+        const taskMatch = line.match(/^\[( |x)\]\s+(.*)$/i);
+        const bulletMatch = !taskMatch && line.match(/^[-–•]\s+(.*)$/);
+
+        if (taskMatch) {
+            if (currentListType !== 'task') {
+                flushList();
+                currentList = document.createElement('ul');
+                currentList.className = 'jenga-task-list';
+                currentListType = 'task';
+            }
+            const li = document.createElement('li');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            if (taskMatch[1].toLowerCase() === 'x') cb.checked = true;
+            const span = document.createElement('span');
+            const tpl = document.createElement('template');
+            tpl.innerHTML = taskMatch[2];
+            span.append(...Array.from(tpl.content.childNodes));
+            li.append(cb, span);
+            currentList.appendChild(li);
+        } else if (bulletMatch) {
+            if (currentListType !== 'bullet') {
+                flushList();
+                currentList = document.createElement('ul');
+                currentListType = 'bullet';
+            }
+            const li = document.createElement('li');
+            const tpl = document.createElement('template');
+            tpl.innerHTML = bulletMatch[1];
+            li.append(...Array.from(tpl.content.childNodes));
+            currentList.appendChild(li);
+        } else if (line.trimStart().startsWith('<table')) {
+            flushList();
+            const tpl = document.createElement('template');
+            tpl.innerHTML = line;
+            const srcTable = tpl.content.querySelector('table');
+            if (srcTable) {
+                const table = document.createElement('table');
+                if (srcTable.className) table.className = srcTable.className;
+                for (const srcRow of srcTable.querySelectorAll('tr')) {
+                    const tr = document.createElement('tr');
+                    for (const srcCell of srcRow.children) {
+                        const isHeader = srcCell.tagName === 'TH';
+                        const cell = document.createElement(isHeader ? 'th' : 'td');
+                        createFormattedElementsFrom([srcCell.innerHTML]).forEach(el => cell.appendChild(el));
+                        tr.appendChild(cell);
+                    }
+                    table.appendChild(tr);
+                }
+                result.push(table);
+            }
+        } else {
+            flushList();
+            if (line.trim()) {
+                // Wrap in <p> so each non-empty line renders as a distinct paragraph block
+                const p = document.createElement('p');
+                createFormattedElementsFrom([line]).forEach(el => p.appendChild(el));
+                result.push(p);
+            }
+            // Empty lines are intentional separators — handled by the gap between <p> blocks
+        }
+    }
+    flushList();
+    return result;
 }
 
 // ─── URL link / cell rendering helpers ────────────────────────────────────

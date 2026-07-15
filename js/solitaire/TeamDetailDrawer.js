@@ -20,7 +20,9 @@ export class TeamDetailDrawer {
         highlightService,
         highlightQuery,
         elementsTitle = 'Managed Services ⚙️',
-        elementsBaseUrl
+        elementsBaseUrl,
+        _permalinkSearch = '',
+        _showDetails = false
     }) {
         if (this.app.interaction.isDraggable) return;
 
@@ -54,6 +56,34 @@ export class TeamDetailDrawer {
         }
 
         titleEl.textContent = `${title ?? ''}`;
+
+        if (_permalinkSearch) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'drawer-copy-btn';
+            copyBtn.title = 'Copy shareable link';
+            copyBtn.textContent = '🔗';
+            copyBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', _permalinkSearch);
+                if (_showDetails) url.searchParams.set('showDetails', 'true');
+                try {
+                    await navigator.clipboard.writeText(url.toString());
+                } catch {
+                    const ta = document.createElement('textarea');
+                    ta.value = url.toString();
+                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                }
+                copyBtn.textContent = '✔️';
+                setTimeout(() => { copyBtn.textContent = '🔗'; }, 1500);
+            });
+            titleEl.appendChild(copyBtn);
+        }
+
         descEl.replaceChildren();
         listEl.replaceChildren();
 

@@ -192,99 +192,307 @@ input:checked + .slider::before {
     transform: translateY(0);
 }
 
+/* .top-search shell + chip styles are in search-bar.css (shared with Domino) */
+
+/* ── Top bar — two-row layout ────────────────────────────────────────────── */
 .top-bar {
     display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 10px 16px;
+    flex-direction: column;
+    padding: 0 16px;
     background: #fff;
-    border-bottom: 1px solid #eee;
-    gap: 12px;
+    box-shadow: 0 1px 0 #eee;
 }
 
-#hamburger-btn {
-    font-size: 24px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-.top-search {
+.top-bar__row {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
+    padding: 8px 0;
 }
 
-.search-field {
-    flex: 1;
+.top-bar__row--filters {
+    padding: 0 0 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.top-bar__row--filters:empty {
+    display: none;
+}
+
+/* ── Quick Filters ────────────────────────────────────────────────────────── */
+
+/* Shared pill base — every filter button uses this */
+.qf-pill-base {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #bbb;
+    background: #f4f4f6;
+    color: #333;
+    font-size: 13px;
+    font-family: var(--brand-font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    line-height: 1.2;
+}
+.qf-pill-base:hover { background: #e8e8ec; border-color: #999; }
+
+/* Dropdown wrapper (positions the menu) */
+.qf-dropdown-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* "Filters" button base styles */
+.qf-dropdown-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+    color: #333;
+    font-size: 13px;
+    font-family: var(--brand-font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, color 0.12s ease;
+    line-height: 1;
+}
+.qf-dropdown-btn:hover { background: #000; color: #fff; border-color: #000; }
+.qf-dropdown-btn__caret { font-size: 10px; opacity: 0.7; }
+
+/* Slot in the search row that contains the dropdown wrapper */
+#qf-filters-btn-slot {
+    flex-shrink: 0;
+}
+
+/* "Filters" button same height as hamburger */
+.qf-dropdown-btn {
+    height: 36px;
+    box-sizing: border-box;
+}
+
+/* Dropdown menu panel */
+.qf-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: auto;
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    padding: 4px 0;
+    z-index: 500;
+}
+
+/* Header items (toggle + clear all) */
+.qf-dropdown-header-item {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 4px 8px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #fff;
-    cursor: text;
-    min-height: 38px;
-}
-
-.search-field input {
-    border: none;
-    outline: none;
-    flex: 1;
-    min-width: 80px;
-    font-size: 15px;
-    background: transparent;
-    padding: 2px 0;
-}
-
-.search-chip-key {
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: #e8f0fe;
-    color: #1a73e8;
+    gap: 10px;
+    padding: 8px 14px;
     font-size: 13px;
-    font-weight: 600;
+    font-family: var(--brand-font);
+    color: #333;
+    cursor: pointer;
     white-space: nowrap;
+    width: 100%;
+    box-sizing: border-box;
+    background: none;
+    border: none;
+    text-align: left;
+}
+.qf-dropdown-header-item:hover { background: #f4f4f6; }
+
+/* "Clear all" row */
+.qf-dropdown-clear { color: #c0392b; }
+.qf-dropdown-clear:hover { background: #fff5f5; }
+
+/* Divider */
+.qf-dropdown-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 4px 0;
+}
+
+.qf-dropdown-section-label {
+    padding: 6px 14px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #999;
     user-select: none;
 }
 
-.search-chip {
-    display: inline-flex;
+/* Toggle switch (Show quick filters) */
+.qf-dropdown-toggle-row { user-select: none; }
+.qf-chips-toggle { display: none; }
+
+.qf-toggle-switch {
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+    background: #ccc;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+    display: inline-block;
+}
+.qf-toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.qf-chips-toggle:checked + .qf-toggle-switch { background: #333; }
+.qf-chips-toggle:checked + .qf-toggle-switch::after { transform: translateX(14px); }
+.qf-toggle-label { flex: 1; }
+
+.qf-dropdown-item {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #f1f3f4;
-    color: #202124;
+    gap: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
     font-size: 13px;
+    font-family: var(--brand-font);
+    color: #333;
     white-space: nowrap;
 }
+.qf-dropdown-item:hover { background: #f4f4f6; }
+.qf-dropdown-item--active { font-weight: 600; }
 
-.search-chip-text {
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.qf-checkmark {
+    width: 14px;
+    font-size: 12px;
+    color: #333;
+    flex-shrink: 0;
 }
 
-.search-chip-close {
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    opacity: 0.55;
-    padding: 0 1px;
-}
-
-.search-chip-close:hover { opacity: 1; }
-
-.top-search button {
-    padding: 8px 10px;
-    border-radius: 6px;
+/* Active filter chips */
+.qf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
     border: 1px solid #ddd;
     background: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+    font-size: 13px;
+    font-family: var(--brand-font);
+    color: #333;
+    white-space: nowrap;
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    line-height: 1.2;
+}
+.qf-chip:hover { background: #000; color: #fff; border-color: #000; }
+.qf-chip--active {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.qf-chip--active:hover { background: #333; border-color: #333; }
+
+.qf-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Clear all — text link */
+.qf-clear-all {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #555;
+    font-size: 13px;
+    font-family: var(--brand-font);
+    padding: 6px 8px;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.qf-clear-all:hover { background: none; color: #000; text-decoration-style: solid; }
+
+/* Filter row: wraps on desktop, scrolls horizontally on mobile */
+.top-bar__row--filters { flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+    .top-bar__row--filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .top-bar__row--filters::-webkit-scrollbar { display: none; }
+}
+
+/* ── Top-bar icon buttons ─────────────────────────────────────────────────── */
+.top-bar__hamburger,
+.top-bar__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+    cursor: pointer;
+    color: #333;
+    font-size: 15px;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.top-bar__hamburger:hover,
+.top-bar__action:hover {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+}
+
+@media (max-width: 600px) {
+    .top-bar { padding: 0 8px; }
+    .top-bar__row { gap: 6px; padding: 6px 0; }
+    .top-bar__hamburger { padding: 0; width: 34px; height: 34px; font-size: 16px; }
+    .top-search { min-width: 0; padding: 0 4px; }
+    .top-search input { font-size: 13px; padding: 6px 2px; }
+    .top-search input::placeholder { opacity: 0; }
+    .top-search input:focus::placeholder { opacity: 0.5; }
+    .qf-dropdown-btn { padding: 0; width: 34px; height: 34px; gap: 2px; font-size: 13px; justify-content: center; }
+    .qf-dropdown-btn .qf-dropdown-btn__caret { display: none; }
+    .qf-dropdown-btn .qf-dropdown-btn__label { display: none; }
 }
 
 #side-overlay {
@@ -404,7 +612,7 @@ body.side-drawer-open {
     overflow: hidden;
 }
 
-input[type="text"] {
+input[type="text"]:not(#drawer-search-input) {
     width: 100%;
     padding: 10px;
     margin: 8px 0;
@@ -1587,6 +1795,37 @@ html[data-theme="dark"] #canvas.is-zooming .profile-box--neutral { fill: #1c1c1e
 /* — Surfaces — */
 html[data-theme="dark"] body      { background: #111113; color: #f5f5f7; }
 html[data-theme="dark"] .top-bar  { background: #1c1c1e; border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
+html[data-theme="dark"] .top-bar__hamburger,
+html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .top-bar__hamburger:hover,
+html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; border-color: rgba(255,255,255,0.20); }
+
+/* — Quick Filters dark mode — */
+html[data-theme="dark"] .qf-dropdown-btn { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] .qf-dropdown-btn:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .qf-chip { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); color: #f5f5f7; }
+html[data-theme="dark"] .qf-chip:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .qf-chip--active { background: #f5f5f7; border-color: #f5f5f7; color: #1c1c1e; }
+html[data-theme="dark"] .qf-chip--active:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
+html[data-theme="dark"] .qf-chip__remove { color: rgba(245,245,247,0.6); }
+html[data-theme="dark"] .qf-chip__remove:hover { background: rgba(255,255,255,0.12); color: #f5f5f7; }
+html[data-theme="dark"] .qf-clear-all { background: #2e2e32; border-color: rgba(255,255,255,0.15); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] .qf-clear-all:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.25); color: #f5f5f7; }
+html[data-theme="dark"] .qf-dropdown-menu { background: #2e2e32; border-color: rgba(255,255,255,0.12); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+html[data-theme="dark"] .qf-dropdown-item { color: #f5f5f7; }
+html[data-theme="dark"] .qf-dropdown-section-label { color: rgba(245,245,247,0.4); }
+html[data-theme="dark"] .qf-dropdown-item:hover { background: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .qf-dropdown-header-item { color: #f5f5f7; background: transparent; border-color: transparent; box-shadow: none; }
+html[data-theme="dark"] .qf-dropdown-header-item:hover { background: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .qf-dropdown-clear { color: #ff6b6b; }
+html[data-theme="dark"] .qf-dropdown-clear:hover { background: rgba(255,100,100,0.10); }
+html[data-theme="dark"] .qf-dropdown-divider { border-color: rgba(255,255,255,0.10); }
+html[data-theme="dark"] .qf-toggle-switch { background: #555; }
+html[data-theme="dark"] .qf-chips-toggle:checked + .qf-toggle-switch { background: #f5f5f7; }
+html[data-theme="dark"] .qf-chips-toggle:checked + .qf-toggle-switch::after { background: #1c1c1e; }
+html[data-theme="dark"] .qf-toggle-label { color: #f5f5f7; }
+html[data-theme="dark"] .qf-checkmark { color: #f5f5f7; }
+
 html[data-theme="dark"] #side-drawer { background: #1c1c1e; }
 html[data-theme="dark"] svg        { background-color: #111113; }
 

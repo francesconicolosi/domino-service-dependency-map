@@ -10,6 +10,7 @@ export const NEUTRAL_COLOR = '#fcfcfc';
 export const ROLE_FIELD_WITH_MAPPING = 'Role';
 export const LOCATION_FIELD = 'Location';
 export const COMPANY_FIELD = 'Company';
+export const BUSINESS_FUNCTION_FIELD = 'Function';
 
 // Org-level field names and their N/A sentinel labels
 export const emailField = 'Email';

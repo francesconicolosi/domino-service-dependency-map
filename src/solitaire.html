@@ -8,6 +8,7 @@
   />
   <title>Solitaire: Visual People Database</title>
   <link rel="stylesheet" href="./brand-specific/brand.css">
+  <link rel="stylesheet" href="./css/search-bar.css">
   <link rel="stylesheet" href="./css/solitaire-styles.css">
   <link rel="icon" type="image/svg+xml" href="assets/solitaire.svg">
 </head>
@@ -28,9 +29,11 @@
           <li><button id="act-about">ℹ️ About</button></li>
           <li><button id="act-upload">📤 Upload CSV</button></li>
           <li><button id="act-legend">🎨 Legenda ›</button></li>
-          <li><button id="act-scenario">🗂️ Display ›</button></li>
+          <li><button id="act-scenario">🖥️ Display ›</button></li>
+          <li><button id="act-scenario-mgr">🗂️ Scenario ›</button></li>
           <li><button id="act-report">📝 Report a change</button></li>
           <li><button id="act-switch" onclick="window.location.href='./domino.html'">⚅ Domino</button></li>
+          <li><button id="act-switch-hub" onclick="window.location.href='./index.html'">🏠 Portfolio Index</button></li>
         </ul>
       </nav>
       <footer class="drawer-footer">
@@ -68,9 +71,18 @@
               <span class="slider"></span>
             </label>
           </li>
+          <li>
+            <label class="switch-label">
+              🏗️ Function
+              <input type="radio" name="legend-mode" id="toggle-color-function">
+              <span class="slider"></span>
+            </label>
+          </li>
         </ul>
-        <ul id="sub-content-scenario" class="actions" style="display:none">
+        <ul id="sub-content-display" class="actions" style="display:none">
           <li><button id="act-fit">↺ Fit to content</button></li>
+          <li><button id="act-collapse-all">⬆ Collapse All Streams</button></li>
+          <li><button id="act-expand-all">⬇ Expand All Streams</button></li>
           <li><hr style="border:none;border-top:1px solid #ddd;margin:4px 0"></li>
           <li>
             <label class="switch-label">
@@ -79,9 +91,8 @@
               <span class="slider"></span>
             </label>
           </li>
-          <li><button id="act-collapse-all">⬆ Collapse All Streams</button></li>
-          <li><button id="act-expand-all">⬇ Expand All Streams</button></li>
-          <li><hr style="border:none;border-top:1px solid #ddd;margin:4px 0"></li>
+        </ul>
+        <ul id="sub-content-scenario" class="actions" style="display:none">
           <li><button id="act-scenario-save">💾 Save Scenario</button></li>
           <li><button id="act-scenario-import">📥 Import Scenario</button></li>
           <li><button id="act-scenario-export">📤 Export Scenario</button></li>
@@ -94,14 +105,18 @@
 </aside>
 
 <div class="top-bar">
-  <span id="toggle-cta" class="toggle-icon"><button>☰</button></span>
-  <div class="top-search">
-    <div class="search-field" id="search-field">
-      <input type="text" id="drawer-search-input" placeholder="Search for a person, group, service or role..." />
+  <div class="top-bar__row top-bar__row--search">
+    <button class="top-bar__hamburger" id="toggle-cta" aria-label="Menu">☰</button>
+    <div class="top-search">
+      <button class="top-search__icon" id="drawer-search-go" title="Search" aria-label="Search">🔍</button>
+      <div class="search-field" id="search-field">
+        <input type="text" id="drawer-search-input" placeholder='Search by name or fields (e.g. role:Developer or role:"Product Developer"). Suggestions appear as you type.' />
+      </div>
+      <button class="top-search__clear" id="act-clear" title="Clear search" aria-label="Clear search">✕</button>
     </div>
-    <button id="drawer-search-go">🔎</button>
-    <button id="act-clear">❌</button>
+    <div id="qf-filters-btn-slot"></div>
   </div>
+  <div class="top-bar__row top-bar__row--filters" id="quick-filters-bar"></div>
 </div>
 
 <label for="fileInput" id="label-file" class="custom-file-upload">

@@ -1,4 +1,4 @@
-import { normalizeWs, setSearchQuery, setQueryParam, removeQueryParam, normalizeForCompare, parseActiveKeyValueSearch, buildKeyValueSearch } from '../shared/utils.js';
+import { normalizeWs, setSearchQuery, removeQueryParam } from '../shared/utils.js';
 import { ChipBar } from '../shared/ChipBar.js';
 import {
     applySearchDimmingForMatches,
@@ -9,6 +9,7 @@ import {
 import { getNameFromTitleEl } from './orgUtils.js';
 
 const UNKNOWN_MATCHER = /^(unknown|n\/?a|not\s*(set|available)|-|—|none)$/i;
+const KNOWN_FIELDS = ['name', 'role', 'company', 'location', 'function', 'room', 'service', 'stream', 'theme', 'team'];
 
 export class SolitaireSearch {
     constructor(app) {
@@ -19,8 +20,8 @@ export class SolitaireSearch {
         this._savedCollapsedKeys = null;   // user's original collapsed state at search start
         this._allMatchDescs = null;        // descriptors for ALL matches across all streams
         this._currentVisibleStream = null; // which originally-collapsed stream is currently expanded
+        this._domDirty = false;            // true when _findAllMatchDescs left stream positions stale
         this._chipBar = null;
-        this._lastQueryKey = null;         // tracks query+field+missing for cycling continuity
     }
 
     // ─── Chip bar ─────────────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ export class SolitaireSearch {
             if (!term) {
                 this.clear();
             } else {
-                this.app.search.search(term);
+                this.search(term);
             }
         });
     }
@@ -41,10 +42,34 @@ export class SolitaireSearch {
     _refreshChips(searchTerm) {
         this._chipBar?.render(
             searchTerm || '',
-            parseActiveKeyValueSearch,
-            buildKeyValueSearch,
-            normalizeForCompare
+            (t) => this._parseActiveKV(t),
+            (k, v, q) => this._buildKV(k, v, q),
+            (v) => this._normalizeForCompare(v),
+            null   // Solitaire uses single-clause queries; no compound parser needed
         );
+    }
+
+    // Minimal key-value helpers for ChipBar (mirrors Domino SearchEngine pattern)
+    _normalizeForCompare(v) {
+        return (v ?? '').toString().replaceAll('\n', '').replaceAll(' ', '').toLowerCase();
+    }
+
+    _parseActiveKV(term) {
+        if (!term || !term.includes(':')) return null;
+        const colonIdx = term.indexOf(':');
+        const key = term.slice(0, colonIdx).trim();
+        if (!key) return null;
+        const valuePart = term.slice(colonIdx + 1).trim();
+        const quoted = valuePart.startsWith('"') && valuePart.endsWith('"') && valuePart.length >= 2;
+        const clean = quoted ? valuePart.slice(1, -1) : valuePart;
+        const values = clean.split(',').map(v => v.trim()).filter(Boolean);
+        return { key, values, quoted };
+    }
+
+    _buildKV(key, values, quoted) {
+        if (!key || !values?.length) return '';
+        const body = quoted ? values.map(v => `"${v}"`).join(',') : values.join(',');
+        return `${key}:${body}`;
     }
 
     // ─── Descriptor helpers ───────────────────────────────────────────────────
@@ -67,27 +92,102 @@ export class SolitaireSearch {
         return selector ? (g.querySelector(selector) ?? g) : g;
     }
 
+    // ─── Query parser ─────────────────────────────────────────────────────────
+
+    // Parses "field:value", "field:"exact"", "field:"Unknown"" and bare queries.
+    // Returns { raw, q, field, exact, missing, noZoom }.
+    _parseQuery(rawInput, extraOpts = {}) {
+        const raw = (rawInput ?? '').toString().trim();
+        const noZoom = !!extraOpts.noZoom;
+
+        if (!raw.includes(':')) {
+            return { raw, q: raw.toLowerCase(), field: '', exact: false, missing: false, noZoom };
+        }
+
+        const colonIdx = raw.indexOf(':');
+        const fieldToken = raw.slice(0, colonIdx).trim().toLowerCase();
+        let valuePart = raw.slice(colonIdx + 1).trim();
+
+        const quoted = valuePart.startsWith('"') && valuePart.endsWith('"') && valuePart.length >= 2;
+        if (quoted) valuePart = valuePart.slice(1, -1);
+
+        const knownField = KNOWN_FIELDS.includes(fieldToken) ? fieldToken : '';
+        const isMissing = quoted && UNKNOWN_MATCHER.test(valuePart.trim());
+
+        return {
+            raw,
+            q: valuePart.trim().toLowerCase(),
+            field: knownField,
+            exact: quoted,
+            missing: isMissing,
+            noZoom,
+        };
+    }
+
     // ─── Query helpers ────────────────────────────────────────────────────────
 
-    _runQuery(q, missing, normalizedField) {
+    _runQuery(q, missing, normalizedField, exact = false) {
         const FIELD_SELECTORS = {
+            name: '.profile-name',
             role: '.role-field',
             company: '.company-field',
             location: '.location-field',
+            'function': '.function-field',
+            room: '.room-field',
+            service: '.team-title[data-services]',
+            stream: '.stream-title[data-full-name]',
+            theme: '.theme-title[data-full-name]',
+            team: '.team-title[data-full-name]',
         };
+
+        // Service field — handled separately (searches data-services on team titles)
+        if (normalizedField === 'service') {
+            return Array.from(document.querySelectorAll('.team-title[data-services]')).filter(n => {
+                const services = (n.getAttribute('data-services') || '')
+                    .split(',').map(s => s.trim().toLowerCase());
+                return exact ? services.includes(q) : services.some(s => s.includes(q));
+            });
+        }
+
         if (missing && normalizedField) {
             const attrName =
                 normalizedField === 'role' ? 'data-role' :
-                normalizedField === 'company' ? 'data-company' : 'data-location';
+                normalizedField === 'company' ? 'data-company' :
+                normalizedField === 'function' ? 'data-function' : 'data-location';
             return Array.from(document.querySelectorAll('g[data-key^="card::"]')).filter(n => {
                 const norm = normalizeWs(n.getAttribute(attrName) || '').trim().toLowerCase();
                 return !norm || UNKNOWN_MATCHER.test(norm);
             });
         }
+
+        // For exact field searches, query card groups directly via data attributes
+        // (field elements contain "Key: Value" in textContent, not the bare value)
+        if (exact && normalizedField) {
+            const FIELD_ATTR = {
+                role: 'data-role',
+                company: 'data-company',
+                location: 'data-location',
+                'function': 'data-function',
+                room: 'data-room',
+            };
+            const attrName = FIELD_ATTR[normalizedField];
+            if (attrName) {
+                return Array.from(document.querySelectorAll('g[data-key^="card::"]')).filter(n => {
+                    const val = normalizeWs(n.getAttribute(attrName) || '').trim().toLowerCase();
+                    return val === q;
+                });
+            }
+        }
+
         const sel = (normalizedField && FIELD_SELECTORS[normalizedField])
-            || '.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, [data-services]';
+            || '.profile-name, .team-title, .theme-title, .stream-title, .role-field, .company-field, .location-field, .function-field, [data-services]';
         return Array.from(document.querySelectorAll(sel)).filter(n => {
-            const txt = (n.textContent || '').trim().toLowerCase();
+            const txt = (n.getAttribute?.('data-full-name') || n.textContent || '').trim().toLowerCase();
+            if (exact) {
+                const exactServiceMatch = (n.getAttribute?.('data-services') || '')
+                    .split(',').some(s => s.trim().toLowerCase() === q);
+                return txt === q || exactServiceMatch;
+            }
             const attrMatch = (n.getAttribute?.('data-services') || '').toLowerCase().includes(q);
             return txt.includes(q) || attrMatch;
         });
@@ -95,11 +195,11 @@ export class SolitaireSearch {
 
     // Temporarily expand all collapsed streams (in-place, no localStorage write)
     // to find matches, then collapse them back. Returns descriptors.
-    _findAllMatchDescs(q, missing, normalizedField) {
+    _findAllMatchDescs(q, missing, normalizedField, exact = false) {
         const renderer = this.app.renderer;
         const collapsed = renderer._getCollapsedKeys?.() ?? new Set();
         collapsed.forEach(k => renderer._expandInPlace?.(k));
-        const matches = this._runQuery(q, missing, normalizedField);
+        const matches = this._runQuery(q, missing, normalizedField, exact);
         collapsed.forEach(k => renderer._collapseInPlace?.(k));
         return matches.map(el => this._matchDesc(el)).filter(Boolean);
     }
@@ -118,18 +218,21 @@ export class SolitaireSearch {
         const inOriginallyCollapsed = this._savedCollapsedKeys?.has(desc.streamKey) ?? false;
         const nextVisibleStream = inOriginallyCollapsed ? desc.streamKey : null;
 
-        if (nextVisibleStream !== this._currentVisibleStream) {
+        if (nextVisibleStream !== this._currentVisibleStream || this._domDirty) {
             // Build the collapsed set: original, minus the one stream we need open
             const newCollapsed = new Set(this._savedCollapsedKeys ?? []);
             if (nextVisibleStream) newCollapsed.delete(nextVisibleStream);
 
-            // Only re-render if the collapsed state actually differs from what's stored
+            // Re-render if localStorage differs from desired state OR if _findAllMatchDescs
+            // left stream positions stale (collapsed a stream in-place without repositioning).
             const currentStored = renderer._getCollapsedKeys?.() ?? new Set();
             const stateChanged =
+                this._domDirty ||
                 newCollapsed.size !== currentStored.size ||
                 [...newCollapsed].some(k => !currentStored.has(k));
 
             this._currentVisibleStream = nextVisibleStream;
+            this._domDirty = false;
 
             if (stateChanged) {
                 localStorage.setItem('dsm-collapsed-v1', JSON.stringify([...newCollapsed]));
@@ -163,6 +266,8 @@ export class SolitaireSearch {
     // ─── Public API ───────────────────────────────────────────────────────────
 
     clear() {
+        this.lastSearch = '';
+        this.currentIndex = 0;
         const { app } = this;
         // Restore the user's original collapsed state and re-render if we changed it
         if (this._savedCollapsedKeys !== null) {
@@ -176,6 +281,7 @@ export class SolitaireSearch {
             this._savedCollapsedKeys = null;
             this._allMatchDescs = null;
             this._currentVisibleStream = null;
+            this._domDirty = false;
         }
         const output = document.getElementById('output');
         if (output) output.textContent = '';
@@ -184,7 +290,6 @@ export class SolitaireSearch {
         if (searchInput) searchInput.value = '';
         setSearchQuery('');
         removeQueryParam('missing');
-        this._lastQueryKey = null;
         this._refreshChips('');
         clearSearchDimming();
         clearFieldHighlights();
@@ -192,32 +297,33 @@ export class SolitaireSearch {
         app.drawer.close();
     }
 
-    search(query, opts = {}) {
+    search(rawQuery, opts = {}) {
         const { app } = this;
-        const q = (query ?? '').toString().trim().toLowerCase();
-        const scopeField = (opts.field || '').toLowerCase();
-        const missing = !!opts.missing;
-        const noZoom = !!opts.noZoom;
+
+        // Legacy opt-based calls (e.g. from old URL restore code or direct callers):
+        // search('', { missing: true, field: 'Role' }) → synthesize canonical query string
+        let effectiveRaw = (rawQuery ?? '').toString().trim();
+        if (opts.missing && !effectiveRaw.includes(':')) {
+            const fieldToken = (opts.field || '').toLowerCase().split(' ')[0] || 'role';
+            effectiveRaw = `${fieldToken}:"Unknown"`;
+        }
+
+        // Parse the unified query string (field:"value", field:value, or bare text)
+        const parsed = this._parseQuery(effectiveRaw, opts);
+        const { raw, q, field: normalizedField, exact, missing } = parsed;
+        const noZoom = parsed.noZoom;
 
         if (!q && !missing) {
             this.clear();
             return;
         }
 
+        // Keep search input in sync — show the full canonical query string
         const searchInput = document.getElementById('drawer-search-input');
-        if (searchInput && searchInput.value.trim().toLowerCase() !== q) {
-            searchInput.value = q;
+        if (searchInput && searchInput.value !== raw) {
+            searchInput.value = raw;
         }
 
-        const normalizeFieldName = (f) => {
-            const fLow = (f || '').toLowerCase();
-            if (fLow.includes('role')) return 'role';
-            if (fLow.includes('company')) return 'company';
-            if (fLow.includes('location')) return 'location';
-            return '';
-        };
-
-        const normalizedField = normalizeFieldName(scopeField);
         const renderer = app.renderer;
 
         // Capture the user's collapsed state on the first search after a clear
@@ -225,25 +331,31 @@ export class SolitaireSearch {
             this._savedCollapsedKeys = renderer._getCollapsedKeys?.() ?? new Set();
         }
 
-        const queryKey = `${q}|${normalizedField}|${missing ? '1' : '0'}`;
-        const isNewQuery = queryKey !== this._lastQueryKey;
+        const isNewQuery = raw !== this.lastSearch || missing;
 
         if (isNewQuery) {
             // Restore localStorage to the user's original state before finding matches
             localStorage.setItem('dsm-collapsed-v1', JSON.stringify([...this._savedCollapsedKeys]));
             this._currentVisibleStream = null;
 
+            // Detect if _findAllMatchDescs will dirty the DOM: a stream is dirty when it is
+            // in the collapsed set (should be collapsed) but is currently expanded in the DOM
+            // because a previous search opened it via loadAndRender.
+            this._domDirty = [...this._savedCollapsedKeys].some(k => {
+                const el = document.querySelector(`g[data-key="${k}"]`);
+                return el && !el.classList.contains('stream-collapsed');
+            });
+
             // Find ALL matches across all streams (in-place expand → query → collapse back)
-            this._allMatchDescs = this._findAllMatchDescs(q, missing, normalizedField);
+            this._allMatchDescs = this._findAllMatchDescs(q, missing, normalizedField, exact);
 
             if (this._allMatchDescs.length === 0) {
                 clearSearchDimming();
-                app.showToast(missing ? 'No result found for Unknown' : `No result found for ${q}`);
+                app.showToast(missing ? 'No result found for Unknown' : `No result found for "${q}"`);
                 return;
             }
 
-            this.lastSearch = q;
-            this._lastQueryKey = queryKey;
+            this.lastSearch = raw;
             this.currentIndex = 0;
         } else {
             if (!this._allMatchDescs?.length) return;
@@ -261,15 +373,11 @@ export class SolitaireSearch {
                 ? `Found ${count} result(s).`
                 : `Found ${count} result(s). Showing ${this.currentIndex + 1}/${count}.`
         );
-        if (!missing) {
-            setSearchQuery(q);
-            removeQueryParam('missing');
-            this._refreshChips(q);
-        } else {
-            removeQueryParam('search');
-            setQueryParam('missing', opts.field || '');
-            this._refreshChips('');
-        }
+
+        // Unified URL: always use a single ?search= param, never ?missing=
+        setSearchQuery(raw);
+        removeQueryParam('missing');
+        this._refreshChips(missing ? '' : raw);
 
         // Field highlight on current result
         if (!missing) {
@@ -285,7 +393,8 @@ export class SolitaireSearch {
                         FIELD_CLASSES.forEach(cls => {
                             const el = group.querySelector('.' + cls);
                             if (!el) return;
-                            if ((el.textContent || '').toLowerCase().includes(q))
+                            const elTxt = (el.textContent || '').toLowerCase();
+                            if (exact ? elTxt === q : elTxt.includes(q))
                                 el.classList.add('field-hit-highlight');
                         });
                     }
@@ -293,28 +402,37 @@ export class SolitaireSearch {
             }
         }
 
-        // Role drawer
-        if (!missing) {
-            const roleMapping = app.db.roleDetailsMapping.get(query);
-            if (scopeField?.toLowerCase() === 'role' && roleMapping) {
+        // Role / Function drawer
+        if (!missing && (normalizedField === 'role' || normalizedField === 'function')) {
+            const mapping = normalizedField === 'role'
+                ? app.db.roleDetailsMapping
+                : app.db.functionDetailsMapping;
+            // Keys are original-case; q is lowercased — do a case-insensitive lookup
+            const key = mapping
+                ? [...mapping.keys()].find(k => k.toLowerCase() === q)
+                : null;
+            const entry = key ? mapping.get(key) : null;
+            if (entry?.description) {
                 app.drawer.open({
-                    name: query,
-                    description: roleMapping['description'],
-                    elements: {
-                        items: (roleMapping['grants'] || '').split(',').map(s => s.trim()).filter(Boolean)
-                    },
-                    elementsTitle: 'Role Grants'
+                    name: key,
+                    description: entry.description,
+                    elements: entry.grants
+                        ? { items: entry.grants.split(',').map(s => s.trim()).filter(Boolean) }
+                        : undefined,
+                    elementsTitle: normalizedField === 'role' ? 'Role Grants' : undefined,
+                    _permalinkSearch: `${normalizedField}:${key}`,
                 });
             }
         }
 
-        // Service drawer
-        if (!missing) {
+        // Service drawer (triggered when target is a team-title with matching service)
+        // Skip when a role/function drawer was (or could be) opened above
+        if (!missing && normalizedField !== 'role' && normalizedField !== 'function') {
             try {
                 const target = this._elFromDesc(this._allMatchDescs[this.currentIndex]);
                 if (!target) return;
-                const group = target.closest?.('g');
-                const teamTitleEl = group ? group.querySelector('text.team-title') : null;
+                const teamTitleEl = target.matches?.('text.team-title') ? target
+                    : target.closest?.('g')?.querySelector('text.team-title');
                 if (!teamTitleEl) return;
 
                 const rawServices = (teamTitleEl.getAttribute('data-services') || '')
@@ -323,7 +441,9 @@ export class SolitaireSearch {
 
                 const norm = v => (v || '').toString().trim().toLowerCase();
                 const normalized = rawServices.map(s => ({ raw: s, norm: norm(s) }));
-                const hit = normalized.find(svc => svc.norm.includes(q));
+                const hit = exact
+                    ? normalized.find(svc => svc.norm === q)
+                    : normalized.find(svc => svc.norm.includes(q));
                 if (!hit) return;
 
                 const teamName = teamTitleEl.getAttribute('data-team-name') || getNameFromTitleEl(teamTitleEl);

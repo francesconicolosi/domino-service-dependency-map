@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Skibidi Toilet vs Siren Head</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Overlay che chiede di ruotare il telefono (solo mobile in verticale) -->
+  <div id="rotate">
+    <div>
+      <div class="icon">&#8635;</div>
+      Ruota il telefono<br>in orizzontale
+    </div>
+  </div>
+
+  <div id="wrapper">
+    <div id="crt">
+      <canvas id="game" width="320" height="224"></canvas>
+      <div id="scanlines"></div>
+    </div>
+    <p id="hint">1P: frecce/WASD + Z/SPAZIO &middot; 2P: G1 frecce+Z, G2 WASD+SPAZIO &middot; gamepad USB supportati &middot; M audio &middot; R restart</p>
+  </div>
+
+  <!-- Controlli touch (visibili solo su dispositivi touch) -->
+  <div id="touch">
+    <div class="tside left">
+      <div class="tbtn" id="tL">&#9664;</div>
+      <div class="tbtn" id="tR">&#9654;</div>
+    </div>
+    <div class="tside right">
+      <div class="tbtn big" id="tJ">&#9650;</div>
+    </div>
+  </div>
+
+  <!-- Gli script sono caricati con normali tag <script> (niente moduli ES)
+       così il gioco funziona aprendo index.html direttamente da disco,
+       senza alcun server. L'ordine conta: prima le dipendenze. -->
+  <script src="js/config.js"></script>
+  <script src="js/gfx/sprites.js"></script>
+  <script src="js/audio/audio.js"></script>
+  <script src="js/core/input.js"></script>
+  <script src="js/core/camera.js"></script>
+  <script src="js/entities/entity.js"></script>
+  <script src="js/entities/platform.js"></script>
+  <script src="js/entities/coin.js"></script>
+  <script src="js/entities/rock.js"></script>
+  <script src="js/entities/goalsign.js"></script>
+  <script src="js/entities/flag.js"></script>
+  <script src="js/entities/sirenhead.js"></script>
+  <script src="js/entities/player.js"></script>
+  <script src="js/level/level1.js"></script>
+  <script src="js/level/level2.js"></script>
+  <script src="js/core/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
