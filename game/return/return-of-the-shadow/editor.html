@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>THE RETURN OF THE SHADOW — Level Editor</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+    #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; touch-action: none; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script src="love-shim.js"></script>
+  <script src="editor.js"></script>
+  <script>
+    love._run(document.getElementById('game'));
+  </script>
+</body>
+</html>

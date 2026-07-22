@@ -1,206 +1,92 @@
 # THE RETURN OF THE SHADOW
 
-Livello d'apertura di un cinematic-platformer 2D in stile anni '90 (movimenti "rotoscopici"
-procedurali), interamente originale: **niente asset esterni** — grafica, animazioni, vento e
-musica sono generati dal codice. Tutto il sorgente è modificabile.
+A cinematic 2D platformer — **The Ascent** (a climbing prologue with a cinematic
+and title screen) and **The Witch's Keep** (a castle with patrolling skeletons, a
+pressure-plate trap, and sword combat). Everything — graphics, skeletal animation,
+wind and music — is generated **procedurally in code**: no external assets.
 
-Motore: **LÖVE (Love2D) 11.x** — https://love2d.org
-Funziona nativamente su **Linux** e **Windows**, e sotto **Proton/Wine** (la build Windows
-gira senza configurazioni particolari).
+Written in **vanilla JavaScript + Canvas 2D**. No frameworks, no build step, no
+runtime dependencies. It runs by opening a single HTML file.
 
----
+> This is a hand-written port of an original Love2D game. The game logic runs on a
+> small **LÖVE-compatibility shim** (`love-shim.js`) that maps `love.graphics` onto
+> Canvas 2D, `love.sound`/`love.audio` onto Web Audio, and `love.math` onto a
+> seeded PRNG + ear-clipping triangulator.
 
-## Requisiti
+## Run it
 
-- LÖVE 11.4 o successivo (11.x).
-  - Linux: pacchetto `love` della tua distro (`apt install love`, `pacman -S love`,
-    `dnf install love`) oppure AppImage dal sito ufficiale.
-  - Windows: installer o zip da https://love2d.org
-
-Nessun'altra dipendenza. Nessun asset da scaricare.
-
-## Eseguire il gioco
-
-Dalla cartella del progetto:
+Open **`index.html`** — it works straight from `file://` (double-click), no server
+required. Or serve the folder statically:
 
 ```bash
-love .
+python3 -m http.server 8000
+# then open http://localhost:8000
 ```
 
-oppure trascina la cartella del progetto sull'eseguibile di LÖVE (Windows).
+Audio starts on the first key press / tap (browser autoplay policy).
 
-## Controlli
+## Controls
 
-| Azione | Tasti |
+| Action | Keys |
 |---|---|
-| Muoversi | ← → oppure A D |
-| Saltare | SPAZIO / Z / K (con jump-buffer e coyote time) |
-| Aggrapparsi a una sporgenza | automatico avvicinandosi in aria |
-| Arrampicarsi (pareti segnate) | ↑ / ↓ vicino alla fascia con gli appigli |
-| Scavalcare da appeso | ↑ |
-| Lasciare la presa | ↓ oppure S |
-| Colpo di spada (Livello 2) | X oppure F (dopo aver raccolto la spada) |
-| Entrare nel castello | INVIO dalla title screen del prologo |
-| Ricominciare il livello | R |
-| Uscire | ESC |
+| Move | ← → or A D |
+| Jump | SPACE / Z / K (jump-buffer + coyote time) |
+| Grab a ledge | automatic while airborne near an edge |
+| Climb marked walls | ↑ / ↓ near the carved holds |
+| Mantle over from a hang | ↑ |
+| Let go | ↓ or S |
+| Sword strike (Level 2) | X or F (after picking up the sword) |
+| Enter the castle | ENTER on the prologue title screen |
+| Restart the level | R |
 
-Le pareti scalabili si riconoscono dalla fascia di roccia levigata con gli appigli
-scavati: avvicinati e premi ↑ per agganciarti (l'aggancio ha priorità sul salto),
-poi ↑/↓ per salire e scendere; SPAZIO fa il balzo di spinta lontano dalla parete.
-In parete ogni arto afferra e molla i singoli appigli, uno alla volta; in cima
-il personaggio si issa in una sequenza completa (tirata, ginocchio sul bordo,
-rilascio delle mani, accovacciato, in piedi). Le travi strette si attraversano
-dal basso e richiedono equilibrio.
+On phones/tablets an on-screen control pad appears automatically (d-pad, ↑/↓,
+**JUMP**, **ATK**, plus **R** and **ENTER**). Keyboard stays primary on desktop.
 
-## Livello 2 — The Witch's Keep
+## Notes
 
-Dalla title screen del prologo, premi **INVIO** per entrare nel castello:
-sale buie di mattoni illuminate dalle torce, scalinate, burroni e **scheletri
-armati di spada** che pattugliano i corridoi. All'inizio sei disarmato: evitali.
+- **Combat animation** — the hero's sword work is choreographed for weight and
+  reach, taking motion cues from the classic *Prince of Persia* fencing: an
+  en-garde guard, a committed **lunge/thrust** (front leg drives forward, back leg
+  extends, torso commits along the blade), a brief held extension that "reads" the
+  hit, then a weighted recovery. It's fully procedural — no sprite art is imported.
+- **Procedural detail** — mountain/rock silhouettes, cracks and grass use a seeded
+  JS PRNG, so the art style and gameplay are deterministic; only the random
+  decoration is generated at load.
+- **Pixel-art pipeline** — the world renders to a low-res canvas and is
+  nearest-neighbor upscaled with letterboxing, for the '90s look.
 
-Nella sala della trappola c'è una **piastra a pressione**: calpestala quando lo
-scheletro di guardia passa sotto la **gabbia sospesa** — se lo manca, l'argano
-la risolleva e puoi ritentare. Lo scheletro colpito crolla in un mucchio d'ossa
-(niente sangue né ferite) e **lascia cadere la spada**: raccoglila per poter
-attaccare con **X**. I fendenti non feriscono gli scheletri: li **respingono**;
-spingili oltre il bordo dei burroni per eliminarli. Hai **3 cuori**: ogni colpo
-di spada nemico ne toglie uno; a zero, si ricomincia dal checkpoint.
+## Level editor
 
-## Level Editor
+Open **`editor.html`**. Drag on empty space to create a platform (thin = beam),
+click to select, drag to move, drag an edge to resize; `TAB` switch level,
+`B` beam, `C` climbable wall, `N` climb-route bottom, `K` checkpoint, right-click a
+flag to remove it, `X`/`DEL` delete, `G` grid snap, `H` help, wheel/middle-drag to
+zoom/pan, `CTRL+S`/`F5` save, `CTRL+L` load.
 
-Nella cartella `editor/` c'è un editor visuale con gli stessi asset del gioco:
+**Saving** writes the layout to the browser's `localStorage` — the game
+(`index.html`) then **auto-loads it** on next launch — and also downloads a
+`level.lua` / `level2.lua` file.
 
-```bash
-love editor           # oppure: love dist/level-editor.love
+To revert the game to its built-in levels, clear the saved layouts from the browser
+console:
+
+```js
+localStorage.removeItem('rots:level.lua');
+localStorage.removeItem('rots:level2.lua');
 ```
 
-Trascina sul vuoto per creare piattaforme (sottile = trave), clicca per
-selezionare, trascina per spostare, trascina un bordo per ridimensionare.
-`TAB` passa dal Livello 1 (la scalata, rupi al tramonto) al Livello 2 (il
-castello, muratura di mattoni con i marker di trappola, pulsante, ronde degli
-scheletri e porta d'uscita come riferimento). `B` trave, `C` parete scalabile,
-`N` fissa la base della via al mouse, `K` checkpoint, `G` snap alla griglia,
-`CTRL+S`/`F5` salva. L'editor scrive `level.lua` (Livello 1) o `level2.lua`
-(Livello 2) nella sua save directory (il percorso appare a schermo dopo il
-salvataggio): copia quei file accanto al `main.lua` del gioco (o dentro lo zip
-del `.love`) e il gioco li caricherà automaticamente al posto dei livelli di
-default. `H` mostra/nasconde l'aiuto in-editor.
-
-## Struttura del progetto
+## Files
 
 ```
 return-of-the-shadow/
-├── conf.lua        # configurazione finestra (1280x720, resizable, vsync, MSAA)
-├── main.lua        # tutto il gioco (~900 righe, commentato in italiano)
-├── assets/         # opzionale: font serif per la title screen (vedi LEGGIMI.txt)
-└── build.sh        # packaging .love / .exe
+├── index.html     # the game
+├── editor.html    # the level editor
+├── love-shim.js   # LÖVE → Canvas2D / Web Audio / input compatibility layer
+├── game.js        # game logic (two levels, physics, animation, audio)
+├── editor.js      # the level editor
+└── touch.js       # on-screen touch controls (game only)
 ```
 
-`main.lua` è organizzato in sezioni chiaramente commentate:
+## License
 
-1. **Costanti e palette** (in testa al file): gravità, velocità, salto, colori del
-   tramonto, posizione del castello, trigger della cinematica. È il primo posto dove
-   mettere le mani per modificare il feel del gioco.
-2. **Livello**: la tabella `plats` definisce le piattaforme (x, y, w, h, più i flag
-   `beam` per le travi strette e `climbL` per le pareti scalabili) e i checkpoint.
-   Le sporgenze afferrabili sono generate automaticamente dagli spigoli.
-3. **Audio procedurale**: `genWind()` (rumore filtrato con raffiche) e `genMusic()`
-   (archi sintetici in Re minore, loop di 16 secondi).
-4. **Sfondo**: cielo a gradiente, sole, nubi, tre catene montuose in parallasse.
-5. **Castello ed emblema**: `drawCastle` e `drawEmblem` (l'emblema della strega:
-   anello con tacche rituali, tre archi intrecciati, luna crescente che culla un occhio).
-6. **Protagonista**: fisica AABB scritta a mano, stati (terra/aria/appeso/arrampicata/
-   scavalcamento/cinematica), pose procedurali per corsa, equilibrio, salto,
-   atterraggio, arrampicata; sciarpa simulata a nodi (verlet) mossa dal vento.
-7. **Cinematica e title screen**: al promontorio il controllo passa al gioco, entra la
-   musica orchestrale con dissolvenza e appare "THE RETURN OF THE SHADOW".
-
-## Personalizzazione rapida
-
-- **Grana pixel-art**: costante `PIX` in `main.lua` (2 = 640×360 in stile anni '90;
-  1 = nessuna pixelatura; 3–4 = ancora più retrò).
-- **Feel del salto**: `GRAV`, `JUMPV`, `COYOTE`, `JBUF` in testa a `main.lua`.
-- **Palette**: tabella `COL`.
-- **Livello**: tabella `plats` (aggiungi/spezza piattaforme, crepacci, pareti).
-- **Font della title screen**: metti un `.ttf` serif in `assets/title.ttf`
-  (caricato automaticamente se presente; altrimenti usa il font di sistema di LÖVE
-  con spaziatura tra le lettere).
-- **Musica/vento**: parametri in `genMusic()` e `genWind()`.
-
-## Compilare / distribuire
-
-### Pacchetto universale `.love`
-
-```bash
-./build.sh
-```
-
-Crea `dist/return-of-the-shadow.love`: si esegue con `love return-of-the-shadow.love`
-su qualunque sistema con LÖVE installato (Linux, Windows, macOS).
-
-### Eseguibile Windows (funziona anche sotto Proton/Wine)
-
-1. Scarica lo zip **a 64 bit** di LÖVE per Windows e scompattalo.
-2. Esegui:
-
-   ```bash
-   ./build.sh /percorso/alla/cartella/love-11.x-win64
-   ```
-
-   Lo script concatena `love.exe` con il `.love` e copia le DLL necessarie in
-   `dist/windows/`. Quella cartella è il gioco completo per Windows.
-
-   Su Windows puro l'equivalente manuale è:
-
-   ```bat
-   copy /b love.exe+return-of-the-shadow.love ReturnOfTheShadow.exe
-   ```
-
-   (poi copia tutte le `.dll` e `license.txt` accanto all'exe).
-
-3. Sotto **Proton/Steam**: aggiungi `ReturnOfTheShadow.exe` come gioco non-Steam e
-   forza una versione di Proton, oppure lancialo con Wine. Non servono override.
-
-### Eseguire nel browser (WebAssembly)
-
-Il gioco può girare anche nel browser tramite **love.js** (il port Emscripten
-di LÖVE). Serve **Node.js 16 o più recente** (consigliato ≥ 18):
-
-```bash
-./build-web.sh
-cd dist/web && python3 -m http.server 8000
-# poi apri http://localhost:8000
-```
-
-Se il comando resta bloccato su uno spinner con `rollbackFailedOptional`,
-il tuo Node è troppo vecchio (quel messaggio è di npm 5/6, incluso in
-Node ≤ 10): aggiorna Node (`nvm install --lts && nvm use --lts` oppure da
-https://nodejs.org) e rilancia. In alternativa installa love.js una volta
-sola con `npm install -g love.js` e riesegui lo script, che userà il
-binario globale.
-
-Lo script alloca **256 MB di memoria WebAssembly** (`--memory`): il default
-di love.js è 16 MB e con questo gioco produce l'errore
-`RuntimeError: memory access out of bounds` al caricamento. Il messaggio in
-console `Could not open file assets/title.ttf` è invece innocuo: è il
-tentativo (facoltativo) di caricare il font personalizzato della title
-screen, che in sua assenza usa il font di sistema.
-
-Note importanti: la cartella `dist/web/` va servita da un **server statico**
-(qualunque, anche `python3 -m http.server`) — aprire `index.html` da `file://`
-non funziona perché i browser bloccano il caricamento del `.wasm`. Lo script
-usa la modalità *compatibility* di love.js, che funziona ovunque senza header
-particolari; l'**audio parte al primo click o tasto** (regola dei browser
-sull'autoplay). La stessa cartella si può pubblicare così com'è su GitHub
-Pages, itch.io (come "HTML playable in browser") o qualunque hosting statico.
-
-### Linux nativo
-
-Su Linux il modo più semplice è distribuire il `.love` (dipendenza: pacchetto `love`).
-Per un binario standalone si può usare il metodo AppImage descritto sul wiki di LÖVE:
-https://love2d.org/wiki/Game_Distribution
-
-## Licenza
-
-Codice e contenuti di questo progetto: **MIT** — usalo, modificalo e ridistribuiscilo
-liberamente. LÖVE è distribuito con licenza zlib (vedi il sito ufficiale).
+MIT.

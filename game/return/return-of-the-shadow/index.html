@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>THE RETURN OF THE SHADOW — Prologue: The Ascent</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+    #game { display: block; width: 100vw; height: 100vh; touch-action: none; }
+    /* --- touch controls (shown only on coarse-pointer devices, see touch.js) --- */
+    #touch { position: fixed; inset: 0; pointer-events: none; display: none;
+             font-family: system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+    #touch.on { display: block; }
+    .tbtn { position: absolute; pointer-events: auto; display: flex; align-items: center;
+            justify-content: center; color: rgba(240,235,225,0.85); font-weight: 600;
+            background: rgba(30,22,40,0.35); border: 1px solid rgba(240,220,200,0.25);
+            border-radius: 14px; backdrop-filter: blur(2px); -webkit-tap-highlight-color: transparent;
+            touch-action: none; }
+    .tbtn.held { background: rgba(210,120,60,0.5); }
+    .tbtn.round { border-radius: 50%; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="touch"></div>
+
+  <script src="love-shim.js"></script>
+  <script src="game.js"></script>
+  <script src="touch.js"></script>
+  <script>
+    love._run(document.getElementById('game'));
+  </script>
+</body>
+</html>
