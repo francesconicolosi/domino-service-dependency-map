@@ -381,8 +381,27 @@
     this.playing = false;
   };
 
+  // One-shot sound effect: overlapping, retriggerable playback (no loop state).
+  // Each play() spins up a fresh BufferSource → gain → destination.
+  function Sfx(sd) { this.sd = sd; this.buffer = null; }
+  Sfx.prototype.play = function (vol, pitch) {
+    if (!audioUnlocked || !audioCtx) return;
+    if (!this.buffer) {
+      this.buffer = audioCtx.createBuffer(1, this.sd._n, this.sd.rate);
+      this.buffer.getChannelData(0).set(this.sd.data);
+    }
+    const node = audioCtx.createBufferSource();
+    node.buffer = this.buffer;
+    node.playbackRate.value = pitch || 1;
+    const g = audioCtx.createGain();
+    g.gain.value = (vol == null ? 1 : vol);
+    node.connect(g).connect(audioCtx.destination);
+    try { node.start(0); } catch (e) { /* ignore */ }
+  };
+
   love.audio = {
-    newSource: function (sd /*, type */) { return new Source(sd); }
+    newSource: function (sd /*, type */) { return new Source(sd); },
+    newSound: function (sd) { return new Sfx(sd); }
   };
 
   function unlockAudio() {

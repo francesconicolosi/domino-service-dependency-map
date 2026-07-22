@@ -27,6 +27,8 @@
   const CLIMBSPD = 200;
   const ATK_DUR = 0.42;
   const DRAW_DUR = 0.55;
+  const BLOCK_DUR = 0.5;      // how long the block guard is held
+  const RIPOSTE_WIN = 1.6;    // window after a successful parry to counter-attack
   const HOLDSTEP = 26;
   const COYOTE = 0.10;
   const JBUF = 0.13;
@@ -121,6 +123,7 @@
 
   // -------------------------------------------------------------- AUDIO (procedural)
   let windSrc, musicSrc;
+  let sfxSwing, sfxHit, sfxParry;
   let musicVol = 0, windVol = 0;
 
   function genWind() {
@@ -172,6 +175,66 @@
         const idx = base + i;
         if (idx < total) sd.setSample(idx, clamp(s * env, -1, 1));
       }
+    }
+    return sd;
+  }
+
+  // Sword swoosh: band-passed noise that swells then fades — a blade cutting air
+  function genSwoosh() {
+    const rate = 22050, dur = 0.24;
+    const n = Math.floor(rate * dur);
+    const sd = love.sound.newSoundData(n, rate, 16, 1);
+    const rng = love.math.newRandomGenerator(4127);
+    let lp = 0, prev = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      const u = t / dur;
+      const white = rng.random() * 2 - 1;
+      const cutoff = 0.05 + 0.5 * (1 - u);        // lowpass opens then closes
+      lp = lp + cutoff * (white - lp);
+      const band = lp - prev; prev = lp;          // crude band-pass
+      const env = Math.sin(Math.PI * clamp(u, 0, 1));
+      const tone = 0.15 * Math.sin(2 * Math.PI * (900 - 500 * u) * t);
+      const s = (band * 4.0 + tone) * env * env;
+      sd.setSample(i, clamp(s, -1, 1));
+    }
+    return sd;
+  }
+
+  // Metallic hit: inharmonic partials with fast decay + a sharp noise transient
+  function genClang() {
+    const rate = 22050, dur = 0.34;
+    const n = Math.floor(rate * dur);
+    const sd = love.sound.newSoundData(n, rate, 16, 1);
+    const rng = love.math.newRandomGenerator(9173);
+    const partials = [[740, 20], [1108, 26], [1560, 30], [2090, 38], [2760, 46]];
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      let s = 0;
+      for (const pr of partials) s += Math.sin(2 * Math.PI * pr[0] * t) * Math.exp(-t * pr[1]);
+      s *= 0.16;
+      if (t < 0.012) s += (rng.random() * 2 - 1) * (1 - t / 0.012) * 0.6;
+      s *= Math.exp(-t * 6);
+      sd.setSample(i, clamp(s, -1, 1));
+    }
+    return sd;
+  }
+
+  // Parry: a bright, high metallic ring (blade catching blade)
+  function genParry() {
+    const rate = 22050, dur = 0.30;
+    const n = Math.floor(rate * dur);
+    const sd = love.sound.newSoundData(n, rate, 16, 1);
+    const rng = love.math.newRandomGenerator(3301);
+    const partials = [[1240, 16], [1860, 20], [2480, 26], [3320, 34], [4100, 44]];
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      let s = 0;
+      for (const pr of partials) s += Math.sin(2 * Math.PI * pr[0] * t) * Math.exp(-t * pr[1]);
+      s *= 0.14;
+      if (t < 0.008) s += (rng.random() * 2 - 1) * (1 - t / 0.008) * 0.5;
+      s *= Math.exp(-t * 5);
+      sd.setSample(i, clamp(s, -1, 1));
     }
     return sd;
   }
@@ -715,6 +778,7 @@
       mant: null, landT: 0, prevVy: 0,
       deadFade: 0, dying: false,
       hp: 3, inv: 0, atkT: 0, drawT: 0, hasSword: false,
+      blockT: 0, riposte: 0, riposteHits: 0, blockFlash: 0,
       iks: { hf: {}, hb: {}, ff: {}, fb: {} },
       iksState: null,
       turnT: 0, turnDur: 0.2, turnFlip: false, climbPh: 0,
@@ -1092,6 +1156,46 @@
     drawSwordAt(hx, hy, forearmA + 0.35);
   }
 
+  // Overhead slash choreography (from the GIF reference). Blade angle uses the
+  // body-local sin/cos convention: 0 = straight down, PI/2 = forward, PI = up.
+  //   wind-up (raise up & back) → chop down through the front → hold → recover
+  function swingBladeAngle(u) {
+    if (u < 0.28) return lerp(1.15, 2.72, smooth(u / 0.28));         // raise up & back
+    if (u < 0.55) return lerp(2.72, 0.70, smooth((u - 0.28) / 0.27)); // chop through forward
+    if (u < 0.66) return 0.70;                                        // hold (down-forward)
+    return lerp(0.70, 1.15, smooth((u - 0.66) / 0.34));              // recover to guard
+  }
+
+  // Fading crescent motion-trail that follows the blade's swept path.
+  function drawSlashTrail(cx, cy, aFrom, aTo, ri, ro, baseAlpha, col) {
+    const c = col || [0.97, 0.98, 1.0];
+    const steps = 7;
+    for (let i = 0; i < steps; i++) {
+      const t1 = (i + 1) / steps;
+      const a0 = lerp(aFrom, aTo, i / steps), a1 = lerp(aFrom, aTo, t1);
+      lg.setColor(c[0], c[1], c[2], baseAlpha * (0.10 + 0.90 * t1));
+      lg.polygon('fill',
+        cx + Math.sin(a0) * ri, cy + Math.cos(a0) * ri,
+        cx + Math.sin(a0) * ro, cy + Math.cos(a0) * ro,
+        cx + Math.sin(a1) * ro, cy + Math.cos(a1) * ro,
+        cx + Math.sin(a1) * ri, cy + Math.cos(a1) * ri);
+    }
+  }
+
+  // Impact starburst at the point of contact.
+  function drawStar(x, y, r, alpha) {
+    lg.setColor(1.0, 0.95, 0.7, alpha);
+    lg.setLineWidth(1.6);
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      const rr = (k % 2 === 0) ? r : r * 0.55;
+      lg.line(x, y, x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    lg.setColor(1.0, 1.0, 0.9, alpha);
+    lg.circle('fill', x, y, r * 0.22);
+    lg.setLineWidth(1);
+  }
+
   function drawHero(p) {
     let o = poseFor(p);
     if ((p.inv || 0) > 0 && !p.dying && Math.floor(T * 14) % 2 === 0) return;
@@ -1103,48 +1207,53 @@
     //    →  held extension that "reads" the hit  →  weighted recovery to
     //    the en-garde guard. Timing preserved (ATK_DUR) so L2 hits line up.
     // -------------------------------------------------------------------
-    const guardF = [0.55, 0.95], antiF = [-0.42, -0.30], thrustF = [1.46, 1.60];
+    const GUARD_A = 1.15;   // blade angle at rest guard (forward, slightly down)
+    const ground = (p.state === 'ground');
     if ((p.atkT || 0) > 0 && (p.state === 'ground' || p.state === 'air')) {
       const u = 1 - p.atkT / ATK_DUR;
-      let armS, armE, lean, bob;
-      let legFa, legFb, legBa, legBb;
-      if (u < 0.22) {                 // anticipation: coil, weight back
-        const k = smooth(u / 0.22);
-        armS = lerp(guardF[0], antiF[0], k); armE = lerp(guardF[1], antiF[1], k);
-        lean = lerp(0.05, -0.16, k); bob = lerp(0, 1.5, k);
-        legFa = lerp(0.06, 0.30, k); legFb = lerp(0.02, 0.12, k);
-        legBa = lerp(-0.10, -0.34, k); legBb = lerp(-0.16, -0.42, k);
-      } else if (u < 0.50) {          // commit: drive forward into the lunge
-        const k = smooth((u - 0.22) / 0.28);
-        armS = lerp(antiF[0], thrustF[0], k); armE = lerp(antiF[1], thrustF[1], k);
-        lean = lerp(-0.16, 0.30, k); bob = lerp(1.5, 4.5, k);
-        legFa = lerp(0.30, 1.02, k); legFb = lerp(0.12, 0.42, k);
-        legBa = lerp(-0.34, -0.80, k); legBb = lerp(-0.42, -1.20, k);
-      } else if (u < 0.68) {          // held extension — reads the hit
-        armS = thrustF[0]; armE = thrustF[1];
-        lean = 0.30; bob = 4.5;
-        legFa = 1.02; legFb = 0.42; legBa = -0.80; legBb = -1.20;
+      const bladeA = swingBladeAngle(u);
+      // the arm follows the blade; the forearm carries it, the shoulder trails
+      o.armF = [bladeA - 0.50, bladeA - 0.35];
+      let lean, bob;
+      if (u < 0.28) {                 // wind-up: rise, weight back
+        const k = smooth(u / 0.28); lean = lerp(0.05, -0.14, k); bob = lerp(0, -1.2, k);
+      } else if (u < 0.55) {          // chop: drop and drive forward
+        const k = smooth((u - 0.28) / 0.27); lean = lerp(-0.14, 0.30, k); bob = lerp(-1.2, 3.6, k);
+      } else if (u < 0.66) {          // contact hold
+        lean = 0.30; bob = 3.6;
       } else {                        // recovery to guard
-        const k = smooth((u - 0.68) / 0.32);
-        armS = lerp(thrustF[0], guardF[0], k); armE = lerp(thrustF[1], guardF[1], k);
-        lean = lerp(0.30, 0.05, k); bob = lerp(4.5, 0, k);
-        legFa = lerp(1.02, 0.06, k); legFb = lerp(0.42, 0.02, k);
-        legBa = lerp(-0.80, -0.10, k); legBb = lerp(-1.20, -0.16, k);
+        const k = smooth((u - 0.66) / 0.34); lean = lerp(0.30, 0.05, k); bob = lerp(3.6, 0, k);
       }
-      o.armF = [armS, armE];
-      o.armB = [-0.34 - Math.max(0, lean) * 0.5, -0.58 - Math.max(0, lean) * 0.7];
-      if (p.state === 'ground') { o.legF = [legFa, legFb]; o.legB = [legBa, legBb]; }
+      o.armB = [-0.30 - Math.max(0, lean) * 0.5, -0.54 - Math.max(0, lean) * 0.7];
       o.lean = lean;
       o.bob = (o.bob || 0) + bob;
+      if (ground) {                    // GROUND ONLY: dramatic deep-lunge stance
+        let lk;
+        if (u < 0.28) lk = smooth(u / 0.28) * 0.35;
+        else if (u < 0.55) lk = lerp(0.35, 1.0, smooth((u - 0.28) / 0.27));
+        else if (u < 0.66) lk = 1.0;
+        else lk = lerp(1.0, 0, smooth((u - 0.66) / 0.34));
+        o.legF = [lerp(0.06, 0.98, lk), lerp(0.02, 0.34, lk)];    // front leg lunges out
+        o.legB = [lerp(-0.10, -0.88, lk), lerp(-0.16, -1.18, lk)]; // back leg drives straight
+        o.bob = (o.bob || 0) + lk * 1.8;                          // sink into the lunge
+        o.lean = o.lean + lk * 0.06;
+      }
     } else if ((p.drawT || 0) > 0) {
       const k = smooth(1 - p.drawT / DRAW_DUR);
       o.armF = [lerp(-0.95, 0.12, k), lerp(1.35, 0.72, k)];
       o.armB = [lerp(0.45, -0.30, k), lerp(0.80, -0.55, k)];
       o.lean = (o.lean || 0) - 0.10 * (1 - k);
+    } else if ((p.blockT || 0) > 0) {
+      // BLOCK / PARRY: the blade sweeps up to a high-forward deflect, braced wide
+      const set = smooth(Math.min(1, (BLOCK_DUR - p.blockT) / 0.10));
+      o.armF = [lerp(GUARD_A - 0.50, 1.70, set), lerp(GUARD_A - 0.35, 1.95, set)];
+      o.armB = [-0.15, -0.45];
+      o.lean = -0.05;
+      if (ground) { o.legF = [0.34, 0.06]; o.legB = [-0.34, -0.30]; }
     } else if (p.hasSword && p.state === 'ground' && Math.abs(p.vx) < 30) {
-      // en-garde guard: blade held ready, subtle breathing
+      // en-garde guard: blade held ready down-forward, subtle breathing
       const br = Math.sin(p.t * 1.6) * 0.02;
-      o.armF = [0.55, 0.95 + br];
+      o.armF = [GUARD_A - 0.50, GUARD_A - 0.35 + br];
       o.armB = [-0.30, -0.52];
       o.lean = 0.06;
     }
@@ -1219,14 +1328,42 @@
     const hf = drawArm(chX, chY, o.armF[0], o.armF[1], false);
     if (p.hasSword && (p.drawT || 0) <= DRAW_DUR * 0.45) {
       const au = (p.atkT || 0) > 0 ? (1 - p.atkT / ATK_DUR) : null;
+      const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
       if (au !== null && au > 0.24 && au < 0.66) {
-        const k = (au - 0.24) / 0.42;
-        lg.setColor(0.95, 0.97, 1.0, 0.30 * (1 - k));
-        lg.arc('line', 'open', chX, chY, 32,
-          -0.62 + 2.4 * Math.max(0, k - 0.25), -0.62 + 2.4 * k);
-        lg.setLineWidth(1);
+        // big sweeping motion-trail (long tail = spectacular); gold when empowered
+        const aNow = swingBladeAngle(au);
+        const aPrev = swingBladeAngle(Math.max(0.22, au - 0.26));
+        const fade = clamp((0.66 - au) / 0.20, 0.4, 1);
+        const col = empowered ? [1.0, 0.86, 0.45] : [0.97, 0.98, 1.0];
+        drawSlashTrail(chX, chY, aPrev, aNow, 16, 62, (empowered ? 0.5 : 0.4) * fade, col);
+      }
+      if (empowered) {   // charged-riposte glow on the blade hand
+        lg.setColor(1.0, 0.85, 0.4, 0.22 + 0.1 * Math.sin(T * 12));
+        lg.circle('fill', hf[0], hf[1], 5);
       }
       drawHeldSword(hf[0], hf[1], o.armF[1]);
+      if (au !== null && au > 0.34 && au < 0.52) {
+        // impact starburst at the blade tip on the (horizontal) contact frame
+        const bladeA = o.armF[1] + 0.35;
+        const tipX = hf[0] + Math.sin(bladeA) * 27;
+        const tipY = hf[1] + Math.cos(bladeA) * 27;
+        const sa = Math.sin((au - 0.34) / 0.18 * Math.PI);
+        drawStar(tipX, tipY, (empowered ? 10 : 7) + sa * 3, 0.72 * sa);
+      }
+      if ((p.blockFlash || 0) > 0) {
+        // successful-parry shield burst in front of the chest
+        const bf = p.blockFlash / 0.25;
+        const fx = 12, fy = -30, rr = 10 + (1 - bf) * 8;
+        lg.setColor(0.7, 0.88, 1.0, 0.5 * bf);
+        lg.setLineWidth(2.2);
+        lg.circle('line', fx, fy, rr);
+        for (let k = 0; k < 6; k++) {
+          const a = k * Math.PI / 3 + T * 6;
+          lg.line(fx + Math.cos(a) * rr * 0.4, fy + Math.sin(a) * rr * 0.4, fx + Math.cos(a) * rr, fy + Math.sin(a) * rr);
+        }
+        lg.setLineWidth(1);
+        drawStar(fx, fy, 8 * bf + 3, 0.7 * bf);
+      }
     }
 
     lg.pop();
@@ -1383,6 +1520,20 @@
   const l2 = { skels: [], trap: null, button: null, sword: null, msg: '', msgT: 0, endT: 0 };
   function l2toast(s) { l2.msg = s; l2.msgT = 3; }
 
+  // Attempt to parry an incoming blow coming from direction `dir` (the way it
+  // would knock the player). Succeeds if blocking and facing the attacker.
+  function tryParry(p, dir) {
+    if ((p.blockT || 0) > 0 && p.facing === -dir && !p.dying) {
+      p.riposte = RIPOSTE_WIN; p.riposteHits = 2; p.blockFlash = 0.25;
+      p.vx = -dir * 50;
+      if (sfxParry) sfxParry.play(0.55, 1.0 + love.math.random() * 0.12);
+      spawnDust(p.x + dir * 10, p.y - 30, 6, 0.8);
+      l2toast('Parried!  Riposte — double strike');
+      return true;
+    }
+    return false;
+  }
+
   function hurtPlayer(p, dir) {
     if ((p.inv || 0) > 0 || p.dying) return;
     p.hp = (p.hp || 3) - 1;
@@ -1446,7 +1597,10 @@
       sk.dir = dx >= 0 ? 1 : -1;
       if (sk.t > 0.38) {
         sk.state = 'strike'; sk.t = 0;
-        if (Math.abs(dx) < 52 && Math.abs(dy) < 56) hurtPlayer(p, sk.dir);
+        if (Math.abs(dx) < 52 && Math.abs(dy) < 56) {
+          if (tryParry(p, sk.dir)) { sk.state = 'stun'; sk.t = 0; sk.vx = -sk.dir * 220; }
+          else hurtPlayer(p, sk.dir);
+        }
       }
     } else if (sk.state === 'strike') {
       if (sk.t > 0.22) { sk.state = 'patrol'; sk.t = 0; sk.cool = 0.6; }
@@ -1504,22 +1658,32 @@
         l2.sword.taken = true;
         p.hasSword = true;
         p.drawT = DRAW_DUR;
-        l2toast('Sword acquired — press X to strike');
+        l2toast('Sword:  X strike  ·  C block (parry → riposte)');
       }
     }
     for (const sk of l2.skels) updateSkel(sk, dt, p);
     const au = 1 - (p.atkT || 0) / ATK_DUR;
     if ((p.atkT || 0) > 0 && au > 0.30 && au < 0.56) {
+      const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
+      let didHit = false;
       for (const sk of l2.skels) {
         if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall' && sk.state !== 'stun') {
           const dx = sk.x - p.x;
           if (dx * p.facing > 0 && Math.abs(dx) < 52 && Math.abs(sk.y - p.y) < 60) {
             sk.state = 'stun'; sk.t = 0;
-            sk.vx = p.facing * 260;
+            sk.vx = p.facing * (empowered ? 540 : 260);   // riposte = double knockback
+            didHit = true;
+            spawnDust(sk.x - p.facing * 8, sk.y - 34, empowered ? 9 : 4, empowered ? 1.3 : 0.8);
           }
         }
       }
+      if (didHit && !l2._hitThisSwing) {
+        if (sfxHit) sfxHit.play(empowered ? 0.6 : 0.5, empowered ? 0.8 : (0.9 + love.math.random() * 0.18));
+        if (empowered) p.riposteHits = Math.max(0, p.riposteHits - 1);
+        l2._hitThisSwing = true;
+      }
     }
+    if ((p.atkT || 0) <= 0) l2._hitThisSwing = false;
     if (p.x > 4060 && l2.endT === 0) { l2.endT = 0.0001; p.state = 'cine'; p.vx = 0; }
     if (l2.endT > 0) l2.endT = l2.endT + dt;
     l2.msgT = Math.max(0, l2.msgT - dt);
@@ -1566,13 +1730,19 @@
     lg.rectangle('fill', 3 + lean * 10, -41, 5.5, 3.4);
     lg.setColor(0.08, 0.08, 0.1, 1);
     lg.circle('fill', 5.5 + lean * 10, -44, 1.4);
-    lg.setColor(BONE[0], BONE[1], BONE[2], 1);
-    lg.setLineWidth(3);
-    let aA;
-    if (sk.state === 'windup') aA = lerp(0.35, -1.05, smooth(Math.min(1, sk.t / 0.38)));
-    else if (sk.state === 'strike') aA = lerp(-1.05, 1.45, smooth(Math.min(1, sk.t / 0.14)));
+    // sword arm follows the SAME overhead-slash choreography as the hero
+    let aA, swingU = null;
+    if (sk.state === 'windup') { swingU = lerp(0.02, 0.30, smooth(Math.min(1, sk.t / 0.38))); aA = swingBladeAngle(swingU) - 0.35; }
+    else if (sk.state === 'strike') { swingU = lerp(0.30, 0.86, smooth(Math.min(1, sk.t / 0.22))); aA = swingBladeAngle(swingU) - 0.35; }
     else if (sk.state === 'stun') aA = 1.9;
     else aA = 0.35 + 0.28 * walk;
+    if (sk.armed && sk.state === 'strike' && swingU !== null) {   // matching motion trail
+      const aNow = swingBladeAngle(swingU);
+      const aPrev = swingBladeAngle(Math.max(0.28, swingU - 0.24));
+      drawSlashTrail(2, -37, aPrev, aNow, 6, 24, 0.28);
+    }
+    lg.setColor(BONE[0], BONE[1], BONE[2], 1);
+    lg.setLineWidth(3);
     const ex = 2 + Math.sin(aA) * 8, ey = -37 + Math.cos(aA) * 8;
     const hxx = ex + Math.sin(aA + 0.3) * 8, hyy = ey + Math.cos(aA + 0.3) * 8;
     lg.line(2, -37, ex, ey, hxx, hyy);
@@ -1667,6 +1837,10 @@
     p.atkT = Math.max(-1, (p.atkT || 0) - dt);
     p.drawT = Math.max(0, (p.drawT || 0) - dt);
     p.inv = Math.max(0, (p.inv || 0) - dt);
+    p.blockT = Math.max(0, (p.blockT || 0) - dt);
+    p.riposte = Math.max(0, (p.riposte || 0) - dt);
+    p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
+    if ((p.riposte || 0) <= 0) p.riposteHits = 0;
 
     if (p.dying) {
       p.deadFade = p.deadFade + dt * 1.6;
@@ -1954,6 +2128,10 @@
     musicSrc.setLooping(true);
     musicSrc.setVolume(0);
 
+    sfxSwing = love.audio.newSound(genSwoosh());
+    sfxHit = love.audio.newSound(genClang());
+    sfxParry = love.audio.newSound(genParry());
+
     FONT_HUD = lg.newFont(15);
     FONT_LOC = lg.newFont(22);
     FONT_SUB = lg.newFont(19);
@@ -2053,11 +2231,20 @@
     if (key === 'r') { initLevel(level); return; }
     if (key === 'return' && level === 1 && cine.on && cine.stage >= 3) { initLevel(2); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
+    const riposteReady = (player && (player.riposte || 0) > 0 && (player.riposteHits || 0) > 0);
     if ((key === 'x' || key === 'f') && level === 2 && player.hasSword
       && (player.state === 'ground' || player.state === 'air')
-      && (player.atkT || 0) <= -0.10 && (player.drawT || 0) <= 0) {
+      && (player.drawT || 0) <= 0
+      && ((player.atkT || 0) <= -0.10 || riposteReady)) {   // riposte bypasses cooldown → double attack
       player.atkT = ATK_DUR;
-      if (player.onGround) player.vx += player.facing * 60; // slight lunge step (PoP feel)
+      player.blockT = 0;
+      if (player.onGround) player.vx += player.facing * (riposteReady ? 80 : 45);
+      if (sfxSwing) sfxSwing.play(riposteReady ? 0.44 : 0.38, (riposteReady ? 0.85 : 0.95) + love.math.random() * 0.18);
+    }
+    // block / parry (Level 2, with a sword)
+    if (key === 'c' && level === 2 && player.hasSword && (player.atkT || 0) <= 0
+      && (player.state === 'ground' || player.state === 'air')) {
+      player.blockT = BLOCK_DUR;
     }
   };
 
@@ -2069,6 +2256,9 @@
     player: function () { return player; },
     l2: function () { return l2; },
     giveSword: function () { player.hasSword = true; player.drawT = 0; },
+    drawHero: function () { drawHero(player); },
+    drawSkel: function (sk) { drawSkel(sk); },
+    setT: function (v) { T = v; },
   };
 
 })();

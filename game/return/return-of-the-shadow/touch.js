@@ -66,9 +66,10 @@
   makeButton('▲', 'up',   { style: { left: (P + (S + 14) * 2) + 'px', bottom: (P + S + 14) + 'px', width: S + 'px', height: S + 'px' }, font: '22px' });
   makeButton('▼', 'down', { style: { left: (P + (S + 14) * 2) + 'px', bottom: P + 'px', width: S + 'px', height: S + 'px' }, font: '22px' });
 
-  // action buttons bottom-right: Jump + Attack
+  // action buttons bottom-right: Jump + Attack + Block
   makeButton('JUMP', 'space', { round: true, tap: true, style: { right: P + 'px', bottom: (P + 8) + 'px', width: (S + 18) + 'px', height: (S + 18) + 'px' }, font: '15px' });
   makeButton('ATK',  'x',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: P + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
+  makeButton('BLK',  'c',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: (P + S + 24) + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
 
   // small utility taps top-right: Restart + Enter (castle)
   makeButton('R',     'r',      { tap: true, style: { right: P + 'px', top: P + 'px', width: '46px', height: '38px' }, font: '15px' });

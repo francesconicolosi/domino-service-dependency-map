@@ -36,19 +36,28 @@ Audio starts on the first key press / tap (browser autoplay policy).
 | Mantle over from a hang | ↑ |
 | Let go | ↓ or S |
 | Sword strike (Level 2) | X or F (after picking up the sword) |
+| Block / parry (Level 2) | C — face the attacker; a well-timed block negates the hit |
 | Enter the castle | ENTER on the prologue title screen |
 | Restart the level | R |
 
+A **successful parry** (blocking while facing the attacker) takes no damage,
+recoils the enemy, and grants a brief **riposte**: your next strikes chain
+instantly (a double attack) and hit with **double knockback** — ideal for
+shoving skeletons off the ledges. Skeletons telegraph with a raised-sword
+wind-up, so watch for it and press **C**.
+
 On phones/tablets an on-screen control pad appears automatically (d-pad, ↑/↓,
-**JUMP**, **ATK**, plus **R** and **ENTER**). Keyboard stays primary on desktop.
+**JUMP**, **ATK**, **BLK**, plus **R** and **ENTER**). Keyboard stays primary on desktop.
 
 ## Notes
 
-- **Combat animation** — the hero's sword work is choreographed for weight and
-  reach, taking motion cues from the classic *Prince of Persia* fencing: an
-  en-garde guard, a committed **lunge/thrust** (front leg drives forward, back leg
-  extends, torso commits along the blade), a brief held extension that "reads" the
-  hit, then a weighted recovery. It's fully procedural — no sprite art is imported.
+- **Combat animation** — the sword work is fully procedural (no sprite art). On
+  the ground the hero commits to a **spectacular overhead slash**: a deep,
+  wide-legged lunge with a big sweeping motion-trail and an impact flash at the
+  contact frame. In the air the same swing plays without the lunge. Skeletons
+  telegraph and strike with the **same** overhead-slash choreography. Blocking
+  raises the blade to a deflect guard; a successful parry pops a shield burst and
+  a golden riposte glow.
 - **Procedural detail** — mountain/rock silhouettes, cracks and grass use a seeded
   JS PRNG, so the art style and gameplay are deterministic; only the random
   decoration is generated at load.
