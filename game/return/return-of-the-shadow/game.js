@@ -32,6 +32,9 @@
   const HOLDSTEP = 26;
   const COYOTE = 0.10;
   const JBUF = 0.13;
+  const SCARF_N = 6;          // cape node count (fewer = shorter cape)
+  const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
+  const BUILD = '2026-07-23o';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -81,7 +84,7 @@
   let plats1 = [
     { x: -260, y: 1420, w: 260, h: 980 },
     { x: 0, y: 1800, w: 760, h: 560 },
-    { x: 840, y: 1728, w: 220, h: 640 },
+    { x: 760, y: 1728, w: 300, h: 640 },   // connected step-up: no death gap right at the start
     { x: 1140, y: 1652, w: 190, h: 720 },
     { x: 1520, y: 1636, w: 330, h: 740 },
     { x: 1920, y: 1476, w: 260, h: 900 },
@@ -257,7 +260,9 @@
     }
     pts.push(x1); pts.push(1400);
     pts.push(x0); pts.push(1400);
-    return love.math.triangulate(pts);
+    // return the raw outline (a single simple polygon). Drawing it as ONE fill
+    // avoids the hairline seams that Safari renders between separate triangles.
+    return pts;
   }
 
   function buildBackground() {
@@ -278,8 +283,11 @@
   }
 
   function drawBackground(cam) {
-    lg.gradientRect(0, 0, VW, VH * 0.55, COL.skyTop, COL.skyMid);
-    lg.gradientRect(0, VH * 0.55, VW, VH - VH * 0.55, COL.skyMid, COL.skyLow);
+    // two abutting gradients sharing skyMid at an INTEGER boundary — no seam.
+    // upper: night purple → dusk pink; lower half: pink → orange (fills down)
+    const hMid = Math.round(VH * 0.45);
+    lg.gradientRect(0, 0, VW, hMid, COL.skyTop, COL.skyMid);
+    lg.gradientRect(0, hMid, VW, VH - hMid, COL.skyMid, COL.skyLow);
 
     const sx = VW * 0.60, sy = VH * 0.55;
     for (let i = 5; i >= 1; i--) {
@@ -300,12 +308,15 @@
       const offY = VH * 0.62 + (1500 - cam.y) * L.par * 0.5 + L.lift;
       lg.translate(-cam.x * L.par, offY);
       setColA(L.col);
-      for (const tri of L.tris) lg.polygon('fill', tri);
+      lg.polygon('fill', L.tris);   // single simple-polygon fill (no triangle seams)
       lg.pop();
     }
 
-    lg.setColor(COL.skyLow[0], COL.skyLow[1], COL.skyLow[2], 0.18);
-    lg.rectangle('fill', 0, VH * 0.55, VW, VH * 0.28);
+    // warm dusk wash over the lower half — ONE continuous gradient (alpha fades
+    // in toward the bottom), so there are no hard internal edges / horizon seam
+    const wy = Math.round(VH * 0.46);
+    lg.gradientRect(0, wy, VW, VH - wy, [COL.skyLow[0], COL.skyLow[1], COL.skyLow[2], 0],
+      [COL.skyLow[0], COL.skyLow[1], COL.skyLow[2], 0.5]);
   }
 
   // -------------------------------------------------------------- ROCK / STONE
@@ -489,9 +500,16 @@
         lg.rectangle('fill', p.x, p.y, p.w, 2);
         drawFlags(p.x, p.y, p.w, rng);
       } else {
-        const tris = rockOutline(p, pi + 1);
+        // extend the pillar far below its collision body so its base is never
+        // visibly cut off when the camera drops during a fall (fades to dark)
         lg.setColor(STONE.base[0], STONE.base[1], STONE.base[2], 1);
-        for (const t of tris) lg.polygon('fill', t);
+        lg.rectangle('fill', p.x, p.y + p.h - 2, p.w, 2600);
+        lg.setColor(STONE.dark[0], STONE.dark[1], STONE.dark[2], 0.55);
+        lg.rectangle('fill', p.x, p.y + p.h - 2, p.w, 2600);
+
+        rockOutline(p, pi + 1);   // computes p._pts (raw outline)
+        lg.setColor(STONE.base[0], STONE.base[1], STONE.base[2], 1);
+        lg.polygon('fill', p._pts);   // single simple-polygon fill (no triangle seams)
 
         const hLim = Math.min(p.h, 820);
 
@@ -674,6 +692,81 @@
     lg.setLineWidth(1);
   }
 
+  // -------------------------------------------------------------- FLYING CARPET
+  // A magic flying carpet hovering over the high left cliff — the enchanted rug
+  // the hero rode up to this place. It undulates gently and glows with magic.
+  function drawFlyingCarpet(cx, gy, s) {
+    s = s || 1;
+    const RED = [0.58, 0.12, 0.17], REDD = [0.36, 0.07, 0.13],
+      GOLD = [0.86, 0.69, 0.32], GOLDD = [0.55, 0.42, 0.20], CREAM = [0.93, 0.87, 0.64];
+    const hover = -44 * s;                 // carpet floats this far above the cliff
+
+    // ground shadow + soft magic glow beneath the carpet
+    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', cx, gy + 1, 40 * s, 6 * s);
+    lg.setColor(0.55, 0.40, 0.85, 0.12); lg.ellipse('fill', cx, gy - 16 * s, 30 * s, 9 * s);
+
+    lg.push();
+    lg.translate(cx, gy + hover);
+    lg.scale(s, s);
+
+    const L = 46, N = 16, amp = 4.2, thick = 7.0, slope = -0.09;
+    // centreline of the carpet at length-coordinate x (gentle travelling wave + tilt)
+    const wv = function (x) { return Math.sin(x * 0.13 + T * 1.5) * amp + x * slope; };
+
+    // carpet body — filled ribbon (top edge left→right, bottom edge right→left)
+    const poly = [];
+    for (let i = 0; i <= N; i++) { const x = -L + 2 * L * i / N; poly.push(x, wv(x) - thick); }
+    for (let i = N; i >= 0; i--) { const x = -L + 2 * L * i / N; poly.push(x, wv(x) + thick); }
+    setColA(RED); lg.polygon('fill', poly);
+    // darker underside band for depth
+    setColA(REDD);
+    const under = [];
+    for (let i = 0; i <= N; i++) { const x = -L + 2 * L * i / N; under.push(x, wv(x) + thick * 0.35); }
+    for (let i = N; i >= 0; i--) { const x = -L + 2 * L * i / N; under.push(x, wv(x) + thick); }
+    lg.polygon('fill', under);
+
+    // gold trim along both long edges
+    lg.setLineWidth(2.2); setColA(GOLD);
+    for (let e = -1; e <= 1; e += 2) {
+      for (let i = 0; i < N; i++) {
+        const x0 = -L + 2 * L * i / N, x1 = -L + 2 * L * (i + 1) / N;
+        lg.line(x0, wv(x0) + e * thick, x1, wv(x1) + e * thick);
+      }
+    }
+
+    // woven pattern — evenly spaced cross-stripes
+    setColA(GOLDD); lg.setLineWidth(1.4);
+    for (let k = -2; k <= 2; k++) {
+      const x = k * 15.5;
+      lg.line(x, wv(x) - thick + 1.6, x, wv(x) + thick - 1.6);
+    }
+    // central medallion (diamond)
+    const cy0 = wv(0);
+    setColA(CREAM); lg.polygon('fill', 0, cy0 - 4.6, 6.4, cy0, 0, cy0 + 4.6, -6.4, cy0);
+    setColA(REDD); lg.polygon('fill', 0, cy0 - 2.6, 3.4, cy0, 0, cy0 + 2.6, -3.4, cy0);
+    setColA(GOLD); lg.circle('fill', 0, cy0, 1.1);
+
+    // fringe / tassels at both ends
+    setColA(CREAM); lg.setLineWidth(1.5);
+    for (const end of [-L, L]) {
+      const base = wv(end), dir = end < 0 ? -1 : 1;
+      for (let f = -2; f <= 2; f++) {
+        const yy = base + f * 2.7;
+        lg.line(end, yy, end + dir * 5, yy + 2.0);
+      }
+    }
+    lg.setLineWidth(1);
+
+    // a couple of drifting magic sparkles
+    const tw = 0.55 + 0.45 * Math.sin(T * 3.1);
+    setColA([1.0, 0.95, 0.7], 0.7 * tw);
+    lg.circle('fill', -L * 0.55, wv(-L * 0.55) - thick - 7 - 2 * tw, 1.3);
+    setColA([0.85, 0.9, 1.0], 0.6 * (1 - tw));
+    lg.circle('fill', L * 0.35, wv(L * 0.35) - thick - 10 + 2 * tw, 1.1);
+
+    lg.pop();
+  }
+
   // -------------------------------------------------------------- PARTICLES
   const windStreaks = [], snowFlakes = [], dusts = [];
 
@@ -765,7 +858,7 @@
   let scarf = [];
   function resetScarf(x, y) {
     scarf = [];
-    for (let i = 0; i < 9; i++) scarf.push({ x: x, y: y, px: x, py: y });
+    for (let i = 0; i < SCARF_N; i++) scarf.push({ x: x, y: y, px: x, py: y });
   }
 
   function newPlayer(x, y) {
@@ -782,6 +875,7 @@
       iks: { hf: {}, hb: {}, ff: {}, fb: {} },
       iksState: null,
       turnT: 0, turnDur: 0.2, turnFlip: false, climbPh: 0,
+      started: false,
     };
   }
 
@@ -819,7 +913,7 @@
         const dx = b.x - a.x, dy = b.y - a.y;
         const d = Math.sqrt(dx * dx + dy * dy);
         if (d > 0.001) {
-          const diff = (d - 5.2) / d;
+          const diff = (d - SCARF_SEG) / d;
           if (i === 1) { b.x = b.x - dx * diff; b.y = b.y - dy * diff; }
           else {
             a.x = a.x + dx * diff * 0.5; a.y = a.y + dy * diff * 0.5;
@@ -827,6 +921,13 @@
           }
         }
       }
+    }
+    // hard length cap: wind must never stretch the cape long again
+    for (let i = 1; i < scarf.length; i++) {
+      const a = scarf[i - 1], b = scarf[i];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > SCARF_SEG) { b.x = a.x + dx / d * SCARF_SEG; b.y = a.y + dy / d * SCARF_SEG; }
     }
   }
 
@@ -1330,18 +1431,26 @@
       const au = (p.atkT || 0) > 0 ? (1 - p.atkT / ATK_DUR) : null;
       const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
       if (au !== null && au > 0.24 && au < 0.66) {
-        // big sweeping motion-trail (long tail = spectacular); gold when empowered
+        // big over-the-top sweeping motion-trail; gold when empowered
         const aNow = swingBladeAngle(au);
-        const aPrev = swingBladeAngle(Math.max(0.22, au - 0.26));
+        const aPrev = swingBladeAngle(Math.max(0.20, au - 0.32));   // long wrap-around tail
         const fade = clamp((0.66 - au) / 0.20, 0.4, 1);
         const col = empowered ? [1.0, 0.86, 0.45] : [0.97, 0.98, 1.0];
-        drawSlashTrail(chX, chY, aPrev, aNow, 16, 62, (empowered ? 0.5 : 0.4) * fade, col);
+        drawSlashTrail(chX, chY, aPrev, aNow, 14, 66, (empowered ? 0.55 : 0.42) * fade, col);
       }
       if (empowered) {   // charged-riposte glow on the blade hand
         lg.setColor(1.0, 0.85, 0.4, 0.22 + 0.1 * Math.sin(T * 12));
         lg.circle('fill', hf[0], hf[1], 5);
       }
       drawHeldSword(hf[0], hf[1], o.armF[1]);
+      if ((p.blockT || 0) > 0 && (p.blockFlash || 0) <= 0) {
+        // faint shield guard held in front while blocking (before any impact)
+        const bp = 0.5 + 0.5 * Math.sin(T * 10);
+        lg.setColor(0.7, 0.85, 1.0, 0.16 + 0.10 * bp);
+        lg.setLineWidth(1.6);
+        lg.circle('line', 12, -30, 11);
+        lg.setLineWidth(1);
+      }
       if (au !== null && au > 0.34 && au < 0.52) {
         // impact starburst at the blade tip on the (horizontal) contact frame
         const bladeA = o.armF[1] + 0.35;
@@ -1510,9 +1619,10 @@
   function respawnPlayer(p) {
     p.x = respawn.x; p.y = respawn.y;
     p.vx = 0; p.vy = 0;
-    p.state = 'air'; p.t = 0;
+    p.state = 'ground'; p.onGround = true; p.coyote = COYOTE; p.t = 0;
     p.ledge = null; p.face = null; p.mant = null;
     p.hp = 3; p.inv = 1.2; p.atkT = 0; p.drawT = 0;
+    p.blockT = 0; p.riposte = 0; p.riposteHits = 0;
     resetScarf(...neckPos(p));
   }
 
@@ -1821,7 +1931,25 @@
       if (n === 2) musicSrc.play();
     }
     if (n === 2) initEnts2();
-    player = newPlayer(checkpoints[0].x, checkpoints[0].y - 4);
+    // snap the spawn onto the actual floor under the checkpoint and start
+    // grounded, so the hero can never show a mid-air "falling" pose at the start
+    const groundY = floorAt(checkpoints[0].x, checkpoints[0].y - 4);
+    const spawnY = (groundY != null) ? groundY : checkpoints[0].y;
+    player = newPlayer(checkpoints[0].x, spawnY);
+    // actively resolve the spawn onto solid ground before the first frame is
+    // ever drawn, so the hero always starts standing (never mid-air/falling)
+    for (let i = 0; i < 8 && !player.onGround; i++) { player.vy = 260; moveAndCollide(player, 1 / 60); }
+    // robust fallback: if the drop-resolve didn't reach a floor (deep gap under
+    // the checkpoint, e.g. a saved editor level), snap onto the nearest floor
+    if (!player.onGround) {
+      const fy = floorAt(player.x, player.y);
+      if (fy != null) player.y = fy;
+    }
+    player.vy = 0;
+    player.state = 'ground'; player.onGround = true; player.coyote = COYOTE;
+    player.spawnFloor = player.y; player.initGrace = 0.5; player.startGuard = 3.5;
+    // the safe spawn the start-guard returns to (guaranteed on solid ground)
+    player.safeX = player.x; player.safeY = player.y;
     resetScarf(...neckPos(player));
     cam.x = player.x + 70; cam.y = player.y - 130; cam.zoom = 1;
     introT = 0;
@@ -1840,6 +1968,8 @@
     p.blockT = Math.max(0, (p.blockT || 0) - dt);
     p.riposte = Math.max(0, (p.riposte || 0) - dt);
     p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
+    p.initGrace = Math.max(0, (p.initGrace || 0) - dt);
+    p.startGuard = Math.max(0, (p.startGuard || 0) - dt);
     if ((p.riposte || 0) <= 0) p.riposteHits = 0;
 
     if (p.dying) {
@@ -1854,6 +1984,18 @@
     const left = keyLeft(), right = keyRight(), up = keyUp(), down = keyDown();
     let dir = (right ? 1 : 0) - (left ? 1 : 0);
 
+    // at the very start of a level the hero waits, planted on the spawn floor —
+    // no gravity, no fall — until the player gives a first input
+    if (!p.started) {
+      if (left || right || up || down || p.jbuf > 0) { p.started = true; }
+      else {
+        p.vx = 0; p.vy = 0; p.onGround = true; p.state = 'ground';
+        if (p.spawnFloor != null) p.y = p.spawnFloor;
+        p.coyote = COYOTE;
+        return;
+      }
+    }
+
     if (p.state === 'ground' || p.state === 'air') {
       if (up || down) {
         tryGrabWall(p);
@@ -1861,6 +2003,12 @@
       }
       const max = p.onBeam ? BEAMSPD : RUNSPD;
       if (p.landT > 0) dir = 0;
+      // while blocking you hold your ground — you can re-orient to face the
+      // attacker but you don't advance or retreat
+      if ((p.blockT || 0) > 0) {
+        if (dir !== 0 && p.state === 'ground') p.facing = dir;
+        dir = 0;
+      }
 
       p.turnT = Math.max(0, (p.turnT || 0) - dt);
       if (p.state === 'ground' && p.landT <= 0 && p.turnT <= 0
@@ -1901,6 +2049,13 @@
         p.coyote = COYOTE;
       } else {
         p.state = 'air';
+      }
+
+      // spawn safety net: during the first moments of a level, never let the
+      // hero drift into a fall — snap onto any floor beneath if not jumping
+      if ((p.initGrace || 0) > 0 && p.state === 'air' && p.vy >= 0 && p.jbuf <= 0) {
+        const fy = floorAt(p.x, p.y - 30);
+        if (fy != null) { p.y = fy; p.vy = 0; p.onGround = true; p.state = 'ground'; p.coyote = COYOTE; }
       }
 
       if (p.jbuf > 0 && p.coyote > 0 && p.landT <= 0) {
@@ -1970,6 +2125,18 @@
           if (c.x !== respawn.x) respawn = { x: c.x, y: c.y };
         }
       }
+    }
+
+    // START-GUARD: for the first seconds of a level the hero can never fall off
+    // the world. If it has dropped well below the guaranteed-solid safe spawn
+    // (whatever the cause — bad saved level, stray input, edge walk-off), return
+    // it there and re-freeze until the player deliberately moves again.
+    if ((p.startGuard || 0) > 0 && p.safeY != null && p.vy > 0 && p.y > p.safeY + 48) {
+      p.x = p.safeX; p.y = p.safeY; p.vx = 0; p.vy = 0;
+      p.state = 'ground'; p.onGround = true; p.coyote = COYOTE; p.jbuf = 0;
+      p.facing = 1;   // face right (toward the level), exactly like a fresh spawn / R
+      p.started = false;
+      resetScarf(...neckPos(p));
     }
 
     if (p.y > respawn.y + 720) killPlayer(p);
@@ -2098,6 +2265,18 @@
   const PIX = 2;
   let pixCanvas;
 
+  // A saved editor level is only used if its first spawn checkpoint actually
+  // rests on one of its platforms — otherwise the hero would fall at the start.
+  function overrideGrounded(data, defCps) {
+    const cps = (Array.isArray(data.checkpoints) && data.checkpoints.length) ? data.checkpoints : defCps;
+    if (!cps || !cps.length) return true;
+    const c = cps[0];
+    for (const p of data.plats) {
+      if (!p.beam && c.x >= p.x && c.x <= p.x + p.w && p.y >= c.y - 4 && p.y <= c.y + 40) return true;
+    }
+    return false;
+  }
+
   function readLevelOverride(name) {
     const raw = love.filesystem.read(name);
     if (!raw) return null;
@@ -2109,12 +2288,25 @@
   }
 
   love.load = function () {
+    try { console.info('[ROTS] build ' + BUILD + ' — no horizon seam + auto-hide volume'); } catch (e) {}
     pixCanvas = lg.newCanvas(VW / PIX, VH / PIX);
 
+    // Loading index.html?reset wipes any level saved from the editor (a bad
+    // saved spawn is the usual cause of "the hero falls at the start").
+    try {
+      if (/[?&](reset|fresh)\b/i.test(window.location.search || '')) {
+        localStorage.removeItem('rots:level.lua');
+        localStorage.removeItem('rots:level2.lua');
+        console.info('[ROTS] Saved level overrides cleared (?reset).');
+      }
+    } catch (e) {}
+
     const lv1 = readLevelOverride('level.lua');
-    if (lv1) { plats1 = lv1.plats; if (Array.isArray(lv1.checkpoints) && lv1.checkpoints.length > 0) checkpoints1 = lv1.checkpoints; }
+    if (lv1 && overrideGrounded(lv1, checkpoints1)) { plats1 = lv1.plats; if (Array.isArray(lv1.checkpoints) && lv1.checkpoints.length > 0) checkpoints1 = lv1.checkpoints; try { console.info('[ROTS] Using saved level.lua override.'); } catch (e) {} }
+    else if (lv1) { try { console.warn('[ROTS] Ignoring saved level.lua — its first checkpoint is not on solid ground. Load index.html?reset to remove it.'); } catch (e) {} }
     const lv2 = readLevelOverride('level2.lua');
-    if (lv2) { plats2 = lv2.plats; if (Array.isArray(lv2.checkpoints) && lv2.checkpoints.length > 0) checkpoints2 = lv2.checkpoints; }
+    if (lv2 && overrideGrounded(lv2, checkpoints2)) { plats2 = lv2.plats; if (Array.isArray(lv2.checkpoints) && lv2.checkpoints.length > 0) checkpoints2 = lv2.checkpoints; try { console.info('[ROTS] Using saved level2.lua override.'); } catch (e) {} }
+    else if (lv2) { try { console.warn('[ROTS] Ignoring saved level2.lua — its first checkpoint is not on solid ground. Load index.html?reset to remove it.'); } catch (e) {} }
 
     buildBackground();
     buildParticles();
@@ -2137,8 +2329,75 @@
     FONT_SUB = lg.newFont(19);
     FONT_TITLE = lg.newFont('title.ttf', 54);
 
+    buildVolumeControl();
     initLevel(1);
   };
+
+  // ---------------------------------------------------- master volume control
+  // A small HTML slider in the top-right corner (persisted to localStorage).
+  function buildVolumeControl() {
+    try {
+      if (typeof document === 'undefined') return;
+      const saved = parseFloat(localStorage.getItem('rots:vol'));
+      let vol = isNaN(saved) ? 0.6 : Math.max(0, Math.min(1, saved));
+      let last = vol > 0 ? vol : 0.6;
+      love.audio.setMasterVolume(vol);
+
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;top:12px;right:14px;z-index:60;display:flex;align-items:center;gap:8px;' +
+        'padding:6px 11px;border-radius:14px;background:rgba(22,17,30,0.5);' +
+        'backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);' +
+        'font-family:system-ui,sans-serif;user-select:none;-webkit-user-select:none;';
+      const icon = document.createElement('span');
+      icon.style.cssText = 'font-size:17px;cursor:pointer;line-height:1;';
+      const slider = document.createElement('input');
+      slider.type = 'range'; slider.min = '0'; slider.max = '1'; slider.step = '0.01';
+      slider.value = String(vol);
+      slider.style.cssText = 'width:104px;cursor:pointer;accent-color:#e0894a;';
+      function refreshIcon(v) { icon.textContent = v <= 0 ? '🔈' : (v < 0.5 ? '🔉' : '🔊'); }
+      function apply(v) {
+        love.audio.setMasterVolume(v);
+        try { localStorage.setItem('rots:vol', String(v)); } catch (e) {}
+        refreshIcon(v);
+      }
+      refreshIcon(vol);
+      slider.addEventListener('input', function () {
+        const v = parseFloat(slider.value); if (v > 0) last = v; apply(v);
+      });
+      icon.addEventListener('click', function () {
+        const cur = parseFloat(slider.value);
+        if (cur > 0) { last = cur; slider.value = '0'; apply(0); }
+        else { slider.value = String(last); apply(last); }
+      });
+      // keep the game from also reacting to keys while the slider has focus
+      box.addEventListener('keydown', function (e) { e.stopPropagation(); });
+      box.appendChild(icon); box.appendChild(slider);
+      document.body.appendChild(box);
+
+      // On desktop the control stays hidden and only appears while the mouse is
+      // moving over the window, auto-hiding after a short idle (like media
+      // controls). On touch devices it stays visible.
+      box.style.transition = 'opacity 0.35s';
+      const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const hasTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+      if (coarse || hasTouch) {
+        box.style.opacity = '1';
+      } else {
+        let hideTimer = null;
+        const hide = function () { box.style.opacity = '0'; box.style.pointerEvents = 'none'; };
+        const show = function () {
+          box.style.opacity = '1'; box.style.pointerEvents = 'auto';
+          if (hideTimer) clearTimeout(hideTimer);
+          hideTimer = setTimeout(hide, 2200);
+        };
+        hide();
+        window.addEventListener('mousemove', show);
+        window.addEventListener('mousedown', show);
+        box.addEventListener('mouseenter', function () { if (hideTimer) clearTimeout(hideTimer); box.style.opacity = '1'; box.style.pointerEvents = 'auto'; });
+        box.addEventListener('mouseleave', show);
+      }
+    } catch (e) { /* ignore — audio control is non-essential */ }
+  }
 
   love.update = function (dt) {
     dt = Math.min(dt, 1 / 30);
@@ -2190,6 +2449,7 @@
 
     if (level === 1) drawCastle(CASTLE_X, PROM_Y);
     drawPlats();
+    if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
     if (level === 2) drawEnts2();
     drawDusts();
     drawScarf();
@@ -2212,6 +2472,14 @@
     lg.draw(pixCanvas, 0, 0, 0, PIX, PIX);
 
     drawOverlays();
+
+    // tiny build tag (bottom-left) — if this shows an OLD date the browser is
+    // serving a cached copy; hard-reload (Cmd+Shift+R) to load the latest code
+    if (FONT_HUD) {
+      lg.setFont(FONT_HUD);
+      lg.setColor(1, 1, 1, 0.35);
+      lg.print('build ' + BUILD, 10, VH - 22, 0, 0.8, 0.8);
+    }
 
     lg.pop();
 
@@ -2259,6 +2527,15 @@
     drawHero: function () { drawHero(player); },
     drawSkel: function (sk) { drawSkel(sk); },
     setT: function (v) { T = v; },
+    climbSetup: function () {
+      if (faces.length) {
+        const F = faces[0];
+        player.face = F; player.facing = -F.side;
+        player.x = F.x + F.side * 12.5; player.y = F.bot - 120;
+        player.state = 'climb'; player.vy = -CLIMBSPD; player.iksState = null; player.climbPh = 0;
+      }
+    },
+    climbStep: function () { player.vy = -CLIMBSPD; },
   };
 
 })();

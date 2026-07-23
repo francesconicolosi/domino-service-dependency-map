@@ -316,16 +316,24 @@
 
   // ------------------------------------------------------------------ audio
   let audioCtx = null;
+  let masterGain = null;
+  let _masterVol = 1;
   const pendingSources = [];
   let audioUnlocked = false;
 
   function ensureAudioCtx() {
     if (!audioCtx) {
       const AC = global.AudioContext || global.webkitAudioContext;
-      if (AC) audioCtx = new AC();
+      if (AC) {
+        audioCtx = new AC();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = _masterVol;
+        masterGain.connect(audioCtx.destination);
+      }
     }
     return audioCtx;
   }
+  function audioOut() { return masterGain || audioCtx.destination; }
 
   function SoundData(n, rate) {
     this.data = new Float32Array(n);
@@ -370,7 +378,7 @@
     this.node.playbackRate.value = this.pitch;
     this.gain = audioCtx.createGain();
     this.gain.gain.value = this.volume;
-    this.node.connect(this.gain).connect(audioCtx.destination);
+    this.node.connect(this.gain).connect(audioOut());
     const self = this;
     this.node.onended = function () { self.playing = false; };
     try { this.node.start(0); this.playing = true; } catch (e) { /* ignore */ }
@@ -395,13 +403,15 @@
     node.playbackRate.value = pitch || 1;
     const g = audioCtx.createGain();
     g.gain.value = (vol == null ? 1 : vol);
-    node.connect(g).connect(audioCtx.destination);
+    node.connect(g).connect(audioOut());
     try { node.start(0); } catch (e) { /* ignore */ }
   };
 
   love.audio = {
     newSource: function (sd /*, type */) { return new Source(sd); },
-    newSound: function (sd) { return new Sfx(sd); }
+    newSound: function (sd) { return new Sfx(sd); },
+    setMasterVolume: function (v) { _masterVol = Math.max(0, Math.min(1, v)); if (masterGain) masterGain.gain.value = _masterVol; },
+    getMasterVolume: function () { return _masterVol; }
   };
 
   function unlockAudio() {
