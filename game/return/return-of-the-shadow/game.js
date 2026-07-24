@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-23o';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-24a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -112,13 +112,17 @@
     { x: 2100, y: 744, w: 430, h: 700 },
     { x: 2530, y: 384, w: 260, h: 1060, climbL: true, climbBot: 700 },
     { x: 2790, y: 384, w: 560, h: 1420 },
-    { x: 3480, y: 384, w: 760, h: 1420 },
+    { x: 3480, y: 384, w: 760, h: 1420 },   // skeleton hall + trap/sword puzzle (3480..4240)
+    { x: 4240, y: 384, w: 760, h: 1420 },   // ROPE HALL  — gate A at ~4960 (4240..5000)
+    { x: 5000, y: 384, w: 760, h: 1420 },   // KEY HALL   — gate B at ~5720 (5000..5760)
+    { x: 5760, y: 384, w: 920, h: 1420 },   // FINAL APPROACH → emblem door (5760..6680)
   ];
   for (let i = 0; i <= 5; i++) {
     plats2.push({ x: 940 + i * 60, y: 900 - (i + 1) * 26, w: 66, h: 560 + (i + 1) * 26 });
   }
   let checkpoints2 = [
     { x: 150, y: 900 }, { x: 1360, y: 744 }, { x: 2160, y: 744 }, { x: 2860, y: 384 }, { x: 3560, y: 384 },
+    { x: 4300, y: 384 }, { x: 5060, y: 384 }, { x: 5820, y: 384 },
   ];
 
   let level = 1;
@@ -1495,6 +1499,17 @@
         }
       }
     }
+    // closed portcullis gates (Level 2) block horizontally — they span floor to
+    // ceiling, so a full-height solid is enough to bar the way
+    if (level === 2 && l2.gates) {
+      for (const g of l2.gates) {
+        if (g.open) continue;
+        if (overlap(p.x - 12, p.y - 56, p.x + 12, p.y - 2, g.x, g.yTop, g.x + g.w, g.yBot)) {
+          if (p.vx >= 0) p.x = g.x - 12; else p.x = g.x + g.w + 12;
+          p.vx = 0;
+        }
+      }
+    }
     const prevBottom = p.y;
     p.y = p.y + p.vy * dt;
     p.onGround = false;
@@ -1627,7 +1642,8 @@
   }
 
   // -------------------------------------------------------------- LEVEL 2 ENTITIES
-  const l2 = { skels: [], trap: null, button: null, sword: null, msg: '', msgT: 0, endT: 0 };
+  const l2 = { skels: [], biters: [], gates: [], rope: null, rbutton: null, key: null,
+    trap: null, button: null, sword: null, msg: '', msgT: 0, endT: 0 };
   function l2toast(s) { l2.msg = s; l2.msgT = 3; }
 
   // Attempt to parry an incoming blow coming from direction `dir` (the way it
@@ -1669,16 +1685,47 @@
       x0: x0, x1: x1, state: 'patrol', armed: armed, phase: love.math.random() * 6 };
   }
 
+  // Flying severed head — pale human face, green hair — that swoops in to bite.
+  function newBiter(x, y) {
+    return { hx: x, hy: y, x: x, y: y, vx: 0, vy: 0, t: 0, cool: 0,
+      phase: love.math.random() * 6.28, state: 'hover', bite: 0, hurt: 0, dead: 0 };
+  }
+
   function initEnts2() {
     l2.skels = [
       newSkel(2330, 2170, 2470, true),
       newSkel(3050, 2880, 3300, true),
       newSkel(3700, 3560, 3960, true),
+      newSkel(4520, 4300, 4900, true),   // rope hall
+      newSkel(5180, 5040, 5420, true),   // key hall
+      newSkel(5560, 5420, 5700, true),   // key hall
+      newSkel(6060, 5820, 6320, true),   // final approach
+      newSkel(6360, 6120, 6560, true),   // final approach
     ];
     for (const s of l2.skels) s.y = floorAt(s.x, 0) || 744;
+    l2.biters = [
+      newBiter(4680, 300),   // rope hall
+      newBiter(5300, 276),   // key hall (guards the key)
+      newBiter(5980, 288),   // final approach
+      newBiter(6340, 300),   // final approach
+    ];
     l2.trap = { x: 2360, y0: 452, y: 452, w: 66, h: 42, state: 'armed', t: 0 };
     l2.button = { x: 2170, y: 744, w: 44, pressed: false };
     l2.sword = null;
+
+    // --- rope-cut puzzle: a weight hangs over a button; cut the rope, the weight
+    //     drops onto the button, gate A opens. (cleat on the left, pulley above.)
+    l2.gates = [
+      { id: 'A', x: 4960, w: 18, yTop: 150, yBot: 384, open: false, openT: 0, locked: false, hinted: false },
+      { id: 'B', x: 5720, w: 18, yTop: 150, yBot: 384, open: false, openT: 0, locked: true, hinted: false },
+    ];
+    l2.rbutton = { x: 4620, y: 384, w: 44, pressed: false };
+    l2.rope = { x: 4620, pulleyY: 176, cleatX: 4470, cleatY: 356, cut: false, hinted: false,
+      weight: { x: 4620, y: 250, s: 26, falling: false, landed: false } };
+
+    // --- key puzzle: pick up the key, then walk into locked gate B to open it.
+    l2.key = { x: 5300, y: 360, taken: false, used: false };
+
     l2.msg = ''; l2.msgT = 0; l2.endT = 0;
   }
 
@@ -1731,6 +1778,46 @@
     }
   }
 
+  function updateBiter(bt, dt, p) {
+    bt.t = bt.t + dt;
+    bt.cool = Math.max(0, bt.cool - dt);
+    bt.bite = Math.max(0, bt.bite - dt);
+    bt.hurt = Math.max(0, bt.hurt - dt);
+    if (bt.state === 'dead') { bt.dead = bt.dead + dt; return; }
+    const bob = Math.sin(bt.t * 2.2 + bt.phase) * 9;
+    const aimX = p.x, aimY = p.y - 34;
+    const dx = aimX - bt.x, dy = aimY - bt.y;
+    const dist = Math.hypot(dx, dy) || 0.001;
+    const aggro = !p.dying && dist < 230;
+    if (bt.state === 'hover') {
+      const tx = bt.hx, ty = bt.hy + bob;
+      bt.vx = lerp(bt.vx, (tx - bt.x) * 2.2, Math.min(1, dt * 3));
+      bt.vy = lerp(bt.vy, (ty - bt.y) * 2.2, Math.min(1, dt * 3));
+      if (aggro && bt.cool <= 0) bt.state = 'chase';
+    } else {  // chase — swoop straight at the hero's head
+      const sp = 172;
+      bt.vx = lerp(bt.vx, (dx / dist) * sp, Math.min(1, dt * 2.6));
+      bt.vy = lerp(bt.vy, (dy / dist) * sp, Math.min(1, dt * 2.6));
+      if (dist > 330 || p.dying) bt.state = 'hover';
+    }
+    bt.x = bt.x + bt.vx * dt;
+    bt.y = bt.y + bt.vy * dt;
+    // bite on contact
+    if (dist < 26 && bt.cool <= 0 && bt.bite <= 0) {
+      bt.bite = 0.35; bt.cool = 1.1;
+      const away = (bt.x <= p.x) ? 1 : -1;   // push the hero away from the head
+      if ((p.blockT || 0) > 0 && p.facing === -away && !p.dying) {
+        bt.vx = -away * 320; bt.vy = -90; bt.hurt = 0.25; bt.state = 'hover';
+        if (sfxParry) sfxParry.play(0.4, 1.2 + love.math.random() * 0.1);
+        spawnDust(bt.x, bt.y, 4, 0.7);
+      } else {
+        hurtPlayer(p, away);
+        bt.vx = -away * 220; bt.vy = -60; bt.hurt = 0.15;
+        if (sfxHit) sfxHit.play(0.42, 1.15);
+      }
+    }
+  }
+
   function updateEnts2(dt) {
     const p = player;
     const b = l2.button, tr = l2.trap;
@@ -1772,10 +1859,31 @@
       }
     }
     for (const sk of l2.skels) updateSkel(sk, dt, p);
+    for (const bt of l2.biters) updateBiter(bt, dt, p);
     const au = 1 - (p.atkT || 0) / ATK_DUR;
     if ((p.atkT || 0) > 0 && au > 0.30 && au < 0.56) {
       const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
       let didHit = false;
+      // a sword swing near the rope cleat cuts the line and drops the weight
+      if (l2.rope && !l2.rope.cut) {
+        const rdx = l2.rope.cleatX - p.x;
+        if (rdx * p.facing > 0 && Math.abs(rdx) < 60 && Math.abs(p.y - l2.rope.cleatY) < 90) {
+          l2.rope.cut = true;
+          l2.rope.weight.falling = true;
+          if (sfxSwing) sfxSwing.play(0.4, 0.8);
+          spawnDust(l2.rope.cleatX, l2.rope.cleatY, 4, 0.7);
+          l2toast('The rope snaps!');
+        }
+      }
+      for (const bt of l2.biters) {
+        if (bt.state === 'dead') continue;
+        const dx = bt.x - p.x;
+        if (dx * p.facing > 0 && Math.abs(dx) < 56 && Math.abs(bt.y - (p.y - 30)) < 52) {
+          bt.state = 'dead'; bt.dead = 0;
+          spawnDust(bt.x, bt.y, 7, 1.0);
+          didHit = true;
+        }
+      }
       for (const sk of l2.skels) {
         if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall' && sk.state !== 'stun') {
           const dx = sk.x - p.x;
@@ -1794,9 +1902,65 @@
       }
     }
     if ((p.atkT || 0) <= 0) l2._hitThisSwing = false;
-    if (p.x > 4060 && l2.endT === 0) { l2.endT = 0.0001; p.state = 'cine'; p.vx = 0; }
+
+    // --- rope puzzle: the freed weight falls onto its button, opening gate A
+    const rp = l2.rope, rb = l2.rbutton, gA = gateById('A'), gB = gateById('B');
+    if (rp && rb) {
+      const w = rp.weight;
+      if (w.falling && !w.landed) {
+        w.vy = (w.vy || 0) + GRAV * dt;
+        w.y = w.y + w.vy * dt;
+        if (w.y + w.s >= rb.y) {
+          w.y = rb.y - w.s; w.landed = true; w.falling = false;
+          rb.pressed = true;
+          spawnDust(rb.x, rb.y, 8, 1.2);
+          // crush any skeleton caught under the weight, for good measure
+          for (const sk of l2.skels) {
+            if (sk.state !== 'pile' && sk.state !== 'gone'
+              && Math.abs(sk.x - rb.x) < 40 && Math.abs(sk.y - rb.y) < 12) { sk.state = 'pile'; sk.armed = false; }
+          }
+          if (gA && !gA.open) { gA.open = true; l2toast('The weight slams the plate — a gate grinds open'); }
+        }
+      }
+      // hint when the hero is near the uncut rope with a sword in hand
+      if (!rp.cut && p.hasSword && Math.abs(p.x - rp.cleatX) < 80 && Math.abs(p.y - rp.cleatY) < 120) {
+        if (!rp.hinted) { l2toast('Cut the rope!  (X)'); rp.hinted = true; }
+      } else if (rp.cut) rp.hinted = true;
+    }
+
+    // --- key pickup
+    const kb = l2.key;
+    if (kb && !kb.taken && Math.abs(p.x - kb.x) < 24 && Math.abs(p.y - kb.y) < 42) {
+      kb.taken = true;
+      l2toast('You pried a rusty key from the bones');
+    }
+
+    // --- gate B: unlocks when the hero reaches it carrying the key
+    if (gB && !gB.open) {
+      const near = Math.abs(p.x - (gB.x + gB.w / 2)) < 46 && p.y > gB.yTop;
+      if (near && kb && kb.taken) {
+        gB.open = true; kb.used = true;
+        l2toast('The key turns — the gate creaks open');
+      } else if (near && (!kb || !kb.taken)) {
+        if (!gB.hinted) { l2toast('A locked gate — find the key'); gB.hinted = true; }
+      } else {
+        gB.hinted = false;
+      }
+    }
+
+    // --- animate opening gates (bars slide up out of view)
+    for (const g of l2.gates) {
+      if (g.open && g.openT < 1) g.openT = Math.min(1, g.openT + dt * 1.6);
+    }
+
+    if (p.x > 6480 && l2.endT === 0) { l2.endT = 0.0001; p.state = 'cine'; p.vx = 0; }
     if (l2.endT > 0) l2.endT = l2.endT + dt;
     l2.msgT = Math.max(0, l2.msgT - dt);
+  }
+
+  function gateById(id) {
+    for (const g of l2.gates) if (g.id === id) return g;
+    return null;
   }
 
   // -------------------------------------------------------------- LEVEL 2 DRAW
@@ -1861,10 +2025,263 @@
     lg.pop();
   }
 
+  // Flying severed head — pale face, wild green hair, gnashing teeth.
+  function drawBiter(bt) {
+    lg.push();
+    lg.translate(bt.x, bt.y);
+    if (bt.state === 'dead') {
+      const a = Math.max(0, 1 - bt.dead / 0.5);
+      lg.setColor(0.55, 0.85, 0.45, 0.5 * a);
+      lg.circle('fill', 0, -bt.dead * 40, 12 + bt.dead * 30);
+      lg.pop();
+      return;
+    }
+    const face = bt.x > player.x ? -1 : 1;   // look toward the hero
+    lg.scale(face, 1);
+    const chase = bt.state === 'chase';
+    const bob = Math.sin(bt.t * 6 + bt.phase) * 1.5;
+    lg.translate(0, bob);
+    // faint sickly aura
+    lg.setColor(0.45, 0.8, 0.4, 0.10 + (chase ? 0.06 : 0));
+    lg.circle('fill', 0, 0, 20);
+    // trailing green wisps under the head (the "flight")
+    lg.setColor(0.35, 0.7, 0.35, 0.35);
+    for (let i = 0; i < 3; i++) {
+      const wy = 9 + i * 4, ww = 6 - i * 1.6;
+      lg.circle('fill', Math.sin(bt.t * 8 + i) * 3, wy, Math.max(1, ww));
+    }
+    // green hair (spiky strands over the crown)
+    lg.setColor(0.20, 0.62, 0.24, 1);
+    for (let i = -3; i <= 3; i++) {
+      const hx = i * 2.4, base = -6;
+      lg.polygon('fill', hx - 1.8, base + 2, hx + 1.8, base + 2,
+        hx + Math.sin(bt.t * 3 + i) * 1.5, base - 9 - Math.abs(i));
+    }
+    lg.setColor(0.14, 0.5, 0.18, 1);
+    for (let i = -2; i <= 2; i++) {
+      const hx = i * 3.0;
+      lg.polygon('fill', hx - 1.4, -4, hx + 1.4, -4, hx, -12 - (2 - Math.abs(i)) * 2);
+    }
+    // pale head
+    lg.setColor(0.93, 0.92, 0.88, 1);
+    lg.circle('fill', 0, 0, 11);
+    lg.setColor(0.82, 0.80, 0.76, 1);      // gaunt cheek shadow
+    lg.circle('fill', -2, 3, 8);
+    lg.setColor(0.93, 0.92, 0.88, 1);
+    lg.circle('fill', 1, -1, 9.5);
+    // sunken eyes (glow red when chasing)
+    if (chase) lg.setColor(0.9, 0.2, 0.15, 1); else lg.setColor(0.12, 0.12, 0.14, 1);
+    lg.circle('fill', -3.5, -2, 2.2);
+    lg.circle('fill', 3.5, -2, 2.2);
+    lg.setColor(1, 1, 1, 0.5);
+    lg.circle('fill', -3, -2.6, 0.7);
+    lg.circle('fill', 4, -2.6, 0.7);
+    // gaping mouth with teeth — opens wide on a bite
+    const open = 2.5 + (bt.bite > 0 ? 6 : chase ? 3 : 0);
+    lg.setColor(0.32, 0.06, 0.08, 1);
+    lg.polygon('fill', -5, 5, 5, 5, 4, 5 + open, -4, 5 + open);
+    lg.setColor(0.95, 0.94, 0.9, 1);
+    for (let i = -4; i <= 4; i += 2) {
+      lg.polygon('fill', i - 0.9, 5, i + 0.9, 5, i, 7.5);          // upper teeth
+      lg.polygon('fill', i - 0.9, 5 + open, i + 0.9, 5 + open, i, 5 + open - 2.5);  // lower teeth
+    }
+    lg.pop();
+  }
+
+  // A closed portcullis; when open the bars have slid up out of sight.
+  function drawGate(g) {
+    if (g.openT >= 1) return;
+    const rise = (g.yBot - g.yTop) * smooth(g.openT);
+    const x = g.x, top = g.yTop - rise, bot = g.yBot - rise;
+    // frame jambs (stay put)
+    lg.setColor(0.12, 0.10, 0.14, 1);
+    lg.rectangle('fill', x - 8, g.yTop - 14, g.w + 16, 14);
+    // iron bars
+    lg.setColor(g.locked && !g.open ? 0.34 : 0.40, 0.30, 0.24, 1);
+    const nbar = 4;
+    for (let i = 0; i < nbar; i++) {
+      const bx = x + 2 + i * (g.w - 4) / (nbar - 1);
+      lg.rectangle('fill', bx - 1.5, top, 3, bot - top);
+    }
+    for (let cy = top + 12; cy < bot; cy += 26) {
+      lg.rectangle('fill', x, cy - 1.5, g.w, 3);
+    }
+    lg.setColor(0.6, 0.5, 0.35, 0.5);
+    for (let i = 0; i < nbar; i++) {
+      const bx = x + 2 + i * (g.w - 4) / (nbar - 1);
+      lg.rectangle('fill', bx - 1.5, top, 1, bot - top);
+    }
+    if (g.locked && !g.open) {   // a keyhole plate on a locked gate
+      lg.setColor(0.72, 0.60, 0.22, 1);
+      lg.circle('fill', x + g.w / 2, (top + bot) / 2, 4.5);
+      lg.setColor(0.1, 0.09, 0.08, 1);
+      lg.circle('fill', x + g.w / 2, (top + bot) / 2 - 1, 1.4);
+      lg.rectangle('fill', x + g.w / 2 - 0.8, (top + bot) / 2 - 1, 1.6, 4);
+    }
+  }
+
+  function drawRopePuzzle() {
+    const rp = l2.rope, rb = l2.rbutton;
+    if (rb) {   // the pressure plate the weight must land on
+      const pressed = rb.pressed;
+      lg.setColor(0.16, 0.14, 0.17, 1);
+      lg.rectangle('fill', rb.x - rb.w / 2 - 4, rb.y - 2, rb.w + 8, 4);
+      lg.setColor(pressed ? 0.5 : 0.62, pressed ? 0.42 : 0.52, 0.30, 1);
+      const h = pressed ? 2 : 6;
+      lg.rectangle('fill', rb.x - rb.w / 2, rb.y - h, rb.w, h);
+      lg.setColor(1, 0.9, 0.6, 0.4);
+      lg.rectangle('fill', rb.x - rb.w / 2, rb.y - h, rb.w, 1.5);
+    }
+    if (!rp) return;
+    const w = rp.weight;
+    // ceiling beam + pulley
+    lg.setColor(0.20, 0.17, 0.13, 1);
+    lg.rectangle('fill', rp.cleatX - 20, rp.pulleyY - 20, (rp.x - rp.cleatX) + 60, 10);
+    lg.setColor(0.30, 0.28, 0.30, 1);
+    lg.circle('fill', rp.x, rp.pulleyY, 6);
+    lg.setColor(0.12, 0.11, 0.12, 1);
+    lg.circle('fill', rp.x, rp.pulleyY, 2);
+    // rope: pulley → weight (vertical), and pulley → cleat (the cut segment)
+    lg.setColor(0.66, 0.54, 0.30, 1);
+    lg.setLineWidth(2.5);
+    lg.line(rp.x, rp.pulleyY, w.x, w.y - w.s);
+    if (!rp.cut) {
+      lg.line(rp.x, rp.pulleyY, rp.cleatX, rp.cleatY);
+      // glint on the cuttable segment
+      const gl = 0.5 + 0.5 * Math.sin(T * 5);
+      lg.setColor(1, 0.95, 0.7, 0.35 * gl);
+      lg.setLineWidth(3.5);
+      lg.line(rp.x, rp.pulleyY, rp.cleatX, rp.cleatY);
+      // cleat anchored to the floor
+      lg.setColor(0.30, 0.26, 0.22, 1);
+      lg.setLineWidth(1);
+      lg.rectangle('fill', rp.cleatX - 4, rp.cleatY, 8, 384 - rp.cleatY);
+    } else {
+      // frayed loose end dangling from the pulley
+      lg.setColor(0.66, 0.54, 0.30, 1);
+      lg.line(rp.x, rp.pulleyY, rp.x - 6, rp.pulleyY + 20 + Math.sin(T * 3) * 3);
+    }
+    lg.setLineWidth(1);
+    // the heavy weight (a studded iron block)
+    lg.setColor(0.22, 0.21, 0.24, 1);
+    lg.rectangle('fill', w.x - w.s, w.y - w.s, w.s * 2, w.s * 2);
+    lg.setColor(0.34, 0.33, 0.37, 1);
+    lg.rectangle('fill', w.x - w.s, w.y - w.s, w.s * 2, 3);
+    lg.setColor(0.10, 0.09, 0.11, 1);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++)
+      lg.circle('fill', w.x + i * w.s * 0.6, w.y + j * w.s * 0.6, 2);
+    lg.setColor(0.5, 0.42, 0.3, 1);
+    lg.rectangle('line', w.x - w.s, w.y - w.s, w.s * 2, w.s * 2);
+  }
+
+  function drawKey(kb) {
+    if (!kb || kb.taken) return;
+    const yb = kb.y + Math.sin(T * 3) * 2;
+    const gl = 0.6 + 0.4 * Math.sin(T * 4);
+    lg.setColor(1, 0.9, 0.5, 0.22 * gl);
+    lg.circle('fill', kb.x, yb - 6, 14);
+    // little bone pedestal
+    lg.setColor(0.80, 0.77, 0.68, 0.9);
+    lg.rectangle('fill', kb.x - 10, 384 - 4, 20, 4);
+    // key: bow (ring) + shaft + bit
+    lg.setColor(0.85, 0.68, 0.24, 1);
+    lg.setLineWidth(2.5);
+    lg.circle('line', kb.x, yb - 12, 4.5);
+    lg.line(kb.x, yb - 7.5, kb.x, yb + 4);
+    lg.line(kb.x, yb + 4, kb.x + 4, yb + 4);
+    lg.line(kb.x, yb + 1, kb.x + 3, yb + 1);
+    lg.setLineWidth(1);
+    lg.setColor(1, 0.92, 0.6, 0.9);
+    lg.circle('fill', kb.x, yb - 12, 1.4);
+  }
+
+  // A grand arched castle entrance drawn at the start of the level.
+  function drawCastleDoor2(cx, floorY) {
+    const w = 150, h = 240;
+    const left = cx - w / 2, top = floorY - h;
+    // warm pool of brazier light behind the whole entrance so it reads as a
+    // grand doorway even in the keep's gloom
+    const fl = 0.8 + 0.2 * Math.sin(T * 6 + cx);
+    lg.setColor(0.9, 0.55, 0.25, 0.06 * fl);
+    lg.circle('fill', cx, top + h * 0.5, 190);
+    lg.setColor(0.9, 0.5, 0.22, 0.05 * fl);
+    lg.circle('fill', cx, top + h * 0.5, 130);
+    // recessed stone archway (outer surround)
+    lg.setColor(0.14, 0.12, 0.17, 1);
+    lg.rectangle('fill', left - 18, top - 26, w + 36, h + 26);
+    lg.arc('fill', cx, top + 6, w / 2 + 18, Math.PI, 2 * Math.PI);
+    // arch stone ring with voussoir blocks
+    lg.setColor(0.34, 0.31, 0.38, 1);
+    lg.rectangle('fill', left - 10, top, w + 20, h);
+    lg.arc('fill', cx, top, w / 2 + 10, Math.PI, 2 * Math.PI);
+    lg.setColor(0.20, 0.18, 0.23, 1);
+    lg.setLineWidth(1.5);
+    for (let a = 0; a <= 8; a++) {
+      const ang = Math.PI + (a / 8) * Math.PI;
+      lg.line(cx + Math.cos(ang) * (w / 2), top + Math.sin(ang) * (w / 2),
+        cx + Math.cos(ang) * (w / 2 + 10), top + Math.sin(ang) * (w / 2 + 10));
+    }
+    // dark doorway recess behind the doors
+    lg.setColor(0.06, 0.05, 0.08, 1);
+    lg.rectangle('fill', left, top, w, h);
+    lg.arc('fill', cx, top, w / 2, Math.PI, 2 * Math.PI);
+    // two heavy wooden door leaves
+    for (const s of [-1, 1]) {
+      const dx = cx + (s < 0 ? -w / 2 : 0);
+      lg.setColor(0.40, 0.26, 0.15, 1);
+      lg.rectangle('fill', dx + (s < 0 ? 2 : 0), top + 4, w / 2 - 2, h - 6);
+      lg.arc('fill', cx, top + 4, w / 2 - 2, s < 0 ? Math.PI : 1.5 * Math.PI, s < 0 ? 1.5 * Math.PI : 2 * Math.PI);
+      // warm lit edge along the top of each leaf
+      lg.setColor(0.58, 0.40, 0.22, 0.8);
+      lg.rectangle('fill', dx + (s < 0 ? 2 : 0), top + 4, w / 2 - 2, 3);
+      // vertical plank seams
+      lg.setColor(0.24, 0.15, 0.08, 1);
+      lg.setLineWidth(1.5);
+      for (let i = 1; i < 4; i++) {
+        const px = dx + i * (w / 2) / 4;
+        lg.line(px, top + 12, px, floorY - 6);
+        lg.setColor(0.48, 0.32, 0.18, 0.5);
+        lg.line(px + 1, top + 12, px + 1, floorY - 6);
+        lg.setColor(0.24, 0.15, 0.08, 1);
+      }
+    }
+    // iron cross-bands with studs
+    for (const by of [top + 40, top + h - 60]) {
+      lg.setColor(0.17, 0.15, 0.18, 1);
+      lg.rectangle('fill', left + 4, by, w - 8, 9);
+      lg.setColor(0.30, 0.28, 0.32, 1);
+      lg.rectangle('fill', left + 4, by, w - 8, 2);
+      lg.setColor(0.46, 0.44, 0.48, 1);
+      for (let i = 0; i <= 8; i++) lg.circle('fill', left + 10 + i * (w - 20) / 8, by + 4.5, 2);
+    }
+    // central seam + two ring handles
+    lg.setColor(0.10, 0.07, 0.05, 1);
+    lg.setLineWidth(2);
+    lg.line(cx, top + 8, cx, floorY - 6);
+    lg.setColor(0.55, 0.48, 0.30, 1);
+    lg.setLineWidth(2.5);
+    lg.circle('line', cx - 12, top + h * 0.55, 6);
+    lg.circle('line', cx + 12, top + h * 0.55, 6);
+    lg.setLineWidth(1);
+    // flanking wall braziers that light the entrance
+    for (const bx of [left - 30, left + w + 30]) {
+      lg.setColor(0.22, 0.16, 0.10, 1);
+      lg.rectangle('fill', bx - 5, top + 70, 10, 24);
+      lg.setColor(1.0, 0.6, 0.2, 0.9 * fl);
+      lg.circle('fill', bx, top + 66, 8);
+      lg.setColor(1.0, 0.85, 0.4, 0.95 * fl);
+      lg.circle('fill', bx, top + 62, 4);
+      lg.setColor(1.0, 0.6, 0.25, 0.08 * fl);
+      lg.circle('fill', bx, top + 66, 90);
+    }
+  }
+
   const L2_TORCHES = [[260, 812], [700, 812], [1420, 656], [1820, 656], [2210, 656],
-    [2470, 656], [2900, 296], [3250, 296], [3620, 296], [3980, 296]];
+    [2470, 656], [2900, 296], [3250, 296], [3620, 296], [3980, 296],
+    [4360, 296], [4780, 296], [5140, 296], [5540, 296], [5920, 296], [6320, 296]];
 
   function drawEnts2() {
+    drawCastleDoor2(150, 900);   // grand entrance at the start of the level
     for (const tc of L2_TORCHES) {
       const fl = 0.75 + 0.25 * Math.sin(T * 9 + tc[0]);
       lg.setColor(0.30, 0.20, 0.12, 1);
@@ -1908,12 +2325,17 @@
       lg.setColor(1, 1, 0.9, 0.25 * g);
       lg.circle('fill', l2.sword.x + 8, l2.sword.y - 14, 12);
     }
+    drawRopePuzzle();
+    drawKey(l2.key);
+    for (const g of l2.gates) drawGate(g);
     for (const sk of l2.skels) drawSkel(sk);
+    for (const bt of l2.biters) drawBiter(bt);
+    // the emblem shrine door at the far end of the level
     lg.setColor(0.10, 0.09, 0.13, 1);
-    lg.rectangle('fill', 4100, 384 - 150, 90, 150);
+    lg.rectangle('fill', 6540, 384 - 150, 90, 150);
     lg.setColor(0.16, 0.14, 0.20, 1);
-    lg.rectangle('fill', 4108, 384 - 142, 74, 142);
-    drawEmblem(4145, 384 - 78, 26, 0.8, [0.16, 0.14, 0.20]);
+    lg.rectangle('fill', 6548, 384 - 142, 74, 142);
+    drawEmblem(6585, 384 - 78, 26, 0.8, [0.16, 0.14, 0.20]);
   }
 
   // -------------------------------------------------------------- LEVEL MGMT
@@ -2288,7 +2710,7 @@
   }
 
   love.load = function () {
-    try { console.info('[ROTS] build ' + BUILD + ' — no horizon seam + auto-hide volume'); } catch (e) {}
+    try { console.info('[ROTS] build ' + BUILD + ' — castle door + rope/key gates + flying biters'); } catch (e) {}
     pixCanvas = lg.newCanvas(VW / PIX, VH / PIX);
 
     // Loading index.html?reset wipes any level saved from the editor (a bad
@@ -2412,8 +2834,8 @@
     if (level === 2) updateEnts2(dt);
 
     if (level === 1) {
-      let target = 0.55 * (0.55 + 0.45 * gust());
-      if (cine.on && cine.stage >= 2) target = 0.16;
+      let target = 0.28 * (0.55 + 0.45 * gust());   // gentler wind
+      if (cine.on && cine.stage >= 2) target = 0.09;
       windVol = lerp(windVol, target, Math.min(1, dt * 1.5));
       windSrc.setVolume(windVol);
       windSrc.setPitch(0.9 + 0.22 * gust(1.7));

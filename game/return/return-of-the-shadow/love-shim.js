@@ -415,12 +415,25 @@
   };
 
   function unlockAudio() {
-    if (audioUnlocked) return;
     ensureAudioCtx();
     if (!audioCtx) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    audioUnlocked = true;
-    for (const s of pendingSources) if (s.wantPlay) s.play();
+    // Fully working already — nothing to do. (We intentionally do NOT latch on
+    // a single call: a context can be created but stay "suspended" if the first
+    // resume didn't land, so we keep retrying on later gestures until running.)
+    if (audioUnlocked && audioCtx.state === 'running') return;
+    // start (or restart) any looping/pending sources; the !playing guard keeps
+    // this idempotent so it's safe to call repeatedly
+    const startPending = function () {
+      audioUnlocked = true;
+      for (const s of pendingSources) if (s.wantPlay && !s.playing) s.play();
+    };
+    // iOS/Safari start the context SUSPENDED and only resume inside a user
+    // gesture; resume() is async, so kick the sources both immediately (within
+    // the gesture) and once the context is actually running.
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume().then(startPending, startPending); } catch (e) {}
+    }
+    startPending();
   }
 
   // ------------------------------------------------------------------ keyboard
@@ -504,6 +517,12 @@
       if (k) pressed.delete(k);
     });
     global.addEventListener('blur', function () { pressed.clear(); });
+
+    // any touch/pointer anywhere unlocks audio (mobile: on-screen buttons alone
+    // aren't enough if the player taps the canvas first)
+    global.addEventListener('touchstart', unlockAudio, { passive: true });
+    global.addEventListener('pointerdown', unlockAudio, { passive: true });
+    global.addEventListener('touchend', unlockAudio, { passive: true });
 
     function updateMouse(e) {
       const rect = mainCanvas.getBoundingClientRect();
