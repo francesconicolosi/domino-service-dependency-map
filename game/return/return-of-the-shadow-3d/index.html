@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>THE RETURN OF THE SHADOW — 3D</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #05040a;
+                 overflow: hidden; position: fixed; inset: 0; overscroll-behavior: none;
+                 -webkit-user-select: none; user-select: none;
+                 font-family: 'Segoe UI', Helvetica, Arial, sans-serif; color: #efe8dc; }
+    #app { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    /* --- HUD --- */
+    #hud { position: fixed; inset: 0; pointer-events: none; }
+    #loc { position: absolute; top: 5%; left: 0; right: 0; text-align: center;
+           letter-spacing: 0.32em; font-size: clamp(13px, 2.4vw, 22px); font-weight: 500;
+           color: rgba(240,232,220,0.9); text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+           transition: opacity 1.2s; }
+    #hint { position: absolute; bottom: 4.5%; left: 0; right: 0; text-align: center;
+            font-size: clamp(11px, 1.7vw, 15px); color: rgba(235,228,216,0.72);
+            text-shadow: 0 1px 6px rgba(0,0,0,0.9); transition: opacity 1s; }
+    #hint b { color: #e8c89a; font-weight: 600; }
+
+    /* loading / start veil */
+    #veil { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 18px;
+            align-items: center; justify-content: center; text-align: center;
+            background: radial-gradient(120% 90% at 50% 30%, #16122a 0%, #05040a 70%);
+            transition: opacity 0.8s; z-index: 10; }
+    #veil h1 { margin: 0; font-weight: 600; letter-spacing: 0.14em;
+               font-size: clamp(22px, 5vw, 44px); color: #efe6d8;
+               text-shadow: 0 3px 24px rgba(120,60,160,0.5); }
+    #veil p { margin: 0; color: rgba(230,222,210,0.7); font-size: clamp(12px, 2vw, 16px);
+              letter-spacing: 0.04em; max-width: 30em; line-height: 1.6; }
+    #play { pointer-events: auto; cursor: pointer; margin-top: 6px;
+            padding: 12px 30px; font-size: clamp(14px, 2.4vw, 18px); letter-spacing: 0.12em;
+            color: #f2ead9; background: rgba(150,80,60,0.35);
+            border: 1px solid rgba(240,200,160,0.4); border-radius: 12px;
+            backdrop-filter: blur(2px); transition: background 0.2s; }
+    #play:hover { background: rgba(200,110,70,0.5); }
+    #err { color: #e88; font-size: 13px; max-width: 34em; }
+
+    /* on-screen joystick (touch) */
+    #stick { position: fixed; left: 26px; bottom: 26px; width: 128px; height: 128px;
+             border-radius: 50%; background: rgba(30,22,40,0.28);
+             border: 1px solid rgba(240,220,200,0.22); display: none; touch-action: none; }
+    #stick.on { display: block; }
+    #nub { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px;
+           border-radius: 50%; background: rgba(220,150,90,0.5); }
+    #jump { position: fixed; right: 30px; bottom: 40px; width: 92px; height: 92px; display: none;
+            border-radius: 50%; background: rgba(30,22,40,0.32);
+            border: 1px solid rgba(240,220,200,0.25); color: rgba(240,235,225,0.9);
+            align-items: center; justify-content: center; font-weight: 600; letter-spacing: 0.08em;
+            touch-action: none; }
+    #jump.on { display: flex; }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="app"></canvas>
+
+  <div id="hud">
+    <div id="loc">THE&nbsp; WITCH'S&nbsp; KEEP</div>
+    <div id="hint"><b>W A S D</b> / arrows move &nbsp;·&nbsp; <b>drag</b> to look &nbsp;·&nbsp; <b>Space</b> jump &nbsp;·&nbsp; <b>Shift</b> run</div>
+  </div>
+
+  <div id="stick"><div id="nub"></div></div>
+  <div id="jump">JUMP</div>
+
+  <div id="veil">
+    <h1>THE RETURN OF THE SHADOW</h1>
+    <p>A third-person walk through the Witch's Keep — rendered in real-time 3D.
+       Everything you see is generated procedurally in code.</p>
+    <button id="play">ENTER THE KEEP</button>
+    <div id="err"></div>
+  </div>
+
+  <script type="module" src="main.js?v=6"></script>
+</body>
+</html>
