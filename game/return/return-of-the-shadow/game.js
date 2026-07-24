@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-24a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-24d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -114,7 +114,11 @@
     { x: 2790, y: 384, w: 560, h: 1420 },
     { x: 3480, y: 384, w: 760, h: 1420 },   // skeleton hall + trap/sword puzzle (3480..4240)
     { x: 4240, y: 384, w: 760, h: 1420 },   // ROPE HALL  — gate A at ~4960 (4240..5000)
-    { x: 5000, y: 384, w: 760, h: 1420 },   // KEY HALL   — gate B at ~5720 (5000..5760)
+    // KEY HALL (5000..5760): two upper walkways with an open shaft between them;
+    // the key is hidden in the basement below, reached by dropping through the hole
+    { x: 5000, y: 384, w: 280, h: 26 },     // upper-left walkway 5000..5280
+    { x: 5520, y: 384, w: 240, h: 26 },     // upper-right walkway 5520..5760 (gate B at 5720)
+    { x: 5000, y: 900, w: 760, h: 900 },    // basement floor 5000..5760
     { x: 5760, y: 384, w: 920, h: 1420 },   // FINAL APPROACH → emblem door (5760..6680)
   ];
   for (let i = 0; i <= 5; i++) {
@@ -1503,7 +1507,7 @@
     // ceiling, so a full-height solid is enough to bar the way
     if (level === 2 && l2.gates) {
       for (const g of l2.gates) {
-        if (g.open) continue;
+        if ((g.openT || 0) > 0.82) continue;   // raised enough to walk under
         if (overlap(p.x - 12, p.y - 56, p.x + 12, p.y - 2, g.x, g.yTop, g.x + g.w, g.yBot)) {
           if (p.vx >= 0) p.x = g.x - 12; else p.x = g.x + g.w + 12;
           p.vx = 0;
@@ -1525,6 +1529,15 @@
           if (p.vy > 0 && prevBottom <= q.y + 12) { p.y = q.y; p.vy = 0; p.onGround = true; }
           else if (p.vy < 0) { p.y = q.y + q.h + 56; p.vy = 0; }
         }
+      }
+    }
+    // the chain lift is a moving one-way platform you ride up the shaft; the
+    // generous top margin keeps the hero glued to it as it climbs
+    if (level === 2 && l2.lift) {
+      const L = l2.lift;
+      if (p.vy >= 0 && p.x + 10 > L.x && p.x - 10 < L.x + L.w
+        && prevBottom <= L.y + 16 && p.y >= L.y - 2) {
+        p.y = L.y; p.vy = 0; p.onGround = true; p.onBeam = true;
       }
     }
   }
@@ -1643,6 +1656,8 @@
 
   // -------------------------------------------------------------- LEVEL 2 ENTITIES
   const l2 = { skels: [], biters: [], gates: [], rope: null, rbutton: null, key: null,
+    lift: null, lives: 3, gameOver: false,
+    doorOpen: false, doorOpenT: 0, endStage: 0, doorHinted: false,
     trap: null, button: null, sword: null, msg: '', msgT: 0, endT: 0 };
   function l2toast(s) { l2.msg = s; l2.msgT = 3; }
 
@@ -1705,7 +1720,9 @@
     for (const s of l2.skels) s.y = floorAt(s.x, 0) || 744;
     l2.biters = [
       newBiter(4680, 300),   // rope hall
-      newBiter(5300, 276),   // key hall (guards the key)
+      newBiter(5220, 640),   // key vault (basement) — guard the descent
+      newBiter(5470, 560),   // key vault (basement)
+      newBiter(5620, 700),   // key vault (basement) — guards the key
       newBiter(5980, 288),   // final approach
       newBiter(6340, 300),   // final approach
     ];
@@ -1723,11 +1740,20 @@
     l2.rope = { x: 4620, pulleyY: 176, cleatX: 4470, cleatY: 356, cut: false, hinted: false,
       weight: { x: 4620, y: 250, s: 26, falling: false, landed: false } };
 
-    // --- key puzzle: pick up the key, then walk into locked gate B to open it.
-    l2.key = { x: 5300, y: 360, taken: false, used: false };
+    // --- key puzzle: the key is hidden in the basement; drop through the hole,
+    //     beat the flying heads, grab it, then ride the chain lift back up and
+    //     use it on locked gate B.
+    l2.key = { x: 5580, y: 878, floorY: 900, taken: false, used: false };
+    // chain lift oscillating in the shaft; its right edge is flush with the
+    // upper-right walkway (5520) so you step straight off at the top
+    l2.lift = { x: 5370, w: 150, y: 896, yTop: 384, yBot: 896, dir: -1, spd: 130 };
 
+    l2.lives = 3; l2.gameOver = false;
+    l2.doorOpen = false; l2.doorOpenT = 0; l2.endStage = 0; l2.doorHinted = false;
     l2.msg = ''; l2.msgT = 0; l2.endT = 0;
   }
+
+  const END_DOOR_X = 6585;   // centre of the exit door at the far end of the keep
 
   function updateSkel(sk, dt, p) {
     sk.t = sk.t + dt;
@@ -1903,7 +1929,10 @@
     }
     if ((p.atkT || 0) <= 0) l2._hitThisSwing = false;
 
-    // --- rope puzzle: the freed weight falls onto its button, opening gate A
+    // --- weight/plate puzzle: gate A is held open ONLY while the plate is
+    //     pressed. Standing on it opens the gate but it slams shut the moment
+    //     you step off (you can't reach the gate in time) — so you learn you
+    //     need the weight to hold it down permanently.
     const rp = l2.rope, rb = l2.rbutton, gA = gateById('A'), gB = gateById('B');
     if (rp && rb) {
       const w = rp.weight;
@@ -1912,15 +1941,20 @@
         w.y = w.y + w.vy * dt;
         if (w.y + w.s >= rb.y) {
           w.y = rb.y - w.s; w.landed = true; w.falling = false;
-          rb.pressed = true;
           spawnDust(rb.x, rb.y, 8, 1.2);
           // crush any skeleton caught under the weight, for good measure
           for (const sk of l2.skels) {
             if (sk.state !== 'pile' && sk.state !== 'gone'
               && Math.abs(sk.x - rb.x) < 40 && Math.abs(sk.y - rb.y) < 12) { sk.state = 'pile'; sk.armed = false; }
           }
-          if (gA && !gA.open) { gA.open = true; l2toast('The weight slams the plate — a gate grinds open'); }
+          l2toast('The weight pins the plate down — the gate stays open');
         }
+      }
+      // the plate is pressed by the hero's body OR (permanently) by the weight
+      const playerOn = p.onGround && Math.abs(p.x - rb.x) < rb.w * 0.5 + 10 && Math.abs(p.y - rb.y) < 8;
+      rb.pressed = playerOn || w.landed;
+      if (playerOn && !w.landed && !rb._taught) {
+        l2toast('The gate opens — but only while the plate is pressed'); rb._taught = true;
       }
       // hint when the hero is near the uncut rope with a sword in hand
       if (!rp.cut && p.hasSword && Math.abs(p.x - rp.cleatX) < 80 && Math.abs(p.y - rp.cleatY) < 120) {
@@ -1935,26 +1969,65 @@
       l2toast('You pried a rusty key from the bones');
     }
 
-    // --- gate B: unlocks when the hero reaches it carrying the key
+    // --- gate B: you must be at the gate AND deliberately USE the key (▲) — just
+    //     carrying it isn't enough
     if (gB && !gB.open) {
-      const near = Math.abs(p.x - (gB.x + gB.w / 2)) < 46 && p.y > gB.yTop;
+      const near = Math.abs(p.x - (gB.x + gB.w / 2)) < 40 && p.onGround;
       if (near && kb && kb.taken) {
-        gB.open = true; kb.used = true;
-        l2toast('The key turns — the gate creaks open');
+        if (!gB.promptShown) { l2toast('Use the key — press ▲'); gB.promptShown = true; }
+        if (keyUp()) {
+          gB.open = true; kb.used = true;
+          l2toast('The key turns — the gate creaks open');
+        }
       } else if (near && (!kb || !kb.taken)) {
         if (!gB.hinted) { l2toast('A locked gate — find the key'); gB.hinted = true; }
       } else {
-        gB.hinted = false;
+        gB.hinted = false; gB.promptShown = false;
       }
     }
 
-    // --- animate opening gates (bars slide up out of view)
-    for (const g of l2.gates) {
-      if (g.open && g.openT < 1) g.openT = Math.min(1, g.openT + dt * 1.6);
+    // --- chain lift oscillates up/down the shaft
+    if (l2.lift) {
+      const L = l2.lift;
+      L.y = L.y + L.dir * L.spd * dt;
+      if (L.y >= L.yBot) { L.y = L.yBot; L.dir = -1; }
+      else if (L.y <= L.yTop) { L.y = L.yTop; L.dir = 1; }
     }
 
-    if (p.x > 6480 && l2.endT === 0) { l2.endT = 0.0001; p.state = 'cine'; p.vx = 0; }
-    if (l2.endT > 0) l2.endT = l2.endT + dt;
+    // --- drive each gate's slide: gate A tracks its pressure plate (opens AND
+    //     closes), gate B latches open once the key is used
+    for (const g of l2.gates) {
+      let wantOpen;
+      if (g.id === 'A') wantOpen = !!(l2.rbutton && l2.rbutton.pressed);
+      else wantOpen = g.open;
+      const rate = (g.id === 'A') ? 3.0 : 1.6;   // the plate gate snaps quicker
+      g.openT = clamp((g.openT || 0) + (wantOpen ? 1 : -1) * dt * rate, 0, 1);
+    }
+
+    // --- EXIT DOOR: opens only once the guardians of the final hall are gone,
+    //     revealing a lit stairway. Enter it to trigger the stair-climb finale.
+    if (!l2.doorOpen) {
+      let foes = 0;
+      for (const sk of l2.skels) if (sk.state !== 'pile' && sk.state !== 'gone' && sk.x > 5820) foes++;
+      for (const bt of l2.biters) if (bt.state !== 'dead' && bt.x > 5820) foes++;
+      if (foes === 0 && p.x > 5760) {   // only announce once the hero is in the final hall
+        l2.doorOpen = true; l2.doorOpenT = 0;
+        l2toast('The guardians are gone — the door grinds open');
+      }
+    }
+    if (l2.doorOpen && l2.doorOpenT < 1) l2.doorOpenT = Math.min(1, l2.doorOpenT + dt * 1.1);
+
+    if (l2.endStage === 0 && p.x > END_DOOR_X - 46 && !p.dying && !l2.gameOver) {
+      if (l2.doorOpen && l2.doorOpenT >= 1) {
+        // step into the doorway and begin the climb
+        l2.endStage = 1; l2.endT = 0.0001;
+        p.state = 'cine'; p.vx = 0; p.vy = 0; p.facing = 1;
+        p.x = END_DOOR_X - 20; p.y = 384;
+      } else if (!l2.doorOpen && !l2.doorHinted) {
+        l2toast('The door is barred — clear the hall first'); l2.doorHinted = true;
+      }
+    }
+    if (l2.endStage >= 1) l2.endT = l2.endT + dt;
     l2.msgT = Math.max(0, l2.msgT - dt);
   }
 
@@ -2176,13 +2249,16 @@
 
   function drawKey(kb) {
     if (!kb || kb.taken) return;
+    const floorY = kb.floorY || 384;
     const yb = kb.y + Math.sin(T * 3) * 2;
     const gl = 0.6 + 0.4 * Math.sin(T * 4);
     lg.setColor(1, 0.9, 0.5, 0.22 * gl);
-    lg.circle('fill', kb.x, yb - 6, 14);
+    lg.circle('fill', kb.x, yb - 6, 16);
+    lg.setColor(1, 0.9, 0.5, 0.10 * gl);
+    lg.circle('fill', kb.x, yb - 6, 30);
     // little bone pedestal
     lg.setColor(0.80, 0.77, 0.68, 0.9);
-    lg.rectangle('fill', kb.x - 10, 384 - 4, 20, 4);
+    lg.rectangle('fill', kb.x - 10, floorY - 4, 20, 4);
     // key: bow (ring) + shaft + bit
     lg.setColor(0.85, 0.68, 0.24, 1);
     lg.setLineWidth(2.5);
@@ -2193,6 +2269,144 @@
     lg.setLineWidth(1);
     lg.setColor(1, 0.92, 0.6, 0.9);
     lg.circle('fill', kb.x, yb - 12, 1.4);
+  }
+
+  // The chain lift: a header beam, two hanging chains, and the riding platform.
+  function drawLift() {
+    const L = l2.lift;
+    if (!L) return;
+    const headY = L.yTop - 26;
+    // header beam bolted across the top of the shaft
+    lg.setColor(0.18, 0.16, 0.19, 1);
+    lg.rectangle('fill', L.x - 8, headY, L.w + 16, 10);
+    lg.setColor(0.30, 0.28, 0.32, 1);
+    lg.rectangle('fill', L.x - 8, headY, L.w + 16, 2);
+    // two chains from the header down to the platform
+    for (const cxx of [L.x + 14, L.x + L.w - 14]) {
+      lg.setColor(0.34, 0.32, 0.36, 1);
+      lg.setLineWidth(2);
+      lg.line(cxx, headY + 8, cxx, L.y);
+      lg.setColor(0.50, 0.48, 0.52, 1);
+      for (let yy = headY + 12; yy < L.y - 1; yy += 7) lg.circle('line', cxx, yy, 2.1);
+    }
+    lg.setLineWidth(1);
+    // the riding platform (iron-bound timber)
+    lg.setColor(0.24, 0.19, 0.14, 1);
+    lg.rectangle('fill', L.x, L.y, L.w, 13);
+    lg.setColor(0.42, 0.35, 0.26, 1);
+    lg.rectangle('fill', L.x, L.y, L.w, 3);
+    lg.setColor(0.14, 0.12, 0.14, 1);
+    lg.rectangle('fill', L.x, L.y + 10, L.w, 3);
+    lg.setColor(0.30, 0.28, 0.32, 1);   // corner brackets
+    lg.rectangle('fill', L.x, L.y, 5, 13);
+    lg.rectangle('fill', L.x + L.w - 5, L.y, 5, 13);
+  }
+
+  // The level-exit door: a barred emblem door while enemies remain, that swings
+  // open to reveal a warm, ascending stairway once the hall is cleared.
+  function drawEndDoor() {
+    const dx = END_DOOR_X, floorY = 384;
+    const w = 96, h = 196;
+    const left = dx - w / 2, top = floorY - h;
+    const openA = smooth(clamp(l2.doorOpenT || 0, 0, 1));
+    // stone arch surround
+    lg.setColor(0.12, 0.11, 0.15, 1);
+    lg.rectangle('fill', left - 14, top - 16, w + 28, h + 16);
+    lg.arc('fill', dx, top, w / 2 + 14, Math.PI, 2 * Math.PI);
+    lg.setColor(0.28, 0.25, 0.32, 1);
+    lg.rectangle('fill', left - 7, top, w + 14, h);
+    lg.arc('fill', dx, top, w / 2 + 7, Math.PI, 2 * Math.PI);
+    // dark interior recess
+    lg.setColor(0.05, 0.045, 0.06, 1);
+    lg.rectangle('fill', left, top, w, h);
+    lg.arc('fill', dx, top, w / 2, Math.PI, 2 * Math.PI);
+    // revealed stairway (ascending, warm light spilling down)
+    if (openA > 0.03) {
+      const gl = 0.7 + 0.3 * Math.sin(T * 3);
+      lg.setColor(0.98, 0.62, 0.26, 0.16 * openA * gl);   // glow pooling out the door
+      lg.circle('fill', dx, floorY - 64, 92);
+      lg.setColor(1.0, 0.7, 0.3, 0.10 * openA * gl);
+      lg.circle('fill', dx, floorY - 40, 60);
+      const steps = 8;
+      for (let i = 0; i < steps; i++) {
+        const t0 = i / steps;
+        const sw = w * 0.92 * (1 - t0 * 0.62);
+        const sx = dx - sw / 2;
+        const sy = floorY - 6 - i * (h * 0.62 / steps);
+        const sh = Math.max(2, (h * 0.62 / steps) - 2);
+        const b = 0.16 + t0 * 0.6;                        // brighter toward the top
+        lg.setColor(b * 0.95, b * 0.74, b * 0.46, openA);
+        lg.rectangle('fill', sx, sy - sh, sw, sh);
+        lg.setColor(1.0, 0.86, 0.5, 0.3 * openA);         // lit step nosing
+        lg.rectangle('fill', sx, sy - sh, sw, 1.5);
+      }
+    }
+    // the two door leaves — each shrinks and slides into its jamb as it opens
+    const lw = (w / 2) * (1 - openA);          // remaining width of each leaf
+    if (lw > 1) {
+      for (const s of [-1, 1]) {
+        const bx = (s < 0) ? left : (dx + (w / 2 - lw));   // hinge side stays at the jamb
+        lg.setColor(0.15, 0.13, 0.19, 1);
+        lg.rectangle('fill', bx, top + 3, lw, h - 3);
+        lg.setColor(0.20, 0.17, 0.24, 1);                 // lit inner edge toward the opening
+        lg.rectangle('fill', (s < 0) ? bx + lw - 2 : bx, top + 3, 2, h - 3);
+        // plank seams
+        lg.setColor(0.09, 0.08, 0.11, 1);
+        lg.setLineWidth(1.5);
+        for (let i = 1; i < 3; i++) lg.line(bx + i * lw / 3, top + 10, bx + i * lw / 3, floorY - 4);
+        lg.setLineWidth(1);
+      }
+    }
+    // emblem on the doors while they are (mostly) shut
+    if (openA < 0.5) drawEmblem(dx, floorY - 100, 24, (1 - openA * 2) * 0.85, [0.16, 0.14, 0.20]);
+    // a pair of braziers flanking the door, brightening as it opens
+    const fl = 0.8 + 0.2 * Math.sin(T * 6);
+    for (const bx of [left - 30, left + w + 30]) {
+      lg.setColor(0.22, 0.16, 0.10, 1);
+      lg.rectangle('fill', bx - 4, floorY - 96, 8, 22);
+      lg.setColor(1.0, 0.6, 0.2, (0.5 + 0.45 * openA) * fl);
+      lg.circle('fill', bx, floorY - 100, 7);
+      lg.setColor(1.0, 0.85, 0.4, (0.5 + 0.45 * openA) * fl);
+      lg.circle('fill', bx, floorY - 103, 3.2);
+    }
+  }
+
+  // The hero, backlit, climbing the stairway during the finale — shrinking and
+  // fading into the warm light at the top of the stairs.
+  function drawClimber() {
+    if (l2.endStage < 1) return;
+    const dx = END_DOOR_X, floorY = 384;
+    const prog = clamp(l2.endT / 1.7, 0, 1);
+    const ease = smooth(prog);
+    const cx = dx;
+    const cy = floorY - 6 - ease * (196 * 0.56);
+    const sc = 1 - ease * 0.55;
+    const fade = 1 - clamp((prog - 0.68) / 0.32, 0, 1);   // dissolve near the top
+    if (fade <= 0) return;
+    const step = l2.endT * 8.5;
+    const bob = Math.abs(Math.sin(step)) * 2;
+    const stride = Math.sin(step) * 4.5;
+    lg.push();
+    lg.translate(cx, cy - bob);
+    lg.scale(sc, sc);
+    // legs (climbing stride)
+    lg.setColor(0.06, 0.05, 0.08, fade);
+    lg.setLineWidth(4.5);
+    lg.line(0, -2, stride, -20);
+    lg.line(0, -2, -stride, -20);
+    // cloak / body
+    lg.polygon('fill', -8, -18, 8, -18, 5, -40, -5, -40);
+    // trailing cape
+    lg.setColor(0.10, 0.08, 0.12, fade * 0.85);
+    lg.polygon('fill', -4, -38, -14, -8, -3, -22);
+    // head
+    lg.setColor(0.07, 0.06, 0.09, fade);
+    lg.circle('fill', 0, -46, 6);
+    // a hint of the red scarf, catching the stairwell light
+    lg.setColor(0.6, 0.16, 0.18, fade * 0.9);
+    lg.line(2, -40, 8 + stride * 0.5, -34);
+    lg.setLineWidth(1);
+    lg.pop();
   }
 
   // A grand arched castle entrance drawn at the start of the level.
@@ -2278,7 +2492,8 @@
 
   const L2_TORCHES = [[260, 812], [700, 812], [1420, 656], [1820, 656], [2210, 656],
     [2470, 656], [2900, 296], [3250, 296], [3620, 296], [3980, 296],
-    [4360, 296], [4780, 296], [5140, 296], [5540, 296], [5920, 296], [6320, 296]];
+    [4360, 296], [4780, 296], [5140, 296], [5540, 296], [5920, 296], [6320, 296],
+    [5060, 858], [5700, 858]];   // basement torches (key vault)
 
   function drawEnts2() {
     drawCastleDoor2(150, 900);   // grand entrance at the start of the level
@@ -2326,16 +2541,14 @@
       lg.circle('fill', l2.sword.x + 8, l2.sword.y - 14, 12);
     }
     drawRopePuzzle();
+    drawLift();
     drawKey(l2.key);
+    drawEndDoor();   // the doorway is scenery — draw it BEHIND enemies + hero so
+                     // they never vanish behind a closed door
     for (const g of l2.gates) drawGate(g);
     for (const sk of l2.skels) drawSkel(sk);
     for (const bt of l2.biters) drawBiter(bt);
-    // the emblem shrine door at the far end of the level
-    lg.setColor(0.10, 0.09, 0.13, 1);
-    lg.rectangle('fill', 6540, 384 - 150, 90, 150);
-    lg.setColor(0.16, 0.14, 0.20, 1);
-    lg.rectangle('fill', 6548, 384 - 142, 74, 142);
-    drawEmblem(6585, 384 - 78, 26, 0.8, [0.16, 0.14, 0.20]);
+    drawClimber();   // the finale climber goes ON TOP, ascending into the doorway
   }
 
   // -------------------------------------------------------------- LEVEL MGMT
@@ -2396,7 +2609,14 @@
 
     if (p.dying) {
       p.deadFade = p.deadFade + dt * 1.6;
-      if (p.deadFade >= 1) { respawnPlayer(p); p.dying = false; p.deadFade = 0.999; }
+      if (p.deadFade >= 1) {
+        // in the keep, dying costs a life; run out of lives → game over
+        if (level === 2 && !l2.gameOver) {
+          l2.lives = (l2.lives || 0) - 1;
+          if (l2.lives <= 0) { l2.gameOver = true; p.deadFade = 1; return; }
+        }
+        respawnPlayer(p); p.dying = false; p.deadFade = 0.999;
+      }
       if (!p.dying) return;
     }
     if (p.deadFade > 0 && !p.dying) p.deadFade = Math.max(0, p.deadFade - dt * 1.4);
@@ -2655,17 +2875,39 @@
         lg.setColor(1, 1, 1, full ? 0.35 : 0.12);
         lg.circle('fill', hx - 6.5, hy - 5, 2);
       }
+      // remaining lives — small hooded-hero pips beneath the hearts
+      lg.setColor(0.86, 0.83, 0.9, 0.9);
+      lg.print('LIVES', 30, 52, 0, 0.85, 0.85);
+      for (let i = 0; i < Math.max(0, l2.lives || 0); i++) {
+        const lx = 108 + i * 22, ly = 60;
+        lg.setColor(0.55, 0.52, 0.66, 1);          // cloak
+        lg.polygon('fill', lx - 6, ly + 6, lx + 6, ly + 6, lx, ly - 3);
+        lg.setColor(0.9, 0.87, 0.94, 1);           // head
+        lg.circle('fill', lx, ly - 4, 3.2);
+      }
       if (l2.msgT > 0) {
         lg.setColor(0.94, 0.89, 0.78, Math.min(1, l2.msgT));
         lg.print(l2.msg, VW / 2 - FONT_HUD.getWidth(l2.msg) / 2, VH - 96);
       }
       if (l2.endT > 0) {
-        const a = clamp((l2.endT - 0.4) / 1.6, 0, 1);
-        lg.setColor(0, 0, 0, a * 0.9);
+        // the hero climbs the stairs first (~1.9s), then the scene fades out
+        const a = clamp((l2.endT - 1.9) / 1.6, 0, 1);
+        lg.setColor(0, 0, 0, a * 0.92);
         lg.rectangle('fill', 0, 0, VW, VH);
         lg.setFont(FONT_SUB);
         lg.setColor(0.94, 0.89, 0.78, a);
         printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 - 12, FONT_SUB, 6, 1);
+      }
+      if (l2.gameOver) {
+        lg.setColor(0.03, 0.0, 0.02, 0.9);
+        lg.rectangle('fill', 0, 0, VW, VH);
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.72, 0.12, 0.14, 1);
+        printSpaced('GAME  OVER', VW / 2, VH / 2 - 28, FONT_SUB, 6, 1);
+        lg.setFont(FONT_HUD);
+        lg.setColor(0.9, 0.86, 0.82, 0.9);
+        const m = 'Press  R  to  try  again';
+        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
       }
     }
 
@@ -2710,7 +2952,7 @@
   }
 
   love.load = function () {
-    try { console.info('[ROTS] build ' + BUILD + ' — castle door + rope/key gates + flying biters'); } catch (e) {}
+    try { console.info('[ROTS] build ' + BUILD + ' — door draw-order + key-use action + live plate gate'); } catch (e) {}
     pixCanvas = lg.newCanvas(VW / PIX, VH / PIX);
 
     // Loading index.html?reset wipes any level saved from the editor (a bad
@@ -2826,6 +3068,9 @@
     T = T + dt;
     introT = introT + dt;
 
+    // GAME OVER freezes the world; only R (keypressed) restarts the level
+    if (level === 2 && l2.gameOver) return;
+
     updatePlayer(dt, player);
     updateScarf(dt);
     updateParticles(dt);
@@ -2874,8 +3119,12 @@
     if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
     if (level === 2) drawEnts2();
     drawDusts();
-    drawScarf();
-    drawHero(player);
+    // during the stair-climb finale the real hero is replaced by the backlit
+    // climber (drawn inside drawEnts2), so hide the normal hero + scarf
+    if (!(level === 2 && l2.endStage > 0)) {
+      drawScarf();
+      drawHero(player);
+    }
 
     lg.pop();
 

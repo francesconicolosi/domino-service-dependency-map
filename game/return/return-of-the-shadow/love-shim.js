@@ -414,12 +414,46 @@
     getMasterVolume: function () { return _masterVol; }
   };
 
+  // A runtime-built, (near-)silent looping <audio> element. Playing an
+  // HTMLMediaElement flips iOS into the "playback" audio session, which — unlike
+  // the default WebAudio "ambient" session — is NOT silenced by the ringer/mute
+  // switch. This is what lets generated sound actually be heard on an iPhone.
+  let _silentEl = null;
+  function makeSilentWavUrl() {
+    const rate = 8000, n = rate;             // 1s of 16-bit mono silence
+    const bytes = 44 + n * 2;
+    const buf = new ArrayBuffer(bytes);
+    const dv = new DataView(buf);
+    const wstr = function (o, s) { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    wstr(0, 'RIFF'); dv.setUint32(4, bytes - 8, true); wstr(8, 'WAVE');
+    wstr(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    wstr(36, 'data'); dv.setUint32(40, n * 2, true);   // samples stay zero = silence
+    try { return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })); } catch (e) { return null; }
+  }
+  function primeMediaSession() {
+    try {
+      if (!_silentEl) {
+        const url = makeSilentWavUrl();
+        if (!url) return;
+        _silentEl = document.createElement('audio');
+        _silentEl.setAttribute('playsinline', '');
+        _silentEl.loop = true;
+        _silentEl.volume = 0.02;
+        _silentEl.src = url;
+      }
+      const pr = _silentEl.play();
+      if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) { /* ignore */ }
+  }
+
   function unlockAudio() {
     ensureAudioCtx();
+    primeMediaSession();   // route through a media session so the mute switch is bypassed
     if (!audioCtx) return;
-    // Fully working already — nothing to do. (We intentionally do NOT latch on
-    // a single call: a context can be created but stay "suspended" if the first
-    // resume didn't land, so we keep retrying on later gestures until running.)
+    // We intentionally do NOT latch on a single call: a context can be created
+    // but stay "suspended" if the first resume didn't land, so we keep retrying
+    // on later gestures until it is actually running.
     if (audioUnlocked && audioCtx.state === 'running') return;
     // start (or restart) any looping/pending sources; the !playing guard keeps
     // this idempotent so it's safe to call repeatedly
@@ -427,9 +461,13 @@
       audioUnlocked = true;
       for (const s of pendingSources) if (s.wantPlay && !s.playing) s.play();
     };
-    // iOS/Safari start the context SUSPENDED and only resume inside a user
-    // gesture; resume() is async, so kick the sources both immediately (within
-    // the gesture) and once the context is actually running.
+    // A one-sample silent buffer started inside the gesture reliably nudges iOS
+    // out of the SUSPENDED state where resume() alone sometimes fails.
+    try {
+      const b = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = b; src.connect(audioOut()); src.start(0);
+    } catch (e) { /* ignore */ }
     if (audioCtx.state === 'suspended') {
       try { audioCtx.resume().then(startPending, startPending); } catch (e) {}
     }
@@ -492,12 +530,27 @@
     ctx = mainCtx;
 
     function resize() {
-      const w = global.innerWidth, h = global.innerHeight;
-      mainCanvas.width = w;
-      mainCanvas.height = h;
+      // Prefer visualViewport (correct on iOS Safari where innerHeight can lag
+      // behind the dynamic toolbar / rotation); fall back to innerWidth/Height.
+      const vv = global.visualViewport;
+      const cssW = Math.max(1, Math.round(vv ? vv.width : global.innerWidth));
+      const cssH = Math.max(1, Math.round(vv ? vv.height : global.innerHeight));
+      // Backing store at devicePixelRatio (capped) → crisp on retina; the game
+      // renders in backing-store pixels and letterboxes to fill it, and the CSS
+      // size scales that down 1:1 to the visible viewport.
+      const dpr = Math.min(Math.max(global.devicePixelRatio || 1, 1), 2);
+      mainCanvas.style.width = cssW + 'px';
+      mainCanvas.style.height = cssH + 'px';
+      mainCanvas.width = Math.max(1, Math.round(cssW * dpr));
+      mainCanvas.height = Math.max(1, Math.round(cssH * dpr));
       mainCtx.imageSmoothingEnabled = false;
     }
     global.addEventListener('resize', resize);
+    global.addEventListener('orientationchange', function () {
+      // iOS reports stale dimensions right after a rotation — settle, then redo
+      resize(); setTimeout(resize, 200); setTimeout(resize, 500);
+    });
+    if (global.visualViewport) global.visualViewport.addEventListener('resize', resize);
     resize();
 
     // input wiring -------------------------------------------------
@@ -523,11 +576,25 @@
     global.addEventListener('touchstart', unlockAudio, { passive: true });
     global.addEventListener('pointerdown', unlockAudio, { passive: true });
     global.addEventListener('touchend', unlockAudio, { passive: true });
+    global.addEventListener('click', unlockAudio, { passive: true });
+    // iOS suspends the audio context when the tab is backgrounded — resume it
+    // (and the media session) whenever we become visible again
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && audioUnlocked) {
+        if (audioCtx && audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch (e) {} }
+        primeMediaSession();
+      }
+    });
+    global.addEventListener('pageshow', function () { if (audioUnlocked) primeMediaSession(); });
 
     function updateMouse(e) {
       const rect = mainCanvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
+      // map CSS-pixel client coords into the canvas's backing-store pixel space
+      // (they differ by devicePixelRatio now that the backing store is HiDPI)
+      const sx = rect.width ? mainCanvas.width / rect.width : 1;
+      const sy = rect.height ? mainCanvas.height / rect.height : 1;
+      mouseX = (e.clientX - rect.left) * sx;
+      mouseY = (e.clientY - rect.top) * sy;
     }
     function loveBtn(e) { return e.button === 0 ? 1 : (e.button === 2 ? 2 : 3); }
     mainCanvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
