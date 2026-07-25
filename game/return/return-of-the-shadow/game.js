@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-24d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -127,6 +127,36 @@
   let checkpoints2 = [
     { x: 150, y: 900 }, { x: 1360, y: 744 }, { x: 2160, y: 744 }, { x: 2860, y: 384 }, { x: 3560, y: 384 },
     { x: 4300, y: 384 }, { x: 5060, y: 384 }, { x: 5820, y: 384 },
+  ];
+
+  // -------------------------------------------------------------- LEVEL 3: THE BLACK HALLS
+  // A pitch-dark descent into the keep's lower vaults. No torches until the hero
+  // finds the candle at the far end of a great saloon. Everything is one long
+  // floor with stairs, floating ledges and a great hall; the saloon (3760..6260)
+  // is where the six-armed guardian awakes.
+  const FLOOR3 = 384;
+  let plats3 = [
+    { x: -80, y: FLOOR3, w: 2260, h: 1600 },     // entrance hall + stair base
+    // stairs climbing up to the key shelf (they rest on the entrance floor)
+    { x: 1180, y: 356, w: 130, h: 60 },
+    { x: 1310, y: 328, w: 130, h: 90 },
+    { x: 1440, y: 300, w: 130, h: 120 },
+    { x: 1570, y: 272, w: 130, h: 150 },
+    { x: 1700, y: 244, w: 440, h: 180 },         // key shelf (1700..2140)
+    // hall beyond the locked gate (gate K sits at x≈2180, added in initEnts3)
+    { x: 2180, y: FLOOR3, w: 1000, h: 1600 },
+    // floating ledges — an upper layer patrolled by flying heads
+    { x: 2360, y: 250, w: 130, h: 18 },
+    { x: 2640, y: 208, w: 320, h: 18 },
+    { x: 2980, y: 250, w: 130, h: 18 },
+    { x: 3180, y: FLOOR3, w: 620, h: 1600 },     // corridor to the saloon
+    // THE SALOON — a vast hall (3760..6260)
+    { x: 3760, y: FLOOR3, w: 2560, h: 1600 },
+    { x: 4380, y: 246, w: 240, h: 16 },          // saloon side ledges (standable)
+    { x: 5320, y: 246, w: 240, h: 16 },
+  ];
+  let checkpoints3 = [
+    { x: 120, y: FLOOR3 }, { x: 2300, y: FLOOR3 }, { x: 3300, y: FLOOR3 }, { x: 3860, y: FLOOR3 },
   ];
 
   let level = 1;
@@ -501,12 +531,12 @@
         lg.rectangle('fill', p.x + 1, p.y, p.w - 2, 2);
         if (level === 1) drawGrass(p.x, p.y, p.w, rng);
         else drawFlags(p.x, p.y, p.w, rng);
-      } else if (level === 2) {
+      } else if (level === 2 || level === 3) {
         drawBrickBody(p, pi + 1);
         if (p.climbL) drawClimbMarks(p, pi + 1);
-        lg.setColor(1.0, 0.72, 0.4, 0.30);
+        lg.setColor(1.0, 0.72, 0.4, level === 3 ? 0.30 * l3.litT : 0.30);
         lg.rectangle('fill', p.x, p.y, p.w, 2);
-        drawFlags(p.x, p.y, p.w, rng);
+        if (level === 2 || l3.litT > 0.05) drawFlags(p.x, p.y, p.w, rng);
       } else {
         // extend the pillar far below its collision body so its base is never
         // visibly cut off when the camera drops during a fall (fades to dark)
@@ -883,9 +913,13 @@
       iks: { hf: {}, hb: {}, ff: {}, fb: {} },
       iksState: null,
       turnT: 0, turnDur: 0.2, turnFlip: false, climbPh: 0,
-      started: false,
+      started: false, crouch: false,
     };
   }
+
+  // y of the hero's head/top, accounting for crouch — used by projectile hit
+  // tests so ducking actually slips the head under a high attack
+  function heroTop(p) { return p.y - (p.crouch ? 34 : 56); }
 
   function bobOf(p) {
     if (p.state === 'ground') {
@@ -1018,6 +1052,21 @@
 
     if (p.state === 'ground') {
       if (p.landT > 0) return poseLand();
+      if (p.crouch) {
+        const br = Math.sin(t * 3) * 0.4;
+        o.bob = 15 + br;                 // sink the torso down toward the knees
+        o.lean = 0.10;
+        o.legF = [1.00, -1.30];          // deep knee bend, thighs forward
+        o.legB = [-0.98, -1.34];
+        const moving = Math.abs(p.vx) > 30;
+        if (moving) {                    // low waddle while shuffling crouched
+          const s = Math.sin(p.runPhase);
+          o.legF[0] += 0.25 * s; o.legB[0] -= 0.25 * s;
+        }
+        o.armF = [0.55, 1.05];
+        o.armB = [-0.35, -0.10];
+        return o;
+      }
       if ((p.turnT || 0) > 0) {
         const u = 1 - p.turnT / (p.turnDur || 0.2);
         const K1 = { bob: 2.6, lean: 0.0,
@@ -1503,10 +1552,11 @@
         }
       }
     }
-    // closed portcullis gates (Level 2) block horizontally — they span floor to
-    // ceiling, so a full-height solid is enough to bar the way
-    if (level === 2 && l2.gates) {
-      for (const g of l2.gates) {
+    // closed portcullis gates (Level 2 / 3) block horizontally — they span floor
+    // to ceiling, so a full-height solid is enough to bar the way
+    const gateSet = level === 2 ? l2.gates : (level === 3 ? l3.gates : null);
+    if (gateSet) {
+      for (const g of gateSet) {
         if ((g.openT || 0) > 0.82) continue;   // raised enough to walk under
         if (overlap(p.x - 12, p.y - 56, p.x + 12, p.y - 2, g.x, g.yTop, g.x + g.w, g.yBot)) {
           if (p.vx >= 0) p.x = g.x - 12; else p.x = g.x + g.w + 12;
@@ -1525,6 +1575,9 @@
           p.y = q.y; p.vy = 0; p.onGround = true; p.onBeam = true;
         }
       } else {
+        // the witch's lightning shatters a hole in the saloon floor — the hero
+        // drops straight through it (no landing on the broken span)
+        if (holeAt(p.x) && q.y <= FLOOR3 + 2 && q.y >= FLOOR3 - 2) continue;
         if (overlap(p.x - 12, p.y - 56, p.x + 12, p.y, q.x, q.y, q.x + q.w, q.y + q.h)) {
           if (p.vy > 0 && prevBottom <= q.y + 12) { p.y = q.y; p.vy = 0; p.onGround = true; }
           else if (p.vy < 0) { p.y = q.y + q.h + 56; p.vy = 0; }
@@ -1603,6 +1656,13 @@
   const cine = { on: false, stage: 0, t: 0, titleA: 0, subA: 0, boxA: 0, hintA: 0 };
   let introT = 0;
   let FONT_HUD, FONT_LOC, FONT_TITLE, FONT_SUB;
+
+  // studio "presents" card shown once at boot, then a bottom-left author credit
+  // as the mountains scene opens
+  const STUDIO_DUR = 3.2;
+  const studio = { active: false, t: 0 };
+  let showCredit = false;
+  let DEBUG = false;   // enabled by ?debug=… — unlocks number-key level switching
 
   function startCine(p) {
     cine.on = true; cine.stage = 1; cine.t = 0;
@@ -1689,6 +1749,7 @@
     let best;
     for (const p of plats) {
       if (!p.beam && x >= p.x && x <= p.x + p.w && p.y >= y - 8) {
+        if (holeAt(x) && p.y <= FLOOR3 + 2 && p.y >= FLOOR3 - 2) continue;
         if (best === undefined || p.y < best) best = p.y;
       }
     }
@@ -1738,7 +1799,7 @@
     ];
     l2.rbutton = { x: 4620, y: 384, w: 44, pressed: false };
     l2.rope = { x: 4620, pulleyY: 176, cleatX: 4470, cleatY: 356, cut: false, hinted: false,
-      weight: { x: 4620, y: 250, s: 26, falling: false, landed: false } };
+      weight: { x: 4620, y: 250, restY: 250, s: 26, falling: false, landed: false } };
 
     // --- key puzzle: the key is hidden in the basement; drop through the hole,
     //     beat the flying heads, grab it, then ride the chain lift back up and
@@ -1950,9 +2011,25 @@
           l2toast('The weight pins the plate down — the gate stays open');
         }
       }
-      // the plate is pressed by the hero's body OR (permanently) by the weight
+      // a patrolling skeleton straying onto the plate demonstrates the mechanic:
+      // its weight presses the plate (gate A opens) AND tugs the hanging block
+      // downward — a hint to the player to get the weight onto the plate too
+      let skelOnPlate = false;
+      for (const sk of l2.skels) {
+        if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall'
+          && Math.abs(sk.x - rb.x) < rb.w * 0.5 + 10 && Math.abs(sk.y - rb.y) < 14) { skelOnPlate = true; break; }
+      }
+      // before the rope is cut, ease the block down while the plate is pressed
+      // by the skeleton, and let it rise back when the plate is free
+      if (!w.falling && !w.landed) {
+        const dip = skelOnPlate ? 60 : 0;
+        w.y = lerp(w.y, w.restY + dip, Math.min(1, dt * 3));
+        if (skelOnPlate && !rp.demoed) { l2toast('The plate sinks under the weight — the gate opens'); rp.demoed = true; }
+      }
+      // the plate is pressed by the hero's body OR a skeleton OR (permanently)
+      // by the fallen weight
       const playerOn = p.onGround && Math.abs(p.x - rb.x) < rb.w * 0.5 + 10 && Math.abs(p.y - rb.y) < 8;
-      rb.pressed = playerOn || w.landed;
+      rb.pressed = playerOn || skelOnPlate || w.landed;
       if (playerOn && !w.landed && !rb._taught) {
         l2toast('The gate opens — but only while the plate is pressed'); rb._taught = true;
       }
@@ -2028,6 +2105,8 @@
       }
     }
     if (l2.endStage >= 1) l2.endT = l2.endT + dt;
+    // once the stair-climb has faded fully to black, descend into Level 3
+    if (l2.endStage >= 1 && l2.endT > 3.8) { initLevel(3); return; }
     l2.msgT = Math.max(0, l2.msgT - dt);
   }
 
@@ -2551,11 +2630,439 @@
     drawClimber();   // the finale climber goes ON TOP, ascending into the doorway
   }
 
+  // ============================================================================
+  //  LEVEL 3 — THE BLACK HALLS  (dark descent + six-armed guardian + witch)
+  // ============================================================================
+  const l3 = {
+    skels: [], biters: [], gates: [],
+    key: null, gateK: null, gateS: null, candle: null,
+    lit: false, litT: 0, boss: null, hole: null,
+    end: { stage: 0, t: 0, holeX: 0 }, cutscene: false,
+    lives: 3, gameOver: false, msg: '', msgT: 0, _hitThisSwing: false,
+    windPush: 0, flash: 0, doorHinted: false, litHint: false,
+  };
+  function l3toast(s) { l3.msg = s; l3.msgT = 3; }
+
+  const LANE3 = { low: FLOOR3 - 12, mid: FLOOR3 - 44, high: FLOOR3 - 84 };
+  const SALOON_L = 3760, SALOON_R = 6260;
+  const BOSS_X = 4120;
+  const SWORD_REACH = 1860;   // how far the boomerangs fly before returning
+
+  function holeAt(x) { return level === 3 && l3.hole && x > l3.hole.x0 && x < l3.hole.x1; }
+
+  function initEnts3() {
+    l3.skels = [
+      newSkel(2520, 2300, 2760, true),
+      newSkel(2900, 2760, 3120, true),
+      newSkel(3420, 3230, 3720, true),
+    ];
+    for (const s of l3.skels) s.y = floorAt(s.x, 0) || FLOOR3;
+    l3.biters = [
+      newBiter(1930, 150),   // guards the key shelf
+      newBiter(2720, 150),   // upper walkway
+      newBiter(3460, 300),   // corridor
+    ];
+    l3.key = { x: 1930, y: 214, floorY: 244, taken: false };
+    // gate K (locked, needs the key) bars the main floor; gate S seals the saloon
+    // entrance once the candle is lifted. openT: 1 = fully open/passable, 0 = shut.
+    l3.gateK = { id: 'K', x: 2166, w: 18, yTop: 150, yBot: FLOOR3, openT: 0, locked: true, open: false, hinted: false, promptShown: false };
+    l3.gateS = { id: 'S', x: SALOON_L + 2, w: 20, yTop: 40, yBot: FLOOR3, openT: 1, locked: false, open: true };
+    l3.gates = [l3.gateK, l3.gateS];
+    l3.candle = { x: 6120, y: FLOOR3, taken: false };
+    l3.lit = false; l3.litT = 0; l3.litHint = false;
+    l3.boss = null; l3.hole = null;
+    l3.end = { stage: 0, t: 0, holeX: 0 }; l3.cutscene = false;
+    l3.lives = 3; l3.gameOver = false; l3.msg = ''; l3.msgT = 0;
+    l3._hitThisSwing = false; l3.windPush = 0; l3.flash = 0; l3.doorHinted = false;
+  }
+
+  function spawnBoss() {
+    l3.boss = {
+      x: BOSS_X, y: FLOOR3, hp: 10, active: true, hitCool: 0, appearT: 0,
+      swords: [], fireCool: 1.4, order: [], dead: false, deadT: 0,
+    };
+    l3toast('The guardian awakes — strike it ten times!');
+  }
+
+  function nextLane() {
+    const b = l3.boss;
+    if (!b.order.length) {
+      b.order = ['low', 'mid', 'high'];
+      for (let i = b.order.length - 1; i > 0; i--) {   // shuffle the volley
+        const j = Math.floor(love.math.random() * (i + 1));
+        const t = b.order[i]; b.order[i] = b.order[j]; b.order[j] = t;
+      }
+    }
+    return b.order.pop();
+  }
+
+  function updateBoss(dt, p) {
+    const b = l3.boss;
+    if (!b) return;
+    b.appearT = Math.min(1, b.appearT + dt * 1.2);
+    b.hitCool = Math.max(0, b.hitCool - dt);
+    // fire boomerang swords, one lane at a time, up to three in flight
+    if (b.active && !b.dead && !l3.cutscene) {
+      b.fireCool -= dt;
+      if (b.fireCool <= 0 && b.swords.length < 3) {
+        const lane = nextLane();
+        const dir = (p.x >= b.x) ? 1 : -1;   // always hurl toward the hero
+        b.swords.push({ x: b.x + dir * 40, y: LANE3[lane], vx: 560 * dir, dir: dir, lane: lane, phase: 'out', spin: 0 });
+        b.fireCool = b.order.length ? 0.9 : 1.7;   // short gap within a volley, longer between
+        if (sfxSwing) sfxSwing.play(0.4, 0.7 + love.math.random() * 0.1);
+      }
+    }
+    // move swords: fly out, then boomerang back to the boss and vanish
+    for (let i = b.swords.length - 1; i >= 0; i--) {
+      const s = b.swords[i];
+      s.spin += dt * 15 * (s.dir || 1);
+      if (s.phase === 'out') {
+        s.x += s.vx * dt;
+        if (Math.abs(s.x - b.x) >= SWORD_REACH) { s.phase = 'back'; s.vx = -560 * s.dir; }
+      } else {
+        s.x += s.vx * dt;
+        if ((s.dir || 1) > 0 ? s.x <= b.x + 20 : s.x >= b.x - 20) { b.swords.splice(i, 1); continue; }
+      }
+      // hit the hero unless jumped/ducked out of this lane
+      if (!p.dying && (p.inv || 0) <= 0 && Math.abs(s.x - p.x) < 22) {
+        const top = heroTop(p), bot = p.y;
+        if (s.y + 9 > top && s.y - 9 < bot) {
+          hurtPlayer(p, s.vx > 0 ? 1 : -1);
+          spawnDust(p.x, p.y - 30, 5, 0.8);
+        }
+      }
+    }
+  }
+
+  // register a melee hit on the boss (called from the swing window in updateEnts3)
+  function tryHitBoss(p, empowered) {
+    const b = l3.boss;
+    if (!b || b.dead || !b.active || b.hitCool > 0) return false;
+    if (Math.abs(p.x - b.x) > 64 || p.facing !== (b.x < p.x ? -1 : 1)) return false;
+    if (Math.abs(p.y - b.y) > 70) return false;
+    b.hp -= 1; b.hitCool = 0.65;
+    if (sfxHit) sfxHit.play(0.6, 0.7 + love.math.random() * 0.12);
+    // a gust bursts from the guardian and flings the hero away
+    const away = (p.x >= b.x) ? 1 : -1;
+    p.vx = away * 460; p.vy = -190; p.state = 'air'; p.t = 0; p.inv = Math.max(p.inv || 0, 0.3);
+    l3.windPush = 0.4;
+    spawnDust(b.x + away * 30, b.y - 40, 10, 1.3);
+    if (b.hp <= 0) {
+      b.dead = true; b.deadT = 0; b.swords.length = 0; b.active = false;
+      l3.end.stage = 1; l3.end.t = 0; l3.cutscene = true;
+      l3toast('The guardian shatters — but something worse stirs…');
+    } else {
+      l3toast('Guardian struck!  ' + b.hp + ' blow' + (b.hp === 1 ? '' : 's') + ' remain');
+    }
+    return true;
+  }
+
+  function updateEnts3(dt) {
+    const p = player;
+    l3.windPush = Math.max(0, l3.windPush - dt);
+    l3.flash = Math.max(0, l3.flash - dt);
+    if (l3.lit && l3.litT < 1) l3.litT = Math.min(1, l3.litT + dt * 0.8);
+
+    for (const sk of l3.skels) updateSkel(sk, dt, p);
+    for (const bt of l3.biters) updateBiter(bt, dt, p);
+    updateBoss(dt, p);
+
+    // --- hero sword swing: hits skeletons, heads and the boss during the strike
+    const au = 1 - (p.atkT || 0) / ATK_DUR;
+    if ((p.atkT || 0) > 0 && au > 0.30 && au < 0.56) {
+      const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
+      let didHit = false;
+      for (const bt of l3.biters) {
+        if (bt.state === 'dead') continue;
+        const dx = bt.x - p.x;
+        if (dx * p.facing > 0 && Math.abs(dx) < 56 && Math.abs(bt.y - (p.y - 30)) < 52) {
+          bt.state = 'dead'; bt.dead = 0; spawnDust(bt.x, bt.y, 7, 1.0); didHit = true;
+        }
+      }
+      for (const sk of l3.skels) {
+        if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall' && sk.state !== 'stun') {
+          const dx = sk.x - p.x;
+          if (dx * p.facing > 0 && Math.abs(dx) < 52 && Math.abs(sk.y - p.y) < 60) {
+            sk.state = 'stun'; sk.t = 0; sk.vx = p.facing * (empowered ? 540 : 260);
+            didHit = true; spawnDust(sk.x - p.facing * 8, sk.y - 34, 4, 0.8);
+          }
+        }
+      }
+      if (tryHitBoss(p, empowered)) didHit = true;
+      if (didHit && !l3._hitThisSwing) {
+        if (empowered) p.riposteHits = Math.max(0, p.riposteHits - 1);
+        l3._hitThisSwing = true;
+      }
+    }
+    if ((p.atkT || 0) <= 0) l3._hitThisSwing = false;
+
+    // --- key pickup
+    const kb = l3.key;
+    if (kb && !kb.taken && Math.abs(p.x - kb.x) < 26 && Math.abs(p.y - kb.y) < 46) {
+      kb.taken = true; l3toast('A cold iron key — for the barred door');
+    }
+
+    // --- locked gate K: stand at it with the key and press ▲ to open
+    const gK = l3.gateK;
+    if (gK && gK.openT < 1 && !gK.open) {
+      const near = Math.abs(p.x - (gK.x + gK.w / 2)) < 42 && p.onGround;
+      if (near && kb && kb.taken) {
+        if (!gK.promptShown) { l3toast('Use the key — press ▲'); gK.promptShown = true; }
+        if (keyUp()) { gK.open = true; l3toast('The lock grinds — the way opens'); }
+      } else if (near) {
+        if (!gK.hinted) { l3toast('Barred and locked — find the key'); gK.hinted = true; }
+      } else { gK.hinted = false; gK.promptShown = false; }
+    }
+    if (gK) gK.openT = clamp(gK.openT + (gK.open ? 1 : -1) * dt * 1.6, 0, 1);
+
+    // --- the candle: lifting it lights the hall, seals the saloon, wakes the boss
+    const cd = l3.candle;
+    if (cd && !cd.taken) {
+      if (Math.abs(p.x - cd.x) < 30 && Math.abs(p.y - cd.y) < 60) {
+        cd.taken = true; l3.lit = true; l3.litT = 0;
+        l3.gateS.open = false;   // seal the entrance behind the hero
+        spawnBoss();
+      } else if (p.x > SALOON_L + 200 && !l3.litHint) {
+        l3toast('A candle glimmers at the far end of the hall'); l3.litHint = true;
+      }
+    }
+    // gate S slides shut once the candle is taken (openT 1 → 0)
+    const gS = l3.gateS;
+    if (gS) gS.openT = clamp(gS.openT + (gS.open ? 1 : -1) * dt * 1.4, 0, 1);
+
+    // --- witch finale: appears, calls down lightning, breaks the floor, the hero
+    //     drops into the dark and the scene fades out
+    if (l3.end.stage > 0) {
+      l3.end.t += dt;
+      if (l3.end.stage === 1) {
+        if (l3.end.t > 2.4) {                  // strike!
+          l3.end.stage = 2; l3.end.t = 0; l3.flash = 0.5;
+          l3.hole = { x0: p.x - 78, x1: p.x + 78 };   // shatter the floor under the hero
+          l3.end.holeX = p.x;
+          if (sfxHit) sfxHit.play(0.8, 0.5);
+          spawnDust(p.x, FLOOR3, 16, 1.6);
+        }
+      } else if (l3.end.stage === 2) {
+        // the floor is gone; the cutscene path (updatePlayer) drops the hero
+        // straight down the shaft. after a beat, begin the fade
+        if (l3.end.t > 0.7) { l3.end.stage = 3; l3.end.t = 0; }
+      } else if (l3.end.stage === 3) {
+        // hero falls into the dark; the overlay fades the scene to black
+      }
+    }
+
+    l3.msgT = Math.max(0, l3.msgT - dt);
+  }
+
+  // ------------------------------------------------------------------ L3 art
+  function drawCandle(cd) {
+    if (!cd || cd.taken) return;
+    const x = cd.x, y = cd.y;
+    const fl = 0.7 + 0.3 * Math.sin(T * 8 + 1.3);
+    // glow so it's findable in the dark
+    lg.setColor(1.0, 0.8, 0.4, 0.10 * fl); lg.circle('fill', x, y - 40, 120);
+    lg.setColor(1.0, 0.75, 0.35, 0.18 * fl); lg.circle('fill', x, y - 40, 46);
+    // holder + candle
+    lg.setColor(0.55, 0.45, 0.22, 1); lg.rectangle('fill', x - 12, y - 4, 24, 4);
+    lg.setColor(0.5, 0.4, 0.2, 1); lg.rectangle('fill', x - 4, y - 8, 8, 5);
+    lg.setColor(0.92, 0.88, 0.76, 1); lg.rectangle('fill', x - 3, y - 42, 6, 34);
+    // flame
+    lg.setColor(1.0, 0.6, 0.2, 0.9 * fl); lg.circle('fill', x, y - 46, 5);
+    lg.setColor(1.0, 0.9, 0.5, fl); lg.circle('fill', x, y - 47, 2.6);
+  }
+
+  // one flying scimitar-boomerang
+  function drawFlyingSword(s) {
+    lg.push();
+    lg.translate(s.x, s.y);
+    lg.rotate(s.spin);
+    // motion smear
+    lg.setColor(1.0, 0.85, 0.4, 0.16);
+    lg.circle('fill', 0, 0, 20);
+    // curved golden blade
+    lg.setColor(0.86, 0.69, 0.28, 1);
+    lg.setLineWidth(5);
+    lg.arc('line', 'open', -6, 2, 20, -1.1, 1.0);
+    lg.setColor(1.0, 0.92, 0.6, 0.9);
+    lg.setLineWidth(1.6);
+    lg.arc('line', 'open', -6, 2, 20, -1.0, 0.9);
+    // dark hilt
+    lg.setColor(0.12, 0.11, 0.13, 1);
+    lg.rectangle('fill', -3, -12, 6, 8);
+    lg.setLineWidth(1);
+    lg.pop();
+  }
+
+  // The six-armed, six-sworded guardian on the saloon's left. Black body with
+  // gold filigree, a tall ornate headdress and burning red eyes.
+  function drawBoss() {
+    const b = l3.boss;
+    if (!b) return;
+    const x = b.x, y = b.y;
+    const a = smooth(b.appearT);
+    const fade = b.dead ? clamp(1 - b.deadT * 0.6, 0, 1) : 1;
+    const DARK = [0.08, 0.07, 0.10], DARK2 = [0.14, 0.12, 0.16], GOLD = [0.86, 0.69, 0.30];
+    lg.push();
+    lg.translate(x, y);
+    lg.scale(a, a);
+    // ground shadow
+    lg.setColor(0, 0, 0, 0.3 * fade); lg.ellipse('fill', 0, 2, 46, 8);
+    // legs
+    setColA(DARK, fade); lg.setLineWidth(11);
+    lg.line(-8, -6, -14, -78); lg.line(8, -6, 14, -78);
+    // torso
+    setColA(DARK2, fade);
+    lg.polygon('fill', -20, -78, 20, -78, 26, -150, -26, -150);
+    // gold sash/filigree on the chest
+    setColA(GOLD, 0.9 * fade); lg.setLineWidth(3);
+    lg.line(-16, -96, 16, -96); lg.line(-12, -118, 12, -118);
+    lg.circle('line', 0, -108, 8);
+    // six arms, each holding a golden scimitar, fanned out (3 per side)
+    setColA(DARK, fade); lg.setLineWidth(8);
+    const armY = -150, shoulders = [-22, -6, 10];
+    for (let side = -1; side <= 1; side += 2) {
+      for (let k = 0; k < 3; k++) {
+        const ang = side * (0.5 + k * 0.55) + Math.sin(T * 1.6 + k) * 0.05;
+        const sy = armY + shoulders[k];
+        const ex = Math.cos(ang) * 42 * side * -1 + side * 4;
+        const ex2 = side * (26 + k * 6);
+        const ey = sy - Math.sin(-ang) * 34 - 8;
+        setColA(DARK, fade); lg.setLineWidth(8);
+        lg.line(side * 6, sy, ex2, ey);
+        // scimitar in the hand
+        lg.push(); lg.translate(ex2, ey); lg.rotate(side * (-0.6 - k * 0.4));
+        setColA(GOLD, fade); lg.setLineWidth(5);
+        lg.arc('line', 'open', 0, 0, 26, -1.1, 0.9);
+        lg.setLineWidth(1);
+        lg.pop();
+      }
+    }
+    // head + tall headdress
+    setColA(DARK2, fade); lg.circle('fill', 0, -166, 14);
+    setColA(DARK, fade);
+    lg.polygon('fill', -18, -176, 18, -176, 22, -210, 0, -232, -22, -210);
+    setColA(GOLD, 0.8 * fade); lg.setLineWidth(2);
+    for (let i = -2; i <= 2; i++) lg.line(i * 7, -178, i * 8, -214);
+    // burning red eyes
+    const gl = 0.7 + 0.3 * Math.sin(T * 6);
+    lg.setColor(1.0, 0.2, 0.15, fade * gl);
+    lg.circle('fill', -5, -168, 2.4); lg.circle('fill', 5, -168, 2.4);
+    lg.setColor(1.0, 0.5, 0.4, fade * 0.3);
+    lg.circle('fill', -5, -168, 5); lg.circle('fill', 5, -168, 5);
+    lg.setLineWidth(1);
+    lg.pop();
+    // its flying swords (drawn in world space, not scaled)
+    for (const s of b.swords) drawFlyingSword(s);
+  }
+
+  // The witch on a far perch during the finale — a hooded silhouette raising a
+  // crooked staff, wreathed in cold light.
+  function drawWitch(alpha) {
+    if (alpha <= 0) return;
+    const p = player;
+    const wx = p.x + 40, wy = FLOOR3 - 300;
+    lg.push();
+    lg.translate(wx, wy);
+    // cold aura
+    lg.setColor(0.5, 0.85, 0.9, 0.10 * alpha); lg.circle('fill', 0, -10, 70);
+    // robe
+    lg.setColor(0.06, 0.05, 0.09, alpha);
+    lg.polygon('fill', -20, 40, 20, 40, 10, -34, -10, -34);
+    // raised arms
+    lg.setColor(0.06, 0.05, 0.09, alpha); lg.setLineWidth(5);
+    lg.line(-8, -20, -30, -46); lg.line(8, -20, 30, -46);
+    // hood + head
+    lg.setColor(0.05, 0.04, 0.07, alpha); lg.circle('fill', 0, -40, 11);
+    lg.polygon('fill', -12, -34, 12, -34, 0, -58);
+    // glowing eyes
+    lg.setColor(0.6, 1.0, 0.9, alpha * (0.6 + 0.4 * Math.sin(T * 5)));
+    lg.circle('fill', -3, -42, 1.6); lg.circle('fill', 3, -42, 1.6);
+    // crooked staff with an orb
+    lg.setColor(0.3, 0.22, 0.14, alpha); lg.setLineWidth(3);
+    lg.line(30, -46, 34, 30);
+    lg.setColor(0.6, 1.0, 0.9, alpha * (0.7 + 0.3 * Math.sin(T * 7)));
+    lg.circle('fill', 30, -50, 6);
+    lg.setLineWidth(1);
+    lg.pop();
+  }
+
+  // jagged lightning bolt from the witch's staff down onto the hero's floor
+  function drawLightning(intensity) {
+    const p = player;
+    const x0 = p.x + 70, y0 = FLOOR3 - 350, x1 = l3.end.holeX || p.x, y1 = FLOOR3;
+    const rng = love.math.newRandomGenerator(Math.floor(T * 30));
+    let px = x0, py = y0;
+    const segs = 10;
+    lg.setColor(0.8, 0.95, 1.0, intensity);
+    lg.setLineWidth(4);
+    for (let i = 1; i <= segs; i++) {
+      const k = i / segs;
+      const nx = lerp(x0, x1, k) + (rng.random() - 0.5) * 46 * (1 - k);
+      const ny = lerp(y0, y1, k);
+      lg.line(px, py, nx, ny);
+      px = nx; py = ny;
+    }
+    lg.setColor(0.6, 0.85, 1.0, intensity * 0.4);
+    lg.setLineWidth(9);
+    lg.line(x0, y0, x1, y1);
+    lg.setLineWidth(1);
+  }
+
+  const L3_TORCHES_HALL = [[300, 300], [900, 300], [1500, 300], [2300, 300], [2760, 300], [3300, 300]];
+  const L3_TORCHES_SALOON = [[3900, 300], [4400, 300], [4900, 300], [5400, 300], [5900, 300]];
+
+  function drawEnts3() {
+    // torches only exist once the candle has lit the halls
+    if (l3.lit) {
+      const torches = L3_TORCHES_HALL.concat(L3_TORCHES_SALOON);
+      for (const tc of torches) {
+        const fl = 0.75 + 0.25 * Math.sin(T * 9 + tc[0]);
+        lg.setColor(0.30, 0.20, 0.12, l3.litT);
+        lg.rectangle('fill', tc[0] - 2, tc[1], 4, 16);
+        lg.setColor(1.0, 0.62, 0.2, 0.85 * fl * l3.litT);
+        lg.circle('fill', tc[0], tc[1] - 4, 5);
+        lg.setColor(1.0, 0.85, 0.4, 0.9 * fl * l3.litT);
+        lg.circle('fill', tc[0], tc[1] - 5, 2.4);
+        lg.setColor(1.0, 0.6, 0.25, (0.05 + 0.04 * fl) * l3.litT);
+        lg.circle('fill', tc[0], tc[1] - 4, 60);
+      }
+    }
+    drawKey(l3.key);
+    for (const g of l3.gates) drawGate(g);
+    drawCandle(l3.candle);
+    for (const sk of l3.skels) drawSkel(sk);
+    for (const bt of l3.biters) drawBiter(bt);
+    if (l3.boss) drawBoss();
+    // witch + lightning during the finale
+    if (l3.end.stage >= 1) {
+      const wa = smooth(clamp(l3.end.stage === 1 ? l3.end.t / 1.4 : 1, 0, 1));
+      drawWitch(wa);
+      if (l3.end.stage === 2 && l3.end.t < 0.4) drawLightning(1 - l3.end.t / 0.4);
+      else if (l3.end.stage === 1 && l3.end.t > 1.8) drawLightning((l3.end.t - 1.8) * 1.5 % 1 * 0.4);
+    }
+  }
+
+  // Heavy darkness over the whole scene until the candle is lit. A soft warm
+  // pool travels with the hero so the near ground stays readable.
+  function drawDark3() {
+    const veil = 0.80 * (1 - l3.litT);
+    if (veil <= 0.001) return;
+    const sx = VW / 2 + (player.x - cam.x) * cam.zoom;
+    const sy = VH / 2 + (player.y - cam.y) * cam.zoom;
+    lg.setColor(0.01, 0.01, 0.02, veil);
+    lg.rectangle('fill', 0, 0, VW, VH);
+    for (let i = 7; i >= 1; i--) {
+      lg.setColor(0.85, 0.72, 0.45, 0.05 * (1 - l3.litT));
+      lg.circle('fill', sx, sy - 44, i * 30);
+    }
+  }
+
   // -------------------------------------------------------------- LEVEL MGMT
   function initLevel(n) {
     level = n;
     if (n === 1) { plats = plats1; checkpoints = checkpoints1; }
-    else { plats = plats2; checkpoints = checkpoints2; }
+    else if (n === 2) { plats = plats2; checkpoints = checkpoints2; }
+    else { plats = plats3; checkpoints = checkpoints3; }
     buildLevel();
     respawn = { x: checkpoints[0].x, y: checkpoints[0].y };
     cine.on = false; cine.stage = 0; cine.t = 0;
@@ -2563,9 +3070,10 @@
     musicVol = 0;
     if (musicSrc) {
       musicSrc.stop(); musicSrc.setVolume(0);
-      if (n === 2) musicSrc.play();
+      if (n >= 2) musicSrc.play();
     }
     if (n === 2) initEnts2();
+    if (n === 3) initEnts3();
     // snap the spawn onto the actual floor under the checkpoint and start
     // grounded, so the hero can never show a mid-air "falling" pose at the start
     const groundY = floorAt(checkpoints[0].x, checkpoints[0].y - 4);
@@ -2582,6 +3090,10 @@
     }
     player.vy = 0;
     player.state = 'ground'; player.onGround = true; player.coyote = COYOTE;
+    // the hero carries the sword learned in the keep into the black halls.
+    // Level 2 normally teaches the sword via its pickup puzzle, so only hand it
+    // over there when a debug jump drops us straight into it.
+    if (n === 3 || (DEBUG && n === 2)) { player.hasSword = true; player.drawT = 0; }
     player.spawnFloor = player.y; player.initGrace = 0.5; player.startGuard = 3.5;
     // the safe spawn the start-guard returns to (guaranteed on solid ground)
     player.safeX = player.x; player.safeY = player.y;
@@ -2615,6 +3127,10 @@
           l2.lives = (l2.lives || 0) - 1;
           if (l2.lives <= 0) { l2.gameOver = true; p.deadFade = 1; return; }
         }
+        if (level === 3 && !l3.gameOver) {
+          l3.lives = (l3.lives || 0) - 1;
+          if (l3.lives <= 0) { l3.gameOver = true; p.deadFade = 1; return; }
+        }
         respawnPlayer(p); p.dying = false; p.deadFade = 0.999;
       }
       if (!p.dying) return;
@@ -2622,6 +3138,17 @@
     if (p.deadFade > 0 && !p.dying) p.deadFade = Math.max(0, p.deadFade - dt * 1.4);
 
     if (p.state === 'cine') { updateCine(dt, p); return; }
+
+    // LEVEL 3 finale cutscene: the hero is frozen in place (still subject to
+    // gravity) while the witch appears; once the floor shatters it falls freely
+    if (level === 3 && l3.cutscene) {
+      p.vx = 0;
+      p.vy = Math.min(p.vy + GRAV * dt, 1400);
+      p.prevVy = p.vy;
+      moveAndCollide(p, dt);
+      p.state = p.onGround ? 'ground' : 'air';
+      return;
+    }
 
     const left = keyLeft(), right = keyRight(), up = keyUp(), down = keyDown();
     let dir = (right ? 1 : 0) - (left ? 1 : 0);
@@ -2643,7 +3170,13 @@
         tryGrabWall(p);
         if (p.state === 'climb') { p.jbuf = 0; return; }
       }
-      const max = p.onBeam ? BEAMSPD : RUNSPD;
+      // CROUCH: hold DOWN on the ground to duck. The hero can shuffle slowly
+      // while crouched; its head drops low enough to slip under high attacks
+      // (see heroTop / the boss's upper sword lane in level 3).
+      p.crouch = (p.state === 'ground' && down && !up && p.landT <= 0
+        && (p.blockT || 0) <= 0 && (p.atkT || 0) <= 0);
+      let max = p.onBeam ? BEAMSPD : RUNSPD;
+      if (p.crouch) max = 96;
       if (p.landT > 0) dir = 0;
       // while blocking you hold your ground — you can re-orient to face the
       // attacker but you don't advance or retreat
@@ -2781,7 +3314,8 @@
       resetScarf(...neckPos(p));
     }
 
-    if (p.y > respawn.y + 720) killPlayer(p);
+    // the finale fall through the shattered floor is intentional — don't "die"
+    if (p.y > respawn.y + 720 && !(level === 3 && l3.end.stage >= 2)) killPlayer(p);
 
     if (p.x < 14) { p.x = 14; p.vx = Math.max(0, p.vx); }
 
@@ -2834,6 +3368,21 @@
   }
 
   function drawOverlays() {
+    // "NYCOSOFT presents" studio card — a clean black screen with fading text
+    if (studio.active) {
+      lg.setColor(0, 0, 0, 1);
+      lg.rectangle('fill', 0, 0, VW, VH);
+      const a = smooth(clamp(studio.t / 0.8, 0, 1)) * smooth(clamp((STUDIO_DUR - studio.t) / 0.8, 0, 1));
+      if (FONT_SUB) {
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.93, 0.90, 0.84, a);
+        printSpaced('NYCOSOFT', VW / 2, VH * 0.44, FONT_SUB, 10, 1.15);
+        lg.setColor(0.72, 0.68, 0.62, a * 0.85);
+        printSpaced('presents', VW / 2, VH * 0.44 + 40, FONT_SUB, 4, 0.7);
+      }
+      return;
+    }
+
     const black = Math.max(1 - Math.min(introT / 1.8, 1), player.deadFade);
     if (black > 0) {
       lg.setColor(0, 0, 0, black);
@@ -2847,8 +3396,19 @@
     if (locA > 0) {
       lg.setFont(FONT_LOC);
       lg.setColor(0.94, 0.90, 0.84, locA);
-      printSpaced(level === 1 ? 'NORTHERN PEAKS  ·  DUSK' : "THE WITCH'S KEEP  ·  INNER HALLS",
+      printSpaced(level === 1 ? 'NORTHERN PEAKS  ·  DUSK'
+        : (level === 2 ? "THE WITCH'S KEEP  ·  INNER HALLS" : 'THE BLACK HALLS  ·  THE DEEP VAULTS'),
         VW / 2, VH * 0.16, FONT_LOC, 5, 1);
+    }
+
+    // author credit in the bottom-left as the mountains scene opens (once)
+    if (showCredit && level === 1) {
+      const cA = Math.min((introT - 0.4) / 1.2, 1) * Math.min((6.5 - introT) / 1.2, 1);
+      if (cA > 0 && FONT_SUB) {
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.92, 0.88, 0.80, clamp(cA, 0, 1) * 0.92);
+        lg.print('a game by Francesco Nicolosi', 30, VH - 52, 0, 0.82, 0.82);
+      }
     }
 
     let hintA = 0;
@@ -2858,7 +3418,7 @@
     if (hintA > 0 && !cine.on) {
       lg.setFont(FONT_HUD);
       lg.setColor(0.92, 0.88, 0.82, hintA * 0.85);
-      const msg = '< >  move      SPACE  jump      UP / DOWN  climb marked walls      DOWN  let go';
+      const msg = '< >  move    SPACE  jump    UP/DOWN  climb    DOWN  duck / let go';
       lg.print(msg, VW / 2 - FONT_HUD.getWidth(msg) / 2, VH - 52);
     }
 
@@ -2895,10 +3455,81 @@
         lg.setColor(0, 0, 0, a * 0.92);
         lg.rectangle('fill', 0, 0, VW, VH);
         lg.setFont(FONT_SUB);
-        lg.setColor(0.94, 0.89, 0.78, a);
-        printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 - 12, FONT_SUB, 6, 1);
+        lg.setColor(0.86, 0.82, 0.9, a * 0.9);
+        printSpaced('DOWN  INTO  THE  DARK', VW / 2, VH / 2 - 12, FONT_SUB, 6, 1);
       }
       if (l2.gameOver) {
+        lg.setColor(0.03, 0.0, 0.02, 0.9);
+        lg.rectangle('fill', 0, 0, VW, VH);
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.72, 0.12, 0.14, 1);
+        printSpaced('GAME  OVER', VW / 2, VH / 2 - 28, FONT_SUB, 6, 1);
+        lg.setFont(FONT_HUD);
+        lg.setColor(0.9, 0.86, 0.82, 0.9);
+        const m = 'Press  R  to  try  again';
+        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
+      }
+    }
+
+    if (level === 3) {
+      lg.setFont(FONT_HUD);
+      for (let i = 1; i <= 3; i++) {
+        const hx = 30 + (i - 1) * 36, hy = 32;
+        const full = (player.hp || 0) >= i;
+        if (full) lg.setColor(0.85, 0.16, 0.22, 1);
+        else lg.setColor(0.25, 0.10, 0.13, 0.8);
+        lg.circle('fill', hx - 5, hy - 3, 6.5);
+        lg.circle('fill', hx + 5, hy - 3, 6.5);
+        lg.polygon('fill', hx - 11, hy - 0.5, hx + 11, hy - 0.5, hx, hy + 12);
+        lg.setColor(1, 1, 1, full ? 0.35 : 0.12);
+        lg.circle('fill', hx - 6.5, hy - 5, 2);
+      }
+      lg.setColor(0.86, 0.83, 0.9, 0.9);
+      lg.print('LIVES', 30, 52, 0, 0.85, 0.85);
+      for (let i = 0; i < Math.max(0, l3.lives || 0); i++) {
+        const lx = 108 + i * 22, ly = 60;
+        lg.setColor(0.55, 0.52, 0.66, 1);
+        lg.polygon('fill', lx - 6, ly + 6, lx + 6, ly + 6, lx, ly - 3);
+        lg.setColor(0.9, 0.87, 0.94, 1);
+        lg.circle('fill', lx, ly - 4, 3.2);
+      }
+      // boss "blows remaining" bar, top-centre, while the guardian lives
+      if (l3.boss && !l3.boss.dead) {
+        const b = l3.boss;
+        lg.setFont(FONT_HUD);
+        lg.setColor(0.9, 0.3, 0.25, 0.95);
+        const gm = 'GUARDIAN';
+        lg.print(gm, VW / 2 - FONT_HUD.getWidth(gm) / 2, 22);
+        const bw = 320, bx = VW / 2 - bw / 2, by = 42;
+        lg.setColor(0.2, 0.06, 0.06, 0.8); lg.rectangle('fill', bx, by, bw, 10);
+        lg.setColor(0.85, 0.20, 0.18, 1); lg.rectangle('fill', bx, by, bw * clamp(b.hp / 10, 0, 1), 10);
+        lg.setColor(1, 0.8, 0.5, 0.5); lg.rectangle('fill', bx, by, bw, 2);
+      }
+      if (l3.msgT > 0) {
+        lg.setColor(0.94, 0.89, 0.78, Math.min(1, l3.msgT));
+        lg.print(l3.msg, VW / 2 - FONT_HUD.getWidth(l3.msg) / 2, VH - 96);
+      }
+      // lightning flash
+      if (l3.flash > 0) {
+        lg.setColor(0.9, 0.95, 1.0, clamp(l3.flash / 0.5, 0, 1) * 0.85);
+        lg.rectangle('fill', 0, 0, VW, VH);
+      }
+      // finale fade to black as the hero drops into the dark
+      if (l3.end.stage === 3) {
+        const a = clamp(l3.end.t / 2.2, 0, 1);
+        lg.setColor(0, 0, 0, a);
+        lg.rectangle('fill', 0, 0, VW, VH);
+        if (a >= 1) {
+          lg.setFont(FONT_SUB);
+          lg.setColor(0.80, 0.78, 0.86, clamp((l3.end.t - 2.4) / 1.2, 0, 1));
+          printSpaced('THE  SHADOW  FALLS', VW / 2, VH / 2 - 18, FONT_SUB, 6, 1);
+          lg.setFont(FONT_HUD);
+          lg.setColor(0.7, 0.68, 0.76, clamp((l3.end.t - 3.4) / 1.0, 0, 1));
+          const m = 'TO  BE  CONTINUED   ·   press  R  to  replay';
+          lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 20);
+        }
+      }
+      if (l3.gameOver) {
         lg.setColor(0.03, 0.0, 0.02, 0.9);
         lg.rectangle('fill', 0, 0, VW, VH);
         lg.setFont(FONT_SUB);
@@ -2994,7 +3625,24 @@
     FONT_TITLE = lg.newFont('title.ttf', 54);
 
     buildVolumeControl();
-    initLevel(1);
+
+    // ?debug=… — a number boots straight into that level (armed); ?debug=true
+    // just enables the number-key level switcher. Debug mode skips the studio
+    // card so level-jumping is instant.
+    let startLevel = 1;
+    try {
+      const m = /[?&]debug=([^&]*)/i.exec(window.location.search || '');
+      if (m) {
+        DEBUG = true;
+        const n = Number(decodeURIComponent(m[1]));
+        if (Number.isFinite(n) && n >= 1 && n <= 3) startLevel = Math.floor(n);
+      }
+    } catch (e) {}
+
+    initLevel(startLevel);
+    // boot with the "NYCOSOFT presents" studio card (only on a normal first
+    // load — never on R, and never in debug mode)
+    if (!DEBUG) { studio.active = true; studio.t = 0; }
   };
 
   // ---------------------------------------------------- master volume control
@@ -3002,6 +3650,16 @@
   function buildVolumeControl() {
     try {
       if (typeof document === 'undefined') return;
+      // On phones/tablets the on-screen slider is redundant — the device's own
+      // physical volume buttons control loudness. Skip the widget entirely there
+      // (audio still starts at a sensible default master volume).
+      const coarsePtr = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const touchDev = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+      if (coarsePtr || touchDev) {
+        const savedM = parseFloat(localStorage.getItem('rots:vol'));
+        love.audio.setMasterVolume(isNaN(savedM) ? 0.6 : Math.max(0, Math.min(1, savedM)));
+        return;
+      }
       const saved = parseFloat(localStorage.getItem('rots:vol'));
       let vol = isNaN(saved) ? 0.6 : Math.max(0, Math.min(1, saved));
       let last = vol > 0 ? vol : 0.6;
@@ -3035,7 +3693,22 @@
       });
       // keep the game from also reacting to keys while the slider has focus
       box.addEventListener('keydown', function (e) { e.stopPropagation(); });
-      box.appendChild(icon); box.appendChild(slider);
+
+      // desktop-only fullscreen toggle (expand ⤢ / collapse ⤡)
+      const fsBtn = document.createElement('span');
+      fsBtn.style.cssText = 'font-size:17px;cursor:pointer;line-height:1;';
+      function fsGlyph() { fsBtn.textContent = document.fullscreenElement ? '⤡' : '⤢'; }
+      fsBtn.title = 'Toggle fullscreen';
+      fsBtn.addEventListener('click', function () {
+        try {
+          if (document.fullscreenElement) { if (document.exitFullscreen) document.exitFullscreen(); }
+          else { const el = document.documentElement; if (el.requestFullscreen) el.requestFullscreen(); }
+        } catch (e) {}
+      });
+      document.addEventListener('fullscreenchange', fsGlyph);
+      fsGlyph();
+
+      box.appendChild(icon); box.appendChild(slider); box.appendChild(fsBtn);
       document.body.appendChild(box);
 
       // On desktop the control stays hidden and only appears while the mouse is
@@ -3064,12 +3737,29 @@
   }
 
   love.update = function (dt) {
+    // mobile portrait: the landscape gate (index.html) freezes the world so the
+    // hero can't drift/fall/die while the player rotates the device
+    if (typeof window !== 'undefined' && window.__ROTS_PAUSED__) return;
     dt = Math.min(dt, 1 / 30);
+
+    // studio card: hold the world frozen (introT pinned at 0 → mountains stay
+    // fully black) until the card finishes, then reveal the scene + credit
+    if (studio.active) {
+      studio.t += dt;
+      introT = 0;
+      if (studio.t >= STUDIO_DUR) { studio.active = false; introT = 0; showCredit = true; }
+      return;
+    }
+
     T = T + dt;
     introT = introT + dt;
+    // the author credit is a one-shot: once its display window has passed, don't
+    // let a later R-restart of level 1 bring it back
+    if (showCredit && introT > 7) showCredit = false;
 
     // GAME OVER freezes the world; only R (keypressed) restarts the level
     if (level === 2 && l2.gameOver) return;
+    if (level === 3 && l3.gameOver) return;
 
     updatePlayer(dt, player);
     updateScarf(dt);
@@ -3077,6 +3767,7 @@
     updateCamera(dt, player);
 
     if (level === 2) updateEnts2(dt);
+    if (level === 3) updateEnts3(dt);
 
     if (level === 1) {
       let target = 0.28 * (0.55 + 0.45 * gust());   // gentler wind
@@ -3118,6 +3809,7 @@
     drawPlats();
     if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
     if (level === 2) drawEnts2();
+    if (level === 3) drawEnts3();
     drawDusts();
     // during the stair-climb finale the real hero is replaced by the backlit
     // climber (drawn inside drawEnts2), so hide the normal hero + scarf
@@ -3127,6 +3819,9 @@
     }
 
     lg.pop();
+
+    // heavy darkness over the black halls until the candle is found
+    if (level === 3) drawDark3();
 
     if (level === 1) {
       const altFade = clamp((1250 - cam.y) / 500, 0, 1);
@@ -3167,11 +3862,13 @@
 
   love.keypressed = function (key) {
     if (key === 'escape') { love.event.quit(); }
+    // debug (?debug=…): number keys jump straight to a level
+    if (DEBUG && (key === '1' || key === '2' || key === '3')) { initLevel(Number(key)); return; }
     if (key === 'r') { initLevel(level); return; }
     if (key === 'return' && level === 1 && cine.on && cine.stage >= 3) { initLevel(2); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
     const riposteReady = (player && (player.riposte || 0) > 0 && (player.riposteHits || 0) > 0);
-    if ((key === 'x' || key === 'f') && level === 2 && player.hasSword
+    if ((key === 'x' || key === 'f') && (level === 2 || level === 3) && player.hasSword
       && (player.state === 'ground' || player.state === 'air')
       && (player.drawT || 0) <= 0
       && ((player.atkT || 0) <= -0.10 || riposteReady)) {   // riposte bypasses cooldown → double attack
@@ -3180,8 +3877,8 @@
       if (player.onGround) player.vx += player.facing * (riposteReady ? 80 : 45);
       if (sfxSwing) sfxSwing.play(riposteReady ? 0.44 : 0.38, (riposteReady ? 0.85 : 0.95) + love.math.random() * 0.18);
     }
-    // block / parry (Level 2, with a sword)
-    if (key === 'c' && level === 2 && player.hasSword && (player.atkT || 0) <= 0
+    // block / parry (Level 2 / 3, with a sword)
+    if (key === 'c' && (level === 2 || level === 3) && player.hasSword && (player.atkT || 0) <= 0
       && (player.state === 'ground' || player.state === 'air')) {
       player.blockT = BLOCK_DUR;
     }
@@ -3194,6 +3891,7 @@
   love._debug = {
     player: function () { return player; },
     l2: function () { return l2; },
+    l3: function () { return l3; },
     giveSword: function () { player.hasSword = true; player.drawT = 0; },
     drawHero: function () { drawHero(player); },
     drawSkel: function (sk) { drawSkel(sk); },

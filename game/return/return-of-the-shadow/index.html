@@ -28,20 +28,95 @@
             touch-action: none; }
     .tbtn.held { background: rgba(210,120,60,0.5); }
     .tbtn.round { border-radius: 50%; }
+    /* --- rotate-to-landscape gate (mobile portrait only, see script below) --- */
+    #rotate { position: fixed; inset: 0; z-index: 200; display: none;
+              flex-direction: column; align-items: center; justify-content: center;
+              gap: 22px; background: #0a0710; color: rgba(240,232,224,0.92);
+              font-family: system-ui, sans-serif; text-align: center; padding: 24px;
+              -webkit-user-select: none; user-select: none; }
+    #rotate.show { display: flex; }
+    #rotate .phone { width: 74px; height: 120px; border: 4px solid rgba(230,190,150,0.85);
+              border-radius: 14px; position: relative;
+              animation: rotatehint 2.2s ease-in-out infinite; }
+    #rotate .phone::after { content: ''; position: absolute; left: 50%; bottom: 7px;
+              width: 22px; height: 3px; background: rgba(230,190,150,0.7);
+              border-radius: 2px; transform: translateX(-50%); }
+    #rotate .msg { font-size: 19px; font-weight: 600; letter-spacing: 0.03em; }
+    #rotate .sub { font-size: 14px; opacity: 0.7; max-width: 300px; line-height: 1.4; }
+    @keyframes rotatehint {
+      0%, 30% { transform: rotate(0deg); }
+      55%, 80% { transform: rotate(-90deg); }
+      100% { transform: rotate(-90deg); }
+    }
   </style>
 </head>
 <body>
   <canvas id="game"></canvas>
   <div id="touch"></div>
+  <div id="rotate">
+    <div class="phone"></div>
+    <div class="msg">Please rotate your device</div>
+    <div class="sub">The Return of the Shadow plays in landscape. Turn your phone sideways to continue.</div>
+  </div>
 
   <!-- ?v is bumped on every release so phones/desktops never run a stale cached
        copy (mobile Safari caches JS very aggressively). Keep it in sync with
        BUILD in game.js. -->
-  <script src="love-shim.js?v=2026-07-24d"></script>
-  <script src="game.js?v=2026-07-24d"></script>
-  <script src="touch.js?v=2026-07-24d"></script>
+  <script src="love-shim.js?v=2026-07-25a"></script>
+  <script src="game.js?v=2026-07-25a"></script>
+  <script src="touch.js?v=2026-07-25a"></script>
   <script>
     love._run(document.getElementById('game'));
+
+    // --- landscape gate (mobile only) ------------------------------------
+    // On touch devices we only allow play in landscape. In portrait we show a
+    // "rotate your device" overlay and pause the game (window.__ROTS_PAUSED__,
+    // honored by love.update). Desktop is never affected.
+    (function () {
+      var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      var touch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+      var isMobile = coarse || touch;
+      var overlay = document.getElementById('rotate');
+      var touchUI = document.getElementById('touch');
+      function isPortrait() {
+        if (window.matchMedia && window.matchMedia('(orientation: portrait)').matches) return true;
+        return window.innerHeight > window.innerWidth;
+      }
+      function check() {
+        var block = isMobile && isPortrait();
+        window.__ROTS_PAUSED__ = block;
+        if (overlay) overlay.classList.toggle('show', block);
+        // hide the on-screen buttons behind the overlay so nothing peeks through
+        if (touchUI) touchUI.style.visibility = block ? 'hidden' : '';
+      }
+      window.addEventListener('resize', check);
+      window.addEventListener('orientationchange', function () {
+        check(); setTimeout(check, 250); setTimeout(check, 600);
+      });
+      if (window.matchMedia) {
+        try { window.matchMedia('(orientation: portrait)').addEventListener('change', check); }
+        catch (e) { try { window.matchMedia('(orientation: portrait)').addListener(check); } catch (e2) {} }
+      }
+      check();
+
+      // Mobile: browsers only grant fullscreen from a user gesture, so request
+      // it once on the very first tap (best-effort — ignored where unsupported).
+      if (isMobile) {
+        var fsTried = false;
+        function goFullscreen() {
+          if (fsTried) return; fsTried = true;
+          var el = document.documentElement;
+          try {
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          } catch (e) {}
+          window.removeEventListener('touchend', goFullscreen);
+          window.removeEventListener('pointerdown', goFullscreen);
+        }
+        window.addEventListener('touchend', goFullscreen, { passive: true });
+        window.addEventListener('pointerdown', goFullscreen, { passive: true });
+      }
+    })();
   </script>
 </body>
 </html>
