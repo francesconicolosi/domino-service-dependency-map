@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25e';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -2721,6 +2721,9 @@
       x: BOSS_X, y: FLOOR3, hp: 10, active: true, hitCool: 0, appearT: 0,
       swords: [], fireCool: 1.4, order: [], dead: false, deadT: 0,
       armSwing: 0, touchCool: 0,
+      // six arms; a hand goes empty while the scimitar it threw is in flight
+      // (index 0-2 = left side k0-2, 3-5 = right side k0-2)
+      arms: [true, true, true, true, true, true], throwArm: -1,
     };
     l3toast('The guardian awakes — strike it ten times!');
   }
@@ -2735,6 +2738,15 @@
       }
     }
     return b.order.pop();
+  }
+
+  // choose an arm that still holds a scimitar, preferring the side facing the
+  // throw so the blade leaves from a hand on the hero's side
+  function pickBossArm(b, dir) {
+    const pref = dir > 0 ? [3, 4, 5] : [2, 1, 0];
+    for (const i of pref) if (b.arms[i]) return i;
+    for (let i = 0; i < 6; i++) if (b.arms[i]) return i;
+    return -1;
   }
 
   function updateBoss(dt, p) {
@@ -2765,9 +2777,11 @@
       if (b.fireCool <= 0 && b.swords.length < 3) {
         const lane = nextLane();
         const dir = (p.x >= b.x) ? 1 : -1;   // always hurl toward the hero
-        b.swords.push({ x: b.x + dir * 40, y: LANE3[lane], vx: 560 * dir, dir: dir, lane: lane, phase: 'out', spin: 0 });
+        const armIndex = pickBossArm(b, dir);            // an arm still holding a blade
+        if (armIndex >= 0) b.arms[armIndex] = false;     // its hand goes empty
+        b.swords.push({ x: b.x + dir * 40, y: LANE3[lane], vx: 560 * dir, dir: dir, lane: lane, phase: 'out', spin: 0, armIndex: armIndex });
         b.fireCool = b.order.length ? 0.9 : 1.7;   // short gap within a volley, longer between
-        b.armSwing = 0.35;   // throw animation on the arms
+        b.armSwing = 0.35; b.throwArm = armIndex;   // throw animation on that arm
         if (sfxSwing) sfxSwing.play(0.4, 0.7 + love.math.random() * 0.1);
       }
     }
@@ -2780,7 +2794,10 @@
         if (Math.abs(s.x - b.x) >= SWORD_REACH) { s.phase = 'back'; s.vx = -560 * s.dir; }
       } else {
         s.x += s.vx * dt;
-        if ((s.dir || 1) > 0 ? s.x <= b.x + 20 : s.x >= b.x - 20) { b.swords.splice(i, 1); continue; }
+        if ((s.dir || 1) > 0 ? s.x <= b.x + 20 : s.x >= b.x - 20) {
+          if (s.armIndex >= 0) b.arms[s.armIndex] = true;   // the blade is caught again
+          b.swords.splice(i, 1); continue;
+        }
       }
       // hit the hero unless jumped/ducked out of this lane
       if (!p.dying && (p.inv || 0) <= 0 && Math.abs(s.x - p.x) < 22) {
@@ -2808,6 +2825,7 @@
     spawnDust(b.x + away * 30, b.y - 40, 10, 1.3);
     if (b.hp <= 0) {
       b.dead = true; b.deadT = 0; b.swords.length = 0; b.active = false;
+      for (let i = 0; i < 6; i++) b.arms[i] = true;   // blades return to the dying hands
       l3.end.stage = 1; l3.end.t = 0; l3.cutscene = true;
       l3toast('The guardian shatters — but something worse stirs…');
     } else {
@@ -2931,25 +2949,40 @@
     lg.setColor(1.0, 0.9, 0.5, fl); lg.circle('fill', x, y - 47, 2.6);
   }
 
-  // one flying scimitar-boomerang
+  // A solid curved scimitar drawn in local space: grip at the origin, the blade
+  // sweeping out along +x to a flared tip (intrinsic tip angle ≈ -0.31 rad).
+  // Reused by the boss's hands and by the flying boomerang blades.
+  function drawScimitar(alpha) {
+    const GOLD = [0.86, 0.69, 0.30], GOLDL = [1.0, 0.92, 0.60], GOLDD = [0.52, 0.40, 0.18], GRIP = [0.12, 0.09, 0.07];
+    // handle + pommel
+    setColA(GRIP, alpha);
+    lg.polygon('fill', -2, -2.0, -12, -2.4, -13, 2.4, -2, 2.0);
+    setColA(GOLDD, alpha); lg.circle('fill', -13, 0, 2.7);
+    // crossguard (quillon)
+    setColA(GOLD, alpha);
+    lg.polygon('fill', -3.5, -6.5, -0.5, -6.5, -0.5, 6.5, -3.5, 6.5);
+    lg.circle('fill', -2, 0, 2.4);
+    // blade silhouette — spine on top, cutting belly below, flared tip
+    const spine = [0, -3, 10, -3.6, 20, -4.4, 29, -6, 36, -9, 42, -13.5];
+    const edge = [42, -13.5, 37, -5.5, 28, -0.8, 18, 1.6, 9, 2.4, 0, 3];
+    setColA(GOLD, alpha); lg.polygon('fill', spine.concat(edge));
+    // bright spine highlight
+    setColA(GOLDL, alpha * 0.9); lg.setLineWidth(1.5);
+    for (let i = 0; i < spine.length - 2; i += 2) lg.line(spine[i], spine[i + 1], spine[i + 2], spine[i + 3]);
+    // darker fuller down the blade
+    setColA(GOLDD, alpha * 0.75); lg.setLineWidth(1.2);
+    lg.line(4, -0.5, 13, -2.5); lg.line(13, -2.5, 23, -4); lg.line(23, -4, 32, -6.5); lg.line(32, -6.5, 38, -10);
+    lg.setLineWidth(1);
+  }
+
+  // one flying scimitar-boomerang (spins about its balance point)
   function drawFlyingSword(s) {
     lg.push();
     lg.translate(s.x, s.y);
+    lg.setColor(1.0, 0.85, 0.4, 0.14); lg.circle('fill', 0, 0, 20);   // motion smear
     lg.rotate(s.spin);
-    // motion smear
-    lg.setColor(1.0, 0.85, 0.4, 0.16);
-    lg.circle('fill', 0, 0, 20);
-    // curved golden blade
-    lg.setColor(0.86, 0.69, 0.28, 1);
-    lg.setLineWidth(5);
-    lg.arc('line', 'open', -6, 2, 20, -1.1, 1.0);
-    lg.setColor(1.0, 0.92, 0.6, 0.9);
-    lg.setLineWidth(1.6);
-    lg.arc('line', 'open', -6, 2, 20, -1.0, 0.9);
-    // dark hilt
-    lg.setColor(0.12, 0.11, 0.13, 1);
-    lg.rectangle('fill', -3, -12, 6, 8);
-    lg.setLineWidth(1);
+    lg.translate(-20, 0);
+    drawScimitar(1);
     lg.pop();
   }
 
@@ -2998,12 +3031,15 @@
     setColA(GOLD, 0.9 * fade); lg.setLineWidth(3);
     lg.line(-16, -96, 16, -96); lg.line(-12, -118, 12, -118);
     lg.circle('line', 0, -108, 8);
-    // six arms, each holding a golden scimitar, fanned out (3 per side). They
-    // sway idly and thrust outward on each sword launch (b.armSwing).
-    const swing = b.armSwing > 0 ? Math.sin((1 - b.armSwing / 0.35) * Math.PI) : 0;
+    // six arms, each holding a solid scimitar, fanned out (3 per side). The arm
+    // that just launched a blade thrusts out (b.throwArm) and its hand is empty
+    // until the boomerang returns (b.arms[armIndex]).
     const armY = -150, shoulders = [-22, -6, 10];
     for (let side = -1; side <= 1; side += 2) {
       for (let k = 0; k < 3; k++) {
+        const armIndex = (side < 0 ? 0 : 3) + k;
+        const swing = (b.armSwing > 0 && b.throwArm === armIndex)
+          ? Math.sin((1 - b.armSwing / 0.35) * Math.PI) : 0;
         const idle = Math.sin(T * 2.2 + k * 1.3 + (side > 0 ? 0.7 : 0)) * 3;
         const sy = armY + shoulders[k];
         const reach = 26 + k * 6 + swing * 18;    // hand thrusts out on a throw
@@ -3023,12 +3059,14 @@
         setColA(goldC); lg.setLineWidth(2.4);
         lg.line(hx - px * 4 - wdx / wl * 3, hy - py * 4 - wdy / wl * 3,
                 hx + px * 4 - wdx / wl * 3, hy + py * 4 - wdy / wl * 3);
-        // scimitar gripped in the fist (rotates through the throwing arc)
-        lg.push(); lg.translate(hx, hy); lg.rotate(side * (-0.6 - k * 0.4) + side * swing * 0.9);
-        setColA(goldC); lg.setLineWidth(5);
-        lg.arc('line', 'open', 0, 0, 26, -1.1, 0.9);
-        lg.setLineWidth(1);
-        lg.pop();
+        // solid scimitar gripped in the fist, pointing radially outward — drawn
+        // only while this hand still holds its blade
+        if (b.arms[armIndex]) {
+          const outAng = Math.atan2(hy - (-110), hx);   // outward from the torso centre
+          lg.push(); lg.translate(hx, hy); lg.rotate(outAng + 0.31);
+          drawScimitar(fade);
+          lg.pop();
+        }
       }
     }
     // head + tall headdress
