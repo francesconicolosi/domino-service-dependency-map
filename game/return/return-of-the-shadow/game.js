@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25f';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25g';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -3175,13 +3175,20 @@
       if (l3.end.stage === 2 && l3.end.t < 0.4) drawLightning(1 - l3.end.t / 0.4);
       else if (l3.end.stage === 1 && l3.end.t > 1.8) drawLightning((l3.end.t - 1.8) * 1.5 % 1 * 0.4);
     }
-    // as the hero drops into the dark, the magic carpet swoops in to catch it
-    if (l3.end.stage === 3 && l3.end.t > 0.35) {
-      const pl = player;
-      const rise = clamp((l3.end.t - 0.35) / 0.8, 0, 1);
-      const gy = pl.y + lerp(210, 96, rise);   // slides up to just under the hero's feet
-      drawFlyingCarpet(pl.x, gy, 1.5);
-    }
+    // (the rescue carpet is drawn in screen space in drawOverlays so it stays
+    //  visible on TOP of the fade-to-black and the end label)
+  }
+
+  // The magic carpet diving after the falling hero — drawn in SCREEN space so it
+  // stays visible over the fade-to-black and the "TO BE CONTINUED" label. It's a
+  // foreshadow of the next level's rescue, so it must never be hidden.
+  function drawRescueCarpet() {
+    const e = l3.end;
+    if (e.stage < 2) return;
+    const ft = (e.stage === 2) ? e.t : e.t + 0.7;   // seconds since the fall began
+    const sx = VW / 2 + (player.x - cam.x) * cam.zoom;   // tracks the hero (≈ centre)
+    const gy = clamp(VH * 0.28 + ft * 150, VH * 0.28, VH * 0.82);   // enters high, descends, then hovers
+    drawFlyingCarpet(sx, gy, 2.0);
   }
 
   // Heavy darkness over the whole scene until the candle is lit. A soft warm
@@ -3656,12 +3663,18 @@
         lg.setColor(0.9, 0.95, 1.0, clamp(l3.flash / 0.5, 0, 1) * 0.85);
         lg.rectangle('fill', 0, 0, VW, VH);
       }
-      // finale fade to black as the hero drops into the dark
-      if (l3.end.stage === 3) {
-        const a = clamp(l3.end.t / 2.2, 0, 1);
-        lg.setColor(0, 0, 0, a);
-        lg.rectangle('fill', 0, 0, VW, VH);
-        if (a >= 1) {
+      // finale: fade to black, then the diving rescue carpet ON TOP of it, then
+      // the end label last so the text stays readable over the carpet
+      if (l3.end.stage >= 2) {
+        let a = 0;
+        if (l3.end.stage === 3) {
+          a = clamp(l3.end.t / 2.2, 0, 1);
+          lg.setColor(0, 0, 0, a);
+          lg.rectangle('fill', 0, 0, VW, VH);
+        }
+        // the magic carpet descends after the hero — always visible (foreshadow)
+        drawRescueCarpet();
+        if (l3.end.stage === 3 && a >= 1) {
           lg.setFont(FONT_SUB);
           lg.setColor(0.80, 0.78, 0.86, clamp((l3.end.t - 2.4) / 1.2, 0, 1));
           printSpaced('THE  SHADOW  FALLS', VW / 2, VH / 2 - 18, FONT_SUB, 6, 1);
