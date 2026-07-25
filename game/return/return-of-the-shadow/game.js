@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25b';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -2967,12 +2967,33 @@
     lg.scale(a, a);
     // ground shadow
     lg.setColor(0, 0, 0, 0.3 * fade); lg.ellipse('fill', 0, 2, 46, 8);
-    // legs
-    setColA(DARK, fade); lg.setLineWidth(11);
-    lg.line(-8, -6, -14, -78); lg.line(8, -6, 14, -78);
+    const LIMB = [0.10, 0.09, 0.12], LIMB2 = [0.13, 0.115, 0.15];
+    const bodyC = mul(DARK2, 1, fade), limbC = mul(LIMB, 1, fade), limb2C = mul(LIMB2, 1, fade);
+    const goldC = mul(GOLD, 1, fade);
+    // a slow stalking stride so the legs read as flesh, not sticks
+    const stride = Math.sin(T * 1.7) * 5;
+    // legs — solid tapered thigh + shin + foot, one striding against the other
+    for (let s = -1; s <= 1; s += 2) {
+      const st = s * stride;
+      const hipx = s * 10, hipy = -74;
+      const kneex = s * 12 + st * 0.4, kneey = -40;
+      const footx = s * 13 + st, footy = -4;
+      segment(hipx, hipy, kneex, kneey, 7.0, 5.6, s < 0 ? limbC : limb2C);   // thigh
+      segment(kneex, kneey, footx, footy, 5.6, 4.2, s < 0 ? limbC : limb2C); // shin
+      lg.circle('fill', kneex, kneey, 5.0);                                  // knee
+      segment(footx - 3, footy - 1, footx + 11, footy + 1, 4.4, 3.0, mul(DARK, 1, fade)); // foot
+      // gold anklet
+      setColA(goldC); lg.setLineWidth(2.4);
+      lg.line(kneex + (footx - kneex) * 0.7 - 5, kneey + (footy - kneey) * 0.7,
+              kneex + (footx - kneex) * 0.7 + 5, kneey + (footy - kneey) * 0.7);
+    }
+    // pelvis block tying the legs into the torso
+    setColA(mul(DARK, 1, fade)); lg.polygon('fill', -16, -70, 16, -70, 20, -86, -20, -86);
     // torso
-    setColA(DARK2, fade);
-    lg.polygon('fill', -20, -78, 20, -78, 26, -150, -26, -150);
+    setColA(bodyC);
+    lg.polygon('fill', -22, -74, 22, -74, 27, -150, -27, -150);
+    // shoulder mass / neck base so the six arms root into a solid trunk
+    lg.polygon('fill', -30, -140, 30, -140, 22, -160, -22, -160);
     // gold sash/filigree on the chest
     setColA(GOLD, 0.9 * fade); lg.setLineWidth(3);
     lg.line(-16, -96, 16, -96); lg.line(-12, -118, 12, -118);
@@ -2985,14 +3006,26 @@
       for (let k = 0; k < 3; k++) {
         const idle = Math.sin(T * 2.2 + k * 1.3 + (side > 0 ? 0.7 : 0)) * 3;
         const sy = armY + shoulders[k];
-        const reach = 26 + k * 6 + swing * 18;   // hand thrusts out on a throw
-        const ex2 = side * reach;
-        const ey = sy - 8 + idle - swing * 7;     // and lifts a little
-        setColA(DARK, fade); lg.setLineWidth(8);
-        lg.line(side * 6, sy, ex2, ey);
-        // scimitar in the hand (rotates through the throwing arc)
-        lg.push(); lg.translate(ex2, ey); lg.rotate(side * (-0.6 - k * 0.4) + side * swing * 0.9);
-        setColA(GOLD, fade); lg.setLineWidth(5);
+        const reach = 26 + k * 6 + swing * 18;    // hand thrusts out on a throw
+        const shx = side * 9, shy = sy;           // shoulder root
+        const hx = side * reach, hy = sy - 8 + idle - swing * 7;   // hand
+        const elx = lerp(shx, hx, 0.5) + side * 3;                 // elbow (bent)
+        const ely = lerp(shy, hy, 0.5) + 5 - swing * 3;
+        const shadeK = (k === 1) ? 0.82 : 1;      // middle pair a touch darker for depth
+        const armC = mul(LIMB, shadeK, fade), armC2 = mul(LIMB2, shadeK, fade);
+        segment(shx, shy, elx, ely, 5.2, 4.2, armC);   // upper arm (solid taper)
+        segment(elx, ely, hx, hy, 4.2, 3.0, armC);     // forearm
+        lg.circle('fill', elx, ely, 4.4);              // elbow
+        setColA(armC2); lg.circle('fill', hx, hy, 3.8); // hand/fist
+        // gold wrist bracer, across the forearm at the wrist
+        const wdx = hx - elx, wdy = hy - ely, wl = Math.hypot(wdx, wdy) || 1;
+        const px = -wdy / wl, py = wdx / wl;
+        setColA(goldC); lg.setLineWidth(2.4);
+        lg.line(hx - px * 4 - wdx / wl * 3, hy - py * 4 - wdy / wl * 3,
+                hx + px * 4 - wdx / wl * 3, hy + py * 4 - wdy / wl * 3);
+        // scimitar gripped in the fist (rotates through the throwing arc)
+        lg.push(); lg.translate(hx, hy); lg.rotate(side * (-0.6 - k * 0.4) + side * swing * 0.9);
+        setColA(goldC); lg.setLineWidth(5);
         lg.arc('line', 'open', 0, 0, 26, -1.1, 0.9);
         lg.setLineWidth(1);
         lg.pop();
