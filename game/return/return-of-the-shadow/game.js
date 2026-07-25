@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25b';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -164,7 +164,7 @@
 
   // -------------------------------------------------------------- AUDIO (procedural)
   let windSrc, musicSrc;
-  let sfxSwing, sfxHit, sfxParry;
+  let sfxSwing, sfxHit, sfxParry, sfxThunder;
   let musicVol = 0, windVol = 0;
 
   function genWind() {
@@ -275,6 +275,27 @@
       s *= 0.14;
       if (t < 0.008) s += (rng.random() * 2 - 1) * (1 - t / 0.008) * 0.5;
       s *= Math.exp(-t * 5);
+      sd.setSample(i, clamp(s, -1, 1));
+    }
+    return sd;
+  }
+
+  // Thunderclap: a sharp crack transient followed by a long, deep rolling rumble
+  function genThunder() {
+    const rate = 22050, dur = 1.6;
+    const n = Math.floor(rate * dur);
+    const sd = love.sound.newSoundData(n, rate, 16, 1);
+    const rng = love.math.newRandomGenerator(2718);
+    let lo = 0, hi = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      const white = rng.random() * 2 - 1;
+      lo = lo + 0.035 * (white - lo);           // deep rumble body
+      hi = hi + 0.55 * (white - hi);            // bright crack/hiss
+      const crack = t < 0.05 ? (1 - t / 0.05) : 0;
+      const roll = Math.exp(-t * 2.0) * (0.65 + 0.35 * Math.sin(2 * Math.PI * 2.5 * t + 0.5));
+      let s = lo * 7.0 * roll + hi * crack * 1.0;
+      s += lo * 4.0 * Math.exp(-Math.abs(t - 0.55) * 5) * 0.6;   // a rolling after-peak
       sd.setSample(i, clamp(s, -1, 1));
     }
     return sd;
@@ -1659,7 +1680,7 @@
 
   // studio "presents" card shown once at boot, then a bottom-left author credit
   // as the mountains scene opens
-  const STUDIO_DUR = 3.2;
+  const STUDIO_DUR = 6.0;
   const studio = { active: false, t: 0 };
   let showCredit = false;
   let DEBUG = false;   // enabled by ?debug=… — unlocks number-key level switching
@@ -1779,6 +1800,12 @@
       newSkel(6360, 6120, 6560, true),   // final approach
     ];
     for (const s of l2.skels) s.y = floorAt(s.x, 0) || 744;
+    // the rope-hall skeleton demonstrates the plate: it patrols onto the plate
+    // and waits there (see updateEnts2), showing the weight drop / gate open
+    l2.plateSkel = l2.skels[3];
+    l2.plateSkel.x0 = 4470; l2.plateSkel.x1 = 4770;   // patrol tightened around the plate (4620)
+    l2.plateSkel.x = 4720;
+    l2.plateDemoDone = false;
     l2.biters = [
       newBiter(4680, 300),   // rope hall
       newBiter(5220, 640),   // key vault (basement) — guard the descent
@@ -2011,8 +2038,21 @@
           l2toast('The weight pins the plate down — the gate stays open');
         }
       }
-      // a patrolling skeleton straying onto the plate demonstrates the mechanic:
-      // its weight presses the plate (gate A opens) AND tugs the hanging block
+      // the rope-hall skeleton walks onto the plate and PAUSES there for a few
+      // seconds — a live demonstration: the weight sinks, gate A grinds open, so
+      // the player learns to weigh the plate down themselves before proceeding
+      const ps = l2.plateSkel;
+      if (ps && !l2.plateDemoDone && ps.state !== 'pile' && ps.state !== 'gone' && ps.state !== 'fall') {
+        if ((ps.wait || 0) > 0) {
+          ps.x = rb.x;                       // pin it on the plate while it waits
+          ps.wait -= dt;
+          if (ps.wait <= 0) { l2.plateDemoDone = true; ps.dir = 1; }
+        } else if (Math.abs(ps.x - rb.x) < 22 && ps.state === 'patrol') {
+          ps.wait = 3.6; ps.x = rb.x;        // reached the plate → begin the wait
+          if (!ps._demoToast) { l2toast('Watch — its weight holds the plate down'); ps._demoToast = true; }
+        }
+      }
+      // a body on the plate presses it (gate A opens) AND tugs the hanging block
       // downward — a hint to the player to get the weight onto the plate too
       let skelOnPlate = false;
       for (const sk of l2.skels) {
@@ -2680,6 +2720,7 @@
     l3.boss = {
       x: BOSS_X, y: FLOOR3, hp: 10, active: true, hitCool: 0, appearT: 0,
       swords: [], fireCool: 1.4, order: [], dead: false, deadT: 0,
+      armSwing: 0, touchCool: 0,
     };
     l3toast('The guardian awakes — strike it ten times!');
   }
@@ -2701,6 +2742,23 @@
     if (!b) return;
     b.appearT = Math.min(1, b.appearT + dt * 1.2);
     b.hitCool = Math.max(0, b.hitCool - dt);
+    b.armSwing = Math.max(0, b.armSwing - dt);
+    b.touchCool = Math.max(0, b.touchCool - dt);
+    // the guardian stalks slowly toward the hero (kept inside the sealed saloon)
+    if (b.active && !b.dead && !l3.cutscene) {
+      const want = clamp(p.x, SALOON_L + 130, SALOON_R - 220);
+      const step = 26 * dt;   // slow, menacing drift
+      if (want > b.x + 2) b.x = Math.min(want, b.x + step);
+      else if (want < b.x - 2) b.x = Math.max(want, b.x - step);
+    }
+    // touching the guardian's body costs a life and flings the hero off
+    if (b.active && !b.dead && !l3.cutscene && !p.dying && (p.inv || 0) <= 0 && b.touchCool <= 0) {
+      if (Math.abs(p.x - b.x) < 32 && p.y > FLOOR3 - 150) {
+        b.touchCool = 0.6;
+        hurtPlayer(p, p.x >= b.x ? 1 : -1);
+        spawnDust(p.x, p.y - 30, 6, 0.9);
+      }
+    }
     // fire boomerang swords, one lane at a time, up to three in flight
     if (b.active && !b.dead && !l3.cutscene) {
       b.fireCool -= dt;
@@ -2709,6 +2767,7 @@
         const dir = (p.x >= b.x) ? 1 : -1;   // always hurl toward the hero
         b.swords.push({ x: b.x + dir * 40, y: LANE3[lane], vx: 560 * dir, dir: dir, lane: lane, phase: 'out', spin: 0 });
         b.fireCool = b.order.length ? 0.9 : 1.7;   // short gap within a volley, longer between
+        b.armSwing = 0.35;   // throw animation on the arms
         if (sfxSwing) sfxSwing.play(0.4, 0.7 + love.math.random() * 0.1);
       }
     }
@@ -2839,7 +2898,8 @@
           l3.end.stage = 2; l3.end.t = 0; l3.flash = 0.5;
           l3.hole = { x0: p.x - 78, x1: p.x + 78 };   // shatter the floor under the hero
           l3.end.holeX = p.x;
-          if (sfxHit) sfxHit.play(0.8, 0.5);
+          if (sfxThunder) sfxThunder.play(0.95, 1.0);   // lightning crack + rumble
+          if (sfxHit) sfxHit.play(0.7, 0.5);            // floor shattering
           spawnDust(p.x, FLOOR3, 16, 1.6);
         }
       } else if (l3.end.stage === 2) {
@@ -2917,20 +2977,21 @@
     setColA(GOLD, 0.9 * fade); lg.setLineWidth(3);
     lg.line(-16, -96, 16, -96); lg.line(-12, -118, 12, -118);
     lg.circle('line', 0, -108, 8);
-    // six arms, each holding a golden scimitar, fanned out (3 per side)
-    setColA(DARK, fade); lg.setLineWidth(8);
+    // six arms, each holding a golden scimitar, fanned out (3 per side). They
+    // sway idly and thrust outward on each sword launch (b.armSwing).
+    const swing = b.armSwing > 0 ? Math.sin((1 - b.armSwing / 0.35) * Math.PI) : 0;
     const armY = -150, shoulders = [-22, -6, 10];
     for (let side = -1; side <= 1; side += 2) {
       for (let k = 0; k < 3; k++) {
-        const ang = side * (0.5 + k * 0.55) + Math.sin(T * 1.6 + k) * 0.05;
+        const idle = Math.sin(T * 2.2 + k * 1.3 + (side > 0 ? 0.7 : 0)) * 3;
         const sy = armY + shoulders[k];
-        const ex = Math.cos(ang) * 42 * side * -1 + side * 4;
-        const ex2 = side * (26 + k * 6);
-        const ey = sy - Math.sin(-ang) * 34 - 8;
+        const reach = 26 + k * 6 + swing * 18;   // hand thrusts out on a throw
+        const ex2 = side * reach;
+        const ey = sy - 8 + idle - swing * 7;     // and lifts a little
         setColA(DARK, fade); lg.setLineWidth(8);
         lg.line(side * 6, sy, ex2, ey);
-        // scimitar in the hand
-        lg.push(); lg.translate(ex2, ey); lg.rotate(side * (-0.6 - k * 0.4));
+        // scimitar in the hand (rotates through the throwing arc)
+        lg.push(); lg.translate(ex2, ey); lg.rotate(side * (-0.6 - k * 0.4) + side * swing * 0.9);
         setColA(GOLD, fade); lg.setLineWidth(5);
         lg.arc('line', 'open', 0, 0, 26, -1.1, 0.9);
         lg.setLineWidth(1);
@@ -3039,6 +3100,13 @@
       drawWitch(wa);
       if (l3.end.stage === 2 && l3.end.t < 0.4) drawLightning(1 - l3.end.t / 0.4);
       else if (l3.end.stage === 1 && l3.end.t > 1.8) drawLightning((l3.end.t - 1.8) * 1.5 % 1 * 0.4);
+    }
+    // as the hero drops into the dark, the magic carpet swoops in to catch it
+    if (l3.end.stage === 3 && l3.end.t > 0.35) {
+      const pl = player;
+      const rise = clamp((l3.end.t - 0.35) / 0.8, 0, 1);
+      const gy = pl.y + lerp(210, 96, rise);   // slides up to just under the hero's feet
+      drawFlyingCarpet(pl.x, gy, 1.5);
     }
   }
 
@@ -3401,9 +3469,9 @@
         VW / 2, VH * 0.16, FONT_LOC, 5, 1);
     }
 
-    // author credit in the bottom-left as the mountains scene opens (once)
+    // author credit in the bottom-left, a few seconds after the scene opens (once)
     if (showCredit && level === 1) {
-      const cA = Math.min((introT - 0.4) / 1.2, 1) * Math.min((6.5 - introT) / 1.2, 1);
+      const cA = Math.min((introT - 4.0) / 1.0, 1) * Math.min((10.0 - introT) / 1.4, 1);
       if (cA > 0 && FONT_SUB) {
         lg.setFont(FONT_SUB);
         lg.setColor(0.92, 0.88, 0.80, clamp(cA, 0, 1) * 0.92);
@@ -3618,6 +3686,7 @@
     sfxSwing = love.audio.newSound(genSwoosh());
     sfxHit = love.audio.newSound(genClang());
     sfxParry = love.audio.newSound(genParry());
+    sfxThunder = love.audio.newSound(genThunder());
 
     FONT_HUD = lg.newFont(15);
     FONT_LOC = lg.newFont(22);
@@ -3625,6 +3694,7 @@
     FONT_TITLE = lg.newFont('title.ttf', 54);
 
     buildVolumeControl();
+    buildFullscreenControl();
 
     // ?debug=… — a number boots straight into that level (armed); ?debug=true
     // just enables the number-key level switcher. Debug mode skips the studio
@@ -3693,22 +3763,7 @@
       });
       // keep the game from also reacting to keys while the slider has focus
       box.addEventListener('keydown', function (e) { e.stopPropagation(); });
-
-      // desktop-only fullscreen toggle (expand ⤢ / collapse ⤡)
-      const fsBtn = document.createElement('span');
-      fsBtn.style.cssText = 'font-size:17px;cursor:pointer;line-height:1;';
-      function fsGlyph() { fsBtn.textContent = document.fullscreenElement ? '⤡' : '⤢'; }
-      fsBtn.title = 'Toggle fullscreen';
-      fsBtn.addEventListener('click', function () {
-        try {
-          if (document.fullscreenElement) { if (document.exitFullscreen) document.exitFullscreen(); }
-          else { const el = document.documentElement; if (el.requestFullscreen) el.requestFullscreen(); }
-        } catch (e) {}
-      });
-      document.addEventListener('fullscreenchange', fsGlyph);
-      fsGlyph();
-
-      box.appendChild(icon); box.appendChild(slider); box.appendChild(fsBtn);
+      box.appendChild(icon); box.appendChild(slider);
       document.body.appendChild(box);
 
       // On desktop the control stays hidden and only appears while the mouse is
@@ -3736,6 +3791,42 @@
     } catch (e) { /* ignore — audio control is non-essential */ }
   }
 
+  // ---------------------------------------------------- fullscreen toggle button
+  // A small always-visible corner button (desktop AND mobile) that toggles
+  // fullscreen. On phones this is the visible control to go fullscreen; on
+  // desktop it sits just below the volume pill. (iOS Safari doesn't grant
+  // element fullscreen — the button simply no-ops there.)
+  function buildFullscreenControl() {
+    try {
+      if (typeof document === 'undefined') return;
+      const btn = document.createElement('div');
+      btn.setAttribute('aria-label', 'Toggle fullscreen');
+      btn.style.cssText = 'position:fixed;top:66px;right:20px;z-index:61;width:44px;height:38px;' +
+        'display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;line-height:1;' +
+        'color:rgba(240,232,224,0.92);background:rgba(22,17,30,0.5);border:1px solid rgba(240,220,200,0.28);' +
+        'border-radius:12px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);' +
+        '-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;';
+      function glyph() { btn.textContent = document.fullscreenElement ? '⤡' : '⛶'; }
+      glyph();
+      function toggle(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        try {
+          if (document.fullscreenElement) { if (document.exitFullscreen) document.exitFullscreen(); }
+          else {
+            const el = document.documentElement;
+            const req = el.requestFullscreen || el.webkitRequestFullscreen;
+            if (req) req.call(el);
+          }
+        } catch (err) {}
+      }
+      btn.addEventListener('click', toggle);
+      btn.addEventListener('touchend', toggle, { passive: false });
+      document.addEventListener('fullscreenchange', glyph);
+      document.addEventListener('webkitfullscreenchange', glyph);
+      document.body.appendChild(btn);
+    } catch (e) { /* non-essential */ }
+  }
+
   love.update = function (dt) {
     // mobile portrait: the landscape gate (index.html) freezes the world so the
     // hero can't drift/fall/die while the player rotates the device
@@ -3755,7 +3846,7 @@
     introT = introT + dt;
     // the author credit is a one-shot: once its display window has passed, don't
     // let a later R-restart of level 1 bring it back
-    if (showCredit && introT > 7) showCredit = false;
+    if (showCredit && introT > 10.5) showCredit = false;
 
     // GAME OVER freezes the world; only R (keypressed) restarts the level
     if (level === 2 && l2.gameOver) return;
