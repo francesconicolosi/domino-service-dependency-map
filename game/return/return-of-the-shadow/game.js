@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25e';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25f';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -1936,7 +1936,15 @@
     const p = player;
     const b = l2.button, tr = l2.trap;
     if (b && tr) {
-      const on = p.onGround && Math.abs(p.x - b.x) < b.w * 0.5 + 8 && Math.abs(p.y - b.y) < 6;
+      const playerOn = p.onGround && Math.abs(p.x - b.x) < b.w * 0.5 + 8 && Math.abs(p.y - b.y) < 6;
+      // a patrolling skeleton stepping on the button also drops the crate —
+      // a live demonstration of what the button does
+      let skelOnBtn = false;
+      for (const sk of l2.skels) {
+        if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall'
+          && Math.abs(sk.x - b.x) < b.w * 0.5 + 12 && Math.abs(sk.y - b.y) < 12) { skelOnBtn = true; break; }
+      }
+      const on = playerOn || skelOnBtn;
       if (on && !b.pressed && tr.state === 'armed') { b.pressed = true; tr.state = 'falling'; tr.t = 0; }
       if (tr.state === 'armed') b.pressed = on;
     }
@@ -2049,23 +2057,18 @@
           if (ps.wait <= 0) { l2.plateDemoDone = true; ps.dir = 1; }
         } else if (Math.abs(ps.x - rb.x) < 22 && ps.state === 'patrol') {
           ps.wait = 3.6; ps.x = rb.x;        // reached the plate → begin the wait
-          if (!ps._demoToast) { l2toast('Watch — its weight holds the plate down'); ps._demoToast = true; }
+          if (!ps._demoToast) { l2toast('Watch — while it stands here, the gate opens'); ps._demoToast = true; }
         }
       }
-      // a body on the plate presses it (gate A opens) AND tugs the hanging block
-      // downward — a hint to the player to get the weight onto the plate too
+      // a body on the plate presses it — gate A opens ONLY while it is pressed.
+      // The hanging weight does NOT move here; it only drops when the rope is cut
+      // (that is the whole point — you need the weight to hold the plate down).
       let skelOnPlate = false;
       for (const sk of l2.skels) {
         if (sk.state !== 'pile' && sk.state !== 'gone' && sk.state !== 'fall'
           && Math.abs(sk.x - rb.x) < rb.w * 0.5 + 10 && Math.abs(sk.y - rb.y) < 14) { skelOnPlate = true; break; }
       }
-      // before the rope is cut, ease the block down while the plate is pressed
-      // by the skeleton, and let it rise back when the plate is free
-      if (!w.falling && !w.landed) {
-        const dip = skelOnPlate ? 60 : 0;
-        w.y = lerp(w.y, w.restY + dip, Math.min(1, dt * 3));
-        if (skelOnPlate && !rp.demoed) { l2toast('The plate sinks under the weight — the gate opens'); rp.demoed = true; }
-      }
+      if (skelOnPlate && !rp.demoed) { l2toast('The plate opens the gate — but only while weighed down'); rp.demoed = true; }
       // the plate is pressed by the hero's body OR a skeleton OR (permanently)
       // by the fallen weight
       const playerOn = p.onGround && Math.abs(p.x - rb.x) < rb.w * 0.5 + 10 && Math.abs(p.y - rb.y) < 8;
