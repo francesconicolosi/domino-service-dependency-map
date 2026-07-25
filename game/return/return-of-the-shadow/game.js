@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-25d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -3825,15 +3825,28 @@
   }
 
   // ---------------------------------------------------- fullscreen toggle button
-  // A small always-visible corner button (desktop AND mobile) that toggles
-  // fullscreen. On phones this is the visible control to go fullscreen; on
-  // desktop it sits just below the volume pill. (iOS Safari doesn't grant
-  // element fullscreen — the button simply no-ops there.)
+  // A small corner button (desktop AND Android) that toggles fullscreen.
+  //   * iPhone/iPad Safari has NO Fullscreen API for web pages (only <video>),
+  //     so there the button instead shows "Add to Home Screen" instructions —
+  //     launching from the home-screen icon is the only real fullscreen on iOS.
+  //   * When already running as a home-screen web app (standalone), we're
+  //     effectively fullscreen already, so no button is shown.
   function buildFullscreenControl() {
     try {
       if (typeof document === 'undefined') return;
+      const el = document.documentElement || {};
+      const ua = (navigator.userAgent || '');
+      const iOS = /iP(hone|od|ad)/.test(ua)
+        || (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);   // iPadOS reports as Mac
+      const standalone = (navigator.standalone === true)
+        || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+      const canFs = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+
+      // launched from the home screen → already fullscreen, nothing to add
+      if (standalone) return;
+
       const btn = document.createElement('div');
-      btn.setAttribute('aria-label', 'Toggle fullscreen');
+      btn.setAttribute('aria-label', 'Fullscreen');
       btn.style.cssText = 'position:fixed;top:66px;right:20px;z-index:61;width:44px;height:38px;' +
         'display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;line-height:1;' +
         'color:rgba(240,232,224,0.92);background:rgba(22,17,30,0.5);border:1px solid rgba(240,220,200,0.28);' +
@@ -3841,15 +3854,35 @@
         '-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation;';
       function glyph() { btn.textContent = document.fullscreenElement ? '⤡' : '⛶'; }
       glyph();
+
+      // iOS: instructions card (built lazily) explaining Add-to-Home-Screen
+      let hint = null;
+      function showIosHint() {
+        if (!hint) {
+          hint = document.createElement('div');
+          hint.style.cssText = 'position:fixed;left:50%;top:12%;transform:translateX(-50%);z-index:210;' +
+            'max-width:82%;padding:16px 18px;border-radius:16px;background:rgba(14,10,20,0.94);' +
+            'color:rgba(240,232,224,0.96);font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;' +
+            'text-align:center;box-shadow:0 8px 28px rgba(0,0,0,0.55);-webkit-user-select:none;user-select:none;';
+          hint.innerHTML = '<b>Fullscreen on iPhone</b><br>' +
+            'Safari can’t make a web page fullscreen. To play without the browser bars:' +
+            '<br><br>1. Tap the <b>Share</b> button (↑ in a square) at the bottom of Safari.' +
+            '<br>2. Choose <b>“Add to Home Screen.”</b>' +
+            '<br>3. Open the game from its new home-screen icon.' +
+            '<br><span style="display:inline-block;margin-top:12px;padding:7px 16px;' +
+            'border:1px solid rgba(240,220,200,0.45);border-radius:10px;cursor:pointer;">Got it</span>';
+          hint.addEventListener('click', function () { hint.style.display = 'none'; });
+          document.body.appendChild(hint);
+        }
+        hint.style.display = 'block';
+      }
+
       function toggle(e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (!canFs) { showIosHint(); return; }   // iOS / unsupported → show A2HS help
         try {
           if (document.fullscreenElement) { if (document.exitFullscreen) document.exitFullscreen(); }
-          else {
-            const el = document.documentElement;
-            const req = el.requestFullscreen || el.webkitRequestFullscreen;
-            if (req) req.call(el);
-          }
+          else { (el.requestFullscreen || el.webkitRequestFullscreen).call(el); }
         } catch (err) {}
       }
       btn.addEventListener('click', toggle);
