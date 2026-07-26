@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26f';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26g';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -2807,7 +2807,9 @@
         const top = heroTop(p), bot = p.y;
         if (s.y + 9 > top && s.y - 9 < bot) {
           const dir = s.vx > 0 ? 1 : -1;   // way it would knock the hero
-          if ((p.blockT || 0) > 0 && p.facing === -dir) {
+          // only the MIDDLE-lane blade can be parried; the low and high blades
+          // must be dodged (jump the low, stay grounded under the high)
+          if (s.lane === 'mid' && (p.blockT || 0) > 0 && p.facing === -dir) {
             // BLOCKED — the boomerang is knocked back toward the guardian
             s.phase = 'back'; s.vx = -560 * s.dir; s.deflected = true;
             p.blockFlash = 0.25;
@@ -3725,6 +3727,19 @@
     p.l3SpawnLock = Math.max(0, (p.l3SpawnLock || 0) - dt);
     if ((p.riposte || 0) <= 0) p.riposteHits = 0;
 
+    // BULLET-PROOF LEVEL-3 SPAWN: for the first seconds of the black halls the hero
+    // can NEVER fall or die. This runs before the dying block, so even a death
+    // already in progress is cancelled and the hero is snapped back onto the start
+    // floor. (No enemies are within reach this early, and the intentional finale
+    // fall is far later — the lock has long expired by then.)
+    if (level === 3 && (p.l3SpawnLock || 0) > 0 && l3.end.stage === 0) {
+      if (p.dying) { p.dying = false; p.deadFade = 0; }
+      if (p.y > FLOOR3 + 40) {
+        p.y = FLOOR3; p.vy = 0; p.state = 'ground'; p.onGround = true; p.coyote = COYOTE;
+        p.started = false;   // re-freeze at the spawn, exactly like level 1's start
+      }
+    }
+
     if (p.dying) {
       p.deadFade = p.deadFade + dt * 1.6;
       if (p.deadFade >= 1) {
@@ -3918,15 +3933,6 @@
       p.facing = 1;   // face right (toward the level), exactly like a fresh spawn / R
       p.started = false;
       resetScarf(...neckPos(p));
-    }
-
-    // HARD spawn-floor lock (Level 3): during the first seconds the hero can never
-    // drop below the start floor. Runs before the kill check so a first-moment
-    // fall glitch can never cost a life. (The finale fall is much later, so the
-    // lock has long expired and is unaffected.)
-    if (level === 3 && (p.l3SpawnLock || 0) > 0 && p.vy > 0 && p.y > FLOOR3 + 40 && l3.end.stage === 0) {
-      p.y = FLOOR3; p.vy = 0; p.state = 'ground'; p.onGround = true; p.coyote = COYOTE;
-      p.started = false;   // re-freeze at the spawn, exactly like level 1's guard rail
     }
 
     // the finale fall through the shattered floor is intentional — don't "die"
@@ -4579,7 +4585,18 @@
   };
 
   // expose a couple of read-only bits for the touch overlay
-  love._game = { getLevel: function () { return level; }, hasSword: function () { return player && player.hasSword; } };
+  love._game = {
+    getLevel: function () { return level; },
+    hasSword: function () { return player && player.hasSword; },
+    // true while a non-interactive cutscene is playing — the touch overlay hides
+    // its gameplay buttons (movement/jump/attack/block), keeping only R / ENTER
+    inCutscene: function () {
+      return level === 4
+        || (level === 1 && cine.on)
+        || (level === 2 && (l2.endStage || 0) > 0)
+        || (level === 3 && (l3.end.stage || 0) > 0);
+    },
+  };
 
   // read-only hooks used by the headless verification harness (harmless in prod)
   love._debug = {

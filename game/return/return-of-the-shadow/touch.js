@@ -15,6 +15,9 @@
   if (!coarse && !hasTouch) return; // desktop: keep it hidden
   root.classList.add('on');
 
+  // gameplay buttons (everything except R / ENTER) are hidden during cutscenes
+  const gameplayBtns = [];
+
   // A button either HOLDS a key (movement) or TAPS it (jump/attack).
   function makeButton(label, key, opts) {
     opts = opts || {};
@@ -52,6 +55,7 @@
     el.addEventListener('mouseup', release);
     el.addEventListener('mouseleave', release);
     root.appendChild(el);
+    if (!opts.always) gameplayBtns.push(el);   // R / ENTER pass opts.always
     return el;
   }
 
@@ -71,7 +75,20 @@
   makeButton('ATK',  'x',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: P + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
   makeButton('BLK',  'c',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: (P + S + 24) + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
 
-  // small utility taps top-right: Restart + Enter (castle)
-  makeButton('R',     'r',      { tap: true, style: { right: P + 'px', top: P + 'px', width: '46px', height: '38px' }, font: '15px' });
-  makeButton('ENTER', 'return', { tap: true, style: { right: (P + 56) + 'px', top: P + 'px', width: '80px', height: '38px' }, font: '13px' });
+  // small utility taps top-right: Restart + Enter (castle) — always available,
+  // including during cutscenes
+  makeButton('R',     'r',      { tap: true, always: true, style: { right: P + 'px', top: P + 'px', width: '46px', height: '38px' }, font: '15px' });
+  makeButton('ENTER', 'return', { tap: true, always: true, style: { right: (P + 56) + 'px', top: P + 'px', width: '80px', height: '38px' }, font: '13px' });
+
+  // hide the gameplay buttons while a cutscene is playing (keep only R / ENTER)
+  let hidden = false;
+  function syncCutscene() {
+    const cut = !!(love._game && love._game.inCutscene && love._game.inCutscene());
+    if (cut !== hidden) {
+      hidden = cut;
+      for (const el of gameplayBtns) el.style.display = cut ? 'none' : 'flex';
+    }
+    requestAnimationFrame(syncCutscene);
+  }
+  requestAnimationFrame(syncCutscene);
 })();
