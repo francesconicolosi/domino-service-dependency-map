@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26b';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -2708,7 +2708,9 @@
     l3.key = { x: 1930, y: 214, floorY: 244, taken: false };
     // gate K (locked, needs the key) bars the main floor; gate S seals the saloon
     // entrance once the candle is lifted. openT: 1 = fully open/passable, 0 = shut.
-    l3.gateK = { id: 'K', x: 2166, w: 18, yTop: 150, yBot: FLOOR3, openT: 0, locked: true, open: false, hinted: false, promptShown: false };
+    // gate K sits on the KEY SHELF (same layer as the key, not down on the floor)
+    // and is more than twice as tall, so it can't be cleared with a jump.
+    l3.gateK = { id: 'K', x: 2090, w: 18, yTop: -100, yBot: FLOOR3, openT: 0, locked: true, open: false, hinted: false, promptShown: false };
     l3.gateS = { id: 'S', x: SALOON_L + 2, w: 20, yTop: 40, yBot: FLOOR3, openT: 1, locked: false, open: true };
     l3.gates = [l3.gateK, l3.gateS];
     l3.candle = { x: 6120, y: FLOOR3, taken: false };
@@ -3000,9 +3002,10 @@
     const a = smooth(b.appearT);
     const fade = b.dead ? clamp(1 - b.deadT * 0.6, 0, 1) : 1;
     const DARK = [0.08, 0.07, 0.10], DARK2 = [0.14, 0.12, 0.16], GOLD = [0.86, 0.69, 0.30];
+    const facing = (player.x >= b.x) ? 1 : -1;   // the guardian turns to face the hero (profile)
     lg.push();
     lg.translate(x, y);
-    lg.scale(a, a);
+    lg.scale(a * facing, a);
     // ground shadow
     lg.setColor(0, 0, 0, 0.3 * fade); lg.ellipse('fill', 0, 2, 46, 8);
     const LIMB = [0.10, 0.09, 0.12], LIMB2 = [0.13, 0.115, 0.15];
@@ -3074,18 +3077,19 @@
         }
       }
     }
-    // head + tall headdress
+    // head — PROFILE, turned toward the hero (forward = +x). One eye, a forward
+    // brow/snout, and a tall headdress swept up and back.
     setColA(DARK2, fade); lg.circle('fill', 0, -166, 14);
     setColA(DARK, fade);
-    lg.polygon('fill', -18, -176, 18, -176, 22, -210, 0, -232, -22, -210);
+    lg.polygon('fill', 10, -172, 20, -168, 17, -159, 9, -159);   // forward brow / snout
+    // headdress swept up and back
+    lg.polygon('fill', -14, -176, 8, -176, -2, -214, -20, -228, -26, -204);
     setColA(GOLD, 0.8 * fade); lg.setLineWidth(2);
-    for (let i = -2; i <= 2; i++) lg.line(i * 7, -178, i * 8, -214);
-    // burning red eyes
+    for (let i = 0; i < 4; i++) lg.line(-2 - i * 4, -180, -9 - i * 4, -214);
+    // one burning red eye, forward
     const gl = 0.7 + 0.3 * Math.sin(T * 6);
-    lg.setColor(1.0, 0.2, 0.15, fade * gl);
-    lg.circle('fill', -5, -168, 2.4); lg.circle('fill', 5, -168, 2.4);
-    lg.setColor(1.0, 0.5, 0.4, fade * 0.3);
-    lg.circle('fill', -5, -168, 5); lg.circle('fill', 5, -168, 5);
+    lg.setColor(1.0, 0.5, 0.4, fade * 0.3); lg.circle('fill', 7, -169, 5);
+    lg.setColor(1.0, 0.2, 0.15, fade * gl); lg.circle('fill', 7, -169, 2.6);
     lg.setLineWidth(1);
     lg.pop();
     // its flying swords (drawn in world space, not scaled)
@@ -3297,8 +3301,13 @@
     // chest sash + waist sash
     setColA(SASH); lg.setLineWidth(4); lg.line(-6.4, chY - 4, 6, hipY - 0.5);
     lg.setLineWidth(1); lg.rectangle('fill', -6.6, hipY - 1, 13, 3.5);
-    // scimitar slung on the back
-    lg.push(); lg.translate(-6, chY - 3); lg.rotate(-0.6); drawScimitar(0.85); lg.pop();
+    // scimitar SHEATHED at the hip — a curved scabbard hanging down-back (its
+    // hilt just peeks above the belt; the blade is not drawn pointing up)
+    segment(-3, hipY, -7, hipY + 12, 2.8, 2.2, [0.32, 0.25, 0.17]);
+    segment(-7, hipY + 12, -12, hipY + 20, 2.2, 1.4, [0.32, 0.25, 0.17]);
+    setColA([0.74, 0.58, 0.30]); lg.circle('fill', -12, hipY + 20, 1.6);   // gold chape (tip)
+    lg.rectangle('fill', -4.6, hipY - 2, 3, 3);                            // gold throat at the belt
+    setColA([0.68, 0.50, 0.24]); lg.circle('fill', -2.6, hipY - 4, 1.5);   // small hilt pommel
     limbLeg(2, hipY, leg.fT, leg.fK, PANT, [0.2, 0.14, 0.1], 1);
     if (moving) { limbArm(1, chY, arm.f, arm.fh, SKIN, SKIN, 1); }
     else {   // folded arms (profile)
@@ -3419,9 +3428,6 @@
       lg.polygon('fill', a.x + h, tp, a.x, tp, a.x + h, sp);
       lg.rectangle('fill', a.x - h, bt, a.w, 372 - bt);
     }
-    // faint lattice on the wall strips
-    setColA(mul(GOLD, 1, 0.05)); lg.setLineWidth(1);
-    for (let x = 20; x < VW; x += 40) { lg.line(x, 0, x - 26, 372); lg.line(x, 0, x + 26, 372); }
     // gold arch frames
     for (const a of A) {
       const h = a.w / 2;
