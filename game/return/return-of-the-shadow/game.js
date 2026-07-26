@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26g';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26h';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -163,9 +163,9 @@
   let plats, checkpoints;
 
   // -------------------------------------------------------------- AUDIO (procedural)
-  let windSrc, musicSrc;
+  let windSrc, musicSrc, battleSrc;
   let sfxSwing, sfxHit, sfxParry, sfxThunder;
-  let musicVol = 0, windVol = 0;
+  let musicVol = 0, windVol = 0, battleVol = 0;
 
   function genWind() {
     const rate = 22050, secs = 6;
@@ -216,6 +216,52 @@
         const idx = base + i;
         if (idx < total) sd.setSample(idx, clamp(s * env, -1, 1));
       }
+    }
+    return sd;
+  }
+
+  // Boss battle theme — driving, Middle-Eastern (Hijaz / Phrygian-dominant scale)
+  // with a darbuka-style dum/tek pulse and a bass drone.
+  function genBattleMusic() {
+    const rate = 22050, bpm = 138, beat = 60 / bpm;
+    const eighth = beat / 2, steps = 32, dur = steps * eighth;
+    const n = Math.floor(rate * dur);
+    const sd = love.sound.newSoundData(n, rate, 16, 1);
+    const rng = love.math.newRandomGenerator(1717);
+    // Hijaz on D: D Eb F# G A Bb C  (root, b2, 3, 4, 5, b6, b7)
+    const S = [146.83, 155.56, 185.00, 196.00, 220.00, 233.08, 261.63];
+    const root = 73.42;   // low D drone
+    const mel = [0, 2, 4, 3, 2, 4, 6, 4, 3, 2, 1, 0, 2, 4, 2, 0, 0, 2, 4, 3, 2, 4, 6, 5, 4, 3, 2, 1, 0, 2, 1, 0];
+    const perc = ['D', '.', 't', '.', 't', '.', 'D', '.', 'D', '.', 't', 't', 't', '.', 'D', '.',
+                  'D', '.', 't', '.', 't', '.', 'D', '.', 'D', '.', 't', 't', 't', 't', 'D', '.'];
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      const stepF = t / eighth;
+      const step = Math.floor(stepF) % steps;
+      const noteT = t - Math.floor(stepF) * eighth;   // time within this 8th
+      let s = 0;
+      // bass drone (root + fifth), pulsing on the beat
+      const bp = 0.55 + 0.45 * Math.max(0, Math.sin(2 * Math.PI * (t / beat)));
+      s += 0.17 * Math.sin(2 * Math.PI * root * t) * bp;
+      s += 0.07 * Math.sin(2 * Math.PI * root * 1.5 * t);
+      // melodic ostinato (slightly nasal reed timbre)
+      const f = S[mel[step]];
+      let env = Math.max(0, 1 - noteT / eighth); env = env * env;
+      s += 0.12 * env * (Math.sin(2 * Math.PI * f * t) + 0.4 * Math.sin(2 * Math.PI * f * 2 * t) + 0.22 * Math.sin(2 * Math.PI * f * 3 * t));
+      // darbuka pulse
+      const ptype = perc[step];
+      if (ptype === 'D') {
+        const e = Math.exp(-noteT * 26);
+        s += 0.26 * e * Math.sin(2 * Math.PI * (95 - noteT * 200) * t);
+        s += 0.10 * (rng.random() * 2 - 1) * Math.exp(-noteT * 90);
+      } else if (ptype === 't') {
+        const e = Math.exp(-noteT * 70);
+        s += 0.13 * e * (rng.random() * 2 - 1);
+        s += 0.07 * e * Math.sin(2 * Math.PI * 650 * t);
+      }
+      let fade = 1;
+      if (t < 0.02) fade = t / 0.02; else if (t > dur - 0.02) fade = (dur - t) / 0.02;
+      sd.setSample(i, clamp(s * fade, -1, 1));
     }
     return sd;
   }
@@ -591,9 +637,12 @@
 
         const nBoulders = Math.max(4, Math.floor(p.w * hLim / 22000));
         for (let bi = 0; bi < nBoulders; bi++) {
-          const cx = p.x + 12 + rng.random() * (p.w - 24);
-          const cy = p.y + 16 + rng.random() * (hLim - 28);
-          const r = 8 + rng.random() * 22;
+          // keep the whole blob (radius r) inside the rock body so it never
+          // spills over the pillar's edge
+          let r = 8 + rng.random() * 20;
+          r = Math.min(r, (p.w - 20) / 2);
+          const cx = p.x + 10 + r + rng.random() * Math.max(0, p.w - 20 - 2 * r);
+          const cy = p.y + 18 + r + rng.random() * Math.max(0, hLim - 36 - 2 * r);
           if (rng.random() < 0.55) lg.setColor(STONE.mid[0], STONE.mid[1], STONE.mid[2], 0.8);
           else lg.setColor(STONE.lit[0], STONE.lit[1], STONE.lit[2], 0.16);
           lg.polygon('fill',
@@ -3736,7 +3785,7 @@
       if (p.dying) { p.dying = false; p.deadFade = 0; }
       if (p.y > FLOOR3 + 40) {
         p.y = FLOOR3; p.vy = 0; p.state = 'ground'; p.onGround = true; p.coyote = COYOTE;
-        p.started = false;   // re-freeze at the spawn, exactly like level 1's start
+        p.started = false; p.facing = 1;   // re-freeze facing right, like level 1's start
       }
     }
 
@@ -3781,6 +3830,7 @@
       else {
         p.vx = 0; p.vy = 0; p.onGround = true; p.state = 'ground';
         if (p.spawnFloor != null) p.y = p.spawnFloor;
+        p.facing = 1;   // a regular-level spawn always faces right (toward the level)
         p.coyote = COYOTE;
         return;
       }
@@ -4242,6 +4292,11 @@
     musicSrc.setLooping(true);
     musicSrc.setVolume(0);
 
+    battleSrc = love.audio.newSource(genBattleMusic(), 'static');
+    battleSrc.setLooping(true);
+    battleSrc.setVolume(0);
+    battleSrc.play();   // loops silently; volume ramps up during the boss fight
+
     sfxSwing = love.audio.newSound(genSwoosh());
     sfxHit = love.audio.newSound(genClang());
     sfxParry = love.audio.newSound(genParry());
@@ -4468,8 +4523,15 @@
     } else {
       windVol = lerp(windVol, 0, Math.min(1, dt * 2.5));
       windSrc.setVolume(windVol);
-      musicVol = lerp(musicVol, 0.36, Math.min(1, dt * 0.6));
+      // during the L3 boss fight, crossfade the ambient theme out and the
+      // Middle-Eastern battle theme in
+      const bossFight = (level === 3 && l3.boss && l3.boss.active && !l3.boss.dead && l3.end.stage === 0);
+      musicVol = lerp(musicVol, bossFight ? 0.0 : 0.36, Math.min(1, dt * (bossFight ? 1.5 : 0.6)));
       musicSrc.setVolume(musicVol);
+      if (battleSrc) {
+        battleVol = lerp(battleVol, bossFight ? 0.55 : 0.0, Math.min(1, dt * (bossFight ? 0.9 : 1.6)));
+        battleSrc.setVolume(battleVol);
+      }
     }
   };
 
