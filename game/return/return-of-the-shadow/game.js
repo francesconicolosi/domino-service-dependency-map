@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -760,8 +760,7 @@
       GOLD = [0.86, 0.69, 0.32], GOLDD = [0.55, 0.42, 0.20], CREAM = [0.93, 0.87, 0.64];
     const hover = -44 * s;                 // carpet floats this far above the cliff
 
-    // ground shadow + soft magic glow beneath the carpet
-    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', cx, gy + 1, 40 * s, 6 * s);
+    // soft magic glow beneath the carpet (no ground shadow — it's airborne)
     lg.setColor(0.55, 0.40, 0.85, 0.12); lg.ellipse('fill', cx, gy - 16 * s, 30 * s, 9 * s);
 
     lg.push();
@@ -2708,9 +2707,10 @@
     l3.key = { x: 1930, y: 214, floorY: 244, taken: false };
     // gate K (locked, needs the key) bars the main floor; gate S seals the saloon
     // entrance once the candle is lifted. openT: 1 = fully open/passable, 0 = shut.
-    // gate K sits on the KEY SHELF (same layer as the key, not down on the floor)
-    // and is more than twice as tall, so it can't be cleared with a jump.
-    l3.gateK = { id: 'K', x: 2090, w: 18, yTop: -100, yBot: FLOOR3, openT: 0, locked: true, open: false, hinted: false, promptShown: false };
+    // gate K stands on the floor just past the key shelf — its base sits ON the
+    // brick floor (over the basement, not sunk into it) and it's tall enough
+    // (top well above head height) that it can't be cleared with a jump.
+    l3.gateK = { id: 'K', x: 2150, w: 18, yTop: -100, yBot: FLOOR3, openT: 0, locked: true, open: false, hinted: false, promptShown: false };
     l3.gateS = { id: 'S', x: SALOON_L + 2, w: 20, yTop: 40, yBot: FLOOR3, openT: 1, locked: false, open: true };
     l3.gates = [l3.gateK, l3.gateS];
     l3.candle = { x: 6120, y: FLOOR3, taken: false };
@@ -3030,37 +3030,56 @@
     }
     // pelvis block tying the legs into the torso
     setColA(mul(DARK, 1, fade)); lg.polygon('fill', -16, -70, 16, -70, 20, -86, -20, -86);
-    // torso
+    // back spines running up the spine (menacing silhouette)
+    setColA(mul(DARK2, 1.1, fade));
+    for (let i = 0; i < 4; i++) { const sy2 = -92 - i * 15; lg.polygon('fill', -24, sy2, -34 - i * 2, sy2 - 5, -24, sy2 - 9); }
+    // torso base — tapered trunk
     setColA(bodyC);
-    lg.polygon('fill', -22, -74, 22, -74, 27, -150, -27, -150);
-    // shoulder mass / neck base so the six arms root into a solid trunk
-    lg.polygon('fill', -30, -140, 30, -140, 22, -160, -22, -160);
-    // gold sash/filigree on the chest
-    setColA(GOLD, 0.9 * fade); lg.setLineWidth(3);
-    lg.line(-16, -96, 16, -96); lg.line(-12, -118, 12, -118);
-    lg.circle('line', 0, -108, 8);
+    lg.polygon('fill', -22, -74, 22, -74, 28, -152, -28, -152);
+    // darker central under-plate for depth
+    setColA(mul(DARK, 1, fade));
+    lg.polygon('fill', -13, -80, 13, -80, 17, -150, -17, -150);
+    // V-shaped chest armour plate
+    setColA(mul(DARK2, 1.25, fade));
+    lg.polygon('fill', -24, -152, 24, -152, 15, -118, 0, -104, -15, -118);
+    // abdominal ridges
+    setColA(mul(DARK, 1, fade)); lg.setLineWidth(2);
+    lg.line(-14, -90, 14, -90); lg.line(-12, -84, 12, -84);
+    // gold filigree bands
+    setColA(GOLD, 0.9 * fade); lg.setLineWidth(2.5);
+    lg.line(-17, -100, 17, -100); lg.line(-13, -126, 13, -126);
+    // glowing chest gem
+    const gemg = 0.6 + 0.4 * Math.sin(T * 3);
+    lg.setColor(1.0, 0.55, 0.35, fade * gemg * 0.4); lg.circle('fill', 0, -118, 10);
+    lg.setColor(1.0, 0.28, 0.18, fade * gemg); lg.circle('fill', 0, -118, 5);
+    // broad shoulder mass with spiked pauldrons (roots the long arms)
+    setColA(bodyC); lg.polygon('fill', -34, -140, 34, -140, 24, -162, -24, -162);
+    for (const sd of [-1, 1]) {
+      setColA(mul(DARK2, 1.2, fade)); lg.polygon('fill', sd * 16, -158, sd * 34, -154, sd * 30, -140, sd * 14, -144);
+      setColA(goldC); lg.polygon('fill', sd * 26, -156, sd * 40, -172, sd * 30, -152);
+    }
     // six arms, each holding a solid scimitar, fanned out (3 per side). The arm
     // that just launched a blade thrusts out (b.throwArm) and its hand is empty
     // until the boomerang returns (b.arms[armIndex]).
-    const armY = -150, shoulders = [-22, -6, 10];
+    const armY = -152, shoulders = [-24, -6, 12];
     for (let side = -1; side <= 1; side += 2) {
       for (let k = 0; k < 3; k++) {
         const armIndex = (side < 0 ? 0 : 3) + k;
         const swing = (b.armSwing > 0 && b.throwArm === armIndex)
           ? Math.sin((1 - b.armSwing / 0.35) * Math.PI) : 0;
-        const idle = Math.sin(T * 2.2 + k * 1.3 + (side > 0 ? 0.7 : 0)) * 3;
+        const idle = Math.sin(T * 2.2 + k * 1.3 + (side > 0 ? 0.7 : 0)) * 3.5;
         const sy = armY + shoulders[k];
-        const reach = 26 + k * 6 + swing * 18;    // hand thrusts out on a throw
-        const shx = side * 9, shy = sy;           // shoulder root
-        const hx = side * reach, hy = sy - 8 + idle - swing * 7;   // hand
-        const elx = lerp(shx, hx, 0.5) + side * 3;                 // elbow (bent)
-        const ely = lerp(shy, hy, 0.5) + 5 - swing * 3;
+        const reach = 46 + k * 12 + swing * 22;   // LONG arms; hand thrusts out on a throw
+        const shx = side * 13, shy = sy;          // shoulder root
+        const hx = side * reach, hy = sy - 6 + idle - swing * 9;   // hand
+        const elx = lerp(shx, hx, 0.5) + side * 4;                 // elbow (bent)
+        const ely = lerp(shy, hy, 0.5) + 9 - swing * 4;
         const shadeK = (k === 1) ? 0.82 : 1;      // middle pair a touch darker for depth
         const armC = mul(LIMB, shadeK, fade), armC2 = mul(LIMB2, shadeK, fade);
-        segment(shx, shy, elx, ely, 5.2, 4.2, armC);   // upper arm (solid taper)
-        segment(elx, ely, hx, hy, 4.2, 3.0, armC);     // forearm
-        lg.circle('fill', elx, ely, 4.4);              // elbow
-        setColA(armC2); lg.circle('fill', hx, hy, 3.8); // hand/fist
+        segment(shx, shy, elx, ely, 6.0, 4.6, armC);   // upper arm (solid taper)
+        segment(elx, ely, hx, hy, 4.6, 3.2, armC);     // forearm
+        lg.circle('fill', elx, ely, 4.8);              // elbow
+        setColA(armC2); lg.circle('fill', hx, hy, 4.0); // hand/fist
         // gold wrist bracer, across the forearm at the wrist
         const wdx = hx - elx, wdy = hy - ely, wl = Math.hypot(wdx, wdy) || 1;
         const px = -wdy / wl, py = wdx / wl;
@@ -3264,7 +3283,8 @@
   }
   function legAngles(ch) {
     const ph = ch.runPhase;
-    if (Math.abs(ch.vx) <= 8) return { fT: 0.10, fK: 0.04, bT: -0.12, bK: -0.20 };
+    // idle: legs stand nearly straight and close together (not splayed)
+    if (Math.abs(ch.vx) <= 8) return { fT: 0.03, fK: 0.04, bT: -0.03, bK: -0.07 };
     const sF = Math.sin(ph), sB = Math.sin(ph + Math.PI);
     const kneeF = 0.30 + 0.85 * Math.max(0, Math.sin(ph - 2.1));
     const kneeB = 0.30 + 0.85 * Math.max(0, Math.sin(ph + Math.PI - 2.1));
@@ -3449,10 +3469,8 @@
     setColA(GOLD); lg.rectangle('fill', 0, 352, VW, 8);
     for (let x = 24; x < VW; x += 34) { setColA(GOLD); lg.ellipse('fill', x, 372, 5, 12); setColA(GOLDD); lg.rectangle('fill', x - 5, 366, 10, 3); }
     setColA(GOLD); lg.rectangle('fill', 0, 386, VW, 6);
-    // marble floor
+    // marble floor (no tile seams — a clean dark floor)
     lg.gradientRect(0, 392, VW, VH - 392, [0.15, 0.14, 0.21], [0.09, 0.08, 0.13]);
-    setColA(mul(GOLD, 1, 0.10)); lg.setLineWidth(1);
-    for (let y = 430; y < VH; y += 48) lg.line(0, y, VW, y);
     setColA([0.9, 0.7, 0.4], 0.04); lg.ellipse('fill', VW / 2, 560, 360, 90);
     lg.setLineWidth(1);
   }
@@ -3481,15 +3499,17 @@
     if (l.line >= 0) l.lineT += dt;
 
     if (l.phase === 0) {                       // "thirty days before" card
-      if (l.t > 2.8 || l.skip) { l.phase = 1; l.t = 0; }
+      if (l.t > 1.6 || l.skip) { l.phase = 1; l.t = 0; }
     } else if (l.phase === 1) {                // fade in + the king walks to centre
-      l.fade = Math.min(1, l.fade + dt * 0.7);
+      l.fade = Math.min(1, l.fade + dt * 1.2);
       player.state = 'ground';
-      const done = walkToward(player, 500, 82, dt);
+      if (l.skip) { player.x = 500; player.vx = 0; l.fade = 1; }
+      const done = walkToward(player, 500, 120, dt);
       if (done) { player.vx = 0; if (l.fade >= 1) { l.phase = 2; l.t = 0; } }
     } else if (l.phase === 2) {                // guard + servant enter from the right
-      const a = walkToward(l.servant, 720, 66, dt);
-      const b = walkToward(l.guard, 908, 70, dt);
+      if (l.skip) { l.servant.x = 705; l.servant.arrived = true; l.servant.vx = 0; l.guard.x = 885; l.guard.arrived = true; l.guard.vx = 0; }
+      const a = walkToward(l.servant, 705, 190, dt);
+      const b = walkToward(l.guard, 885, 190, dt);
       player.vx = 0; player.facing = 1;
       if (a && b) { l.phase = 3; l4StartLine(0); }
     } else if (l.phase === 3) {                // main dialogue (lines 0..9)
@@ -3606,14 +3626,14 @@
     musicVol = 0.3;
     if (windSrc) windSrc.setVolume(0);
     if (musicSrc) { musicSrc.stop(); musicSrc.setVolume(0.3); musicSrc.play(); }
-    player = newPlayer(170, GROUND4);
+    player = newPlayer(420, GROUND4);
     player.state = 'ground'; player.onGround = true; player.started = true;
     player.hasSword = false; player.facing = 1;
     resetScarf(...neckPos(player));
     cam.x = VW / 2; cam.y = VH / 2; cam.zoom = 1;
     l4.phase = 0; l4.t = 0; l4.line = -1; l4.lineT = 0; l4.lineDur = 0; l4.skip = false;
     l4.fade = 0; l4.fade2 = 0; l4.jt = 0;
-    l4.guard = mkChar4(1360, -1); l4.servant = mkChar4(1290, -1);
+    l4.guard = mkChar4(1310, -1); l4.servant = mkChar4(1370, -1);
     l4.child = null; l4.carpet = null;
     introT = 999;   // suppress the platformer intro/location overlays
   }
