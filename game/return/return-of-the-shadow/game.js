@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26d';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26e';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -760,9 +760,7 @@
       GOLD = [0.86, 0.69, 0.32], GOLDD = [0.55, 0.42, 0.20], CREAM = [0.93, 0.87, 0.64];
     const hover = -44 * s;                 // carpet floats this far above the cliff
 
-    // soft magic glow beneath the carpet (no ground shadow — it's airborne)
-    lg.setColor(0.55, 0.40, 0.85, 0.12); lg.ellipse('fill', cx, gy - 16 * s, 30 * s, 9 * s);
-
+    // (no shadow or glow beneath the carpet — it is airborne)
     lg.push();
     lg.translate(cx, gy + hover);
     lg.scale(s, s);
@@ -2804,12 +2802,22 @@
           b.swords.splice(i, 1); continue;
         }
       }
-      // hit the hero unless jumped/ducked out of this lane
-      if (!p.dying && (p.inv || 0) <= 0 && Math.abs(s.x - p.x) < 22) {
+      // contact with the hero — blockable, else it wounds
+      if (!p.dying && Math.abs(s.x - p.x) < 22 && !s.deflected) {
         const top = heroTop(p), bot = p.y;
         if (s.y + 9 > top && s.y - 9 < bot) {
-          hurtPlayer(p, s.vx > 0 ? 1 : -1);
-          spawnDust(p.x, p.y - 30, 5, 0.8);
+          const dir = s.vx > 0 ? 1 : -1;   // way it would knock the hero
+          if ((p.blockT || 0) > 0 && p.facing === -dir) {
+            // BLOCKED — the boomerang is knocked back toward the guardian
+            s.phase = 'back'; s.vx = -560 * s.dir; s.deflected = true;
+            p.blockFlash = 0.25;
+            if (sfxParry) sfxParry.play(0.55, 1.0 + love.math.random() * 0.12);
+            spawnDust(p.x + dir * 10, p.y - 30, 6, 0.8);
+            l3toast('Blocked!  The blade is hurled back');
+          } else if ((p.inv || 0) <= 0) {
+            hurtPlayer(p, dir);
+            spawnDust(p.x, p.y - 30, 5, 0.8);
+          }
         }
       }
     }
@@ -3545,10 +3553,14 @@
         player.y = lerp(GROUND4, l.carpet.y, k) - Math.sin(k * Math.PI) * 70;
         if (k >= 1) { player.y = l.carpet.y; player.state = 'ground'; player.vx = 0; l.phase = 8; }
       }
-    } else if (l.phase === 8) {                // fly UP through the arch into the sky (behind the walls)
-      l.carpet.x += 40 * dt; l.carpet.y -= 150 * dt;
+    } else if (l.phase === 8) {                // fly up into the sky (behind the walls) while fading out
+      // rise only within the arch (never up to the wall top) and fade to black
+      // concurrently, so the hero is fully hidden before it could clear the wall
+      l.carpet.y = Math.max(178, l.carpet.y - 120 * dt);
+      l.carpet.x += 22 * dt;
       player.x = l.carpet.x - 6; player.y = l.carpet.y; player.facing = 1; player.vx = 0;
-      if (l.carpet.y < 20) { l.phase = 9; l.t = 0; }
+      l.fade2 = Math.min(1, l.fade2 + dt * 0.9);
+      if (l.fade2 >= 1) { l.phase = 9; l.t = 0; }
     } else if (l.phase === 9) {                // fade to black + label
       l.fade2 = Math.min(1, l.fade2 + dt * 0.5);
     }
@@ -3608,9 +3620,9 @@
     }
     if (l.fade < 1) { lg.setColor(0, 0, 0, 1 - l.fade); lg.rectangle('fill', 0, 0, VW, VH); }
     if (l.line >= 0) drawSubtitle(L4_LINES[l.line]);
-    if (l.phase === 9) {
+    if (l.phase >= 8) {   // fade to black grows during the fly-away (hides the hero fully)
       lg.setColor(0, 0, 0, clamp(l.fade2, 0, 1)); lg.rectangle('fill', 0, 0, VW, VH);
-      if (l.fade2 >= 1 && FONT_SUB) {
+      if (l.phase === 9 && l.fade2 >= 1 && FONT_SUB) {
         lg.setFont(FONT_SUB); lg.setColor(0.86, 0.82, 0.9, 0.92);
         printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 - 6, FONT_SUB, 6, 1);
         lg.setFont(FONT_HUD); lg.setColor(0.7, 0.68, 0.76, 0.8);
@@ -3697,8 +3709,14 @@
     p.blockT = Math.max(0, (p.blockT || 0) - dt);
     p.riposte = Math.max(0, (p.riposte || 0) - dt);
     p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
-    p.initGrace = Math.max(0, (p.initGrace || 0) - dt);
-    p.startGuard = Math.max(0, (p.startGuard || 0) - dt);
+    // the spawn guard rails only count down ONCE the hero actually starts moving
+    // — otherwise, on a dark level where you take a few seconds to get oriented,
+    // the guard would expire while the hero is still frozen at the spawn, leaving
+    // the very start of play unprotected (the reported debug=3 fall).
+    if (p.started) {
+      p.initGrace = Math.max(0, (p.initGrace || 0) - dt);
+      p.startGuard = Math.max(0, (p.startGuard || 0) - dt);
+    }
     if ((p.riposte || 0) <= 0) p.riposteHits = 0;
 
     if (p.dying) {
