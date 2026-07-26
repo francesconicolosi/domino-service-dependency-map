@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26b';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -3273,168 +3273,165 @@
   }
 
   // ---- the burly turbaned palace guard (crossed arms when idle)
+  // All balcony figures share the hero's exact proportions (feet 0, hip -33,
+  // chest -49, head ~-58) and are drawn in PROFILE (nose forward, one eye), so
+  // after scale(facing,1) they face the way they are looking.
+  const L4_ARCHES = [{ x: 300, w: 210 }, { x: 640, w: 250 }, { x: 980, w: 210 }];
+  const L4_SPRING = 205, L4_TIP = 50, L4_BOT = 360;
+
   function drawGuard(g) {
-    const SKIN = [0.78, 0.52, 0.34], PANT = [0.58, 0.15, 0.13], SASH = [0.86, 0.68, 0.28],
+    const SKIN = [0.80, 0.55, 0.36], PANT = [0.58, 0.15, 0.13], SASH = [0.86, 0.68, 0.28],
       TURB = [0.90, 0.87, 0.80], TURBB = [0.66, 0.16, 0.15], HAIR = [0.08, 0.06, 0.05];
     const moving = Math.abs(g.vx) > 8;
-    const leg = legAngles(g);
+    const leg = legAngles(g), arm = armAngles(g, 0.3);
+    const bob = moving ? Math.abs(Math.sin(g.runPhase)) * 1.6 : Math.sin(T * 1.4) * 0.5;
     lg.push(); lg.translate(g.x, g.y); lg.scale(g.facing, 1);
-    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', 0, 2, 22, 5);
-    const hipy = -48, chy = -104;
-    limbLeg(-7, hipy, leg.bT, leg.bK, mul(PANT, 0.82), [0.26, 0.18, 0.12], 1.3);
-    // broad bare torso
+    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', 0, 2, 14, 4);
+    const hipY = -33 + bob, chY = -49 + bob;
+    limbLeg(-2, hipY, leg.bT, leg.bK, mul(PANT, 0.72), [0.2, 0.14, 0.1], 1);
+    if (moving) limbArm(-1, chY, arm.b, arm.bh, mul(SKIN, 0.82), mul(SKIN, 0.82), 1);
+    // bare, slightly broad torso
     setColA(SKIN);
-    lg.polygon('fill', -20, hipy + 4, 20, hipy + 4, 26, chy + 8, -24, chy + 8);
-    lg.circle('fill', 0, chy + 12, 22);
-    // pants waistband
-    setColA(PANT); lg.polygon('fill', -22, hipy - 6, 22, hipy - 6, 20, hipy + 14, -20, hipy + 14);
-    setColA(SASH); lg.rectangle('fill', -22, hipy - 8, 44, 8);
-    // sash across the chest
-    setColA(SASH); lg.setLineWidth(7); lg.line(-20, chy + 4, 20, hipy - 2);
+    lg.polygon('fill', -6.4, hipY + 1.5, 6.4, hipY + 1.5, 7.8, chY - 2, -7.8, chY - 2);
+    lg.circle('fill', 0, chY - 1.5, 7.2);
+    // chest sash + waist sash
+    setColA(SASH); lg.setLineWidth(4); lg.line(-6.4, chY - 4, 6, hipY - 0.5);
+    lg.setLineWidth(1); lg.rectangle('fill', -6.6, hipY - 1, 13, 3.5);
     // scimitar slung on the back
-    lg.push(); lg.translate(-15, chy - 4); lg.rotate(-0.5); drawScimitar(0.9); lg.pop();
-    limbLeg(7, hipy, leg.fT, leg.fK, PANT, [0.26, 0.18, 0.12], 1.3);
-    // arms — crossed over the chest when idle, swinging when walking
-    if (!moving) {
-      segment(-19, chy + 6, 15, chy + 18, 5.2, 4.2, mul(SKIN, 0.92));
-      segment(19, chy + 8, -15, chy + 20, 5.2, 4.2, SKIN);
-      setColA(SKIN); lg.circle('fill', 15, chy + 18, 5); lg.circle('fill', -15, chy + 20, 5);
-    } else {
-      const aa = armAngles(g, 0.3);
-      limbArm(-9, chy + 8, aa.b, aa.bh, SKIN, SKIN, 1.3);
-      limbArm(9, chy + 8, aa.f, aa.fh, SKIN, SKIN, 1.3);
+    lg.push(); lg.translate(-6, chY - 3); lg.rotate(-0.6); drawScimitar(0.85); lg.pop();
+    limbLeg(2, hipY, leg.fT, leg.fK, PANT, [0.2, 0.14, 0.1], 1);
+    if (moving) { limbArm(1, chY, arm.f, arm.fh, SKIN, SKIN, 1); }
+    else {   // folded arms (profile)
+      segment(1, chY + 1, 8, chY + 7, 3.6, 3.0, mul(SKIN, 0.9));
+      segment(1, chY + 6, 8, chY + 1, 3.4, 2.8, SKIN);
+      setColA(SKIN); lg.circle('fill', 8, chY + 7, 3); lg.circle('fill', 8, chY + 1, 2.8);
     }
-    // head
-    const hx = 2, hy = chy - 22;
-    setColA(SKIN); lg.circle('fill', hx, hy, 12);
-    // fierce brows + eyes
-    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hx - 4, hy - 1, 1.7); lg.circle('fill', hx + 4, hy - 1, 1.7);
-    setColA(HAIR); lg.setLineWidth(2.6); lg.line(hx - 9, hy - 5, hx - 1, hy - 3); lg.line(hx + 9, hy - 5, hx + 1, hy - 3);
-    // big curled moustache
-    setColA(HAIR); lg.setLineWidth(3.6);
-    lg.arc('line', 'open', hx - 6, hy + 6, 5, 0.1, 2.6);
-    lg.arc('line', 'open', hx + 6, hy + 6, 5, Math.PI - 2.6, Math.PI - 0.1);
-    lg.circle('fill', hx - 10, hy + 9, 1.8); lg.circle('fill', hx + 10, hy + 9, 1.8);
+    // neck + profile head
+    const hX = 0, hY = chY - 9.5;
+    segment(0, chY - 4, hX, hY + 3, 2.9, 2.5, SKIN);
+    setColA(SKIN); lg.circle('fill', hX, hY, 6.6);
+    lg.polygon('fill', hX + 2.8, hY + 1, hX + 7, hY + 1.8, hX + 3.2, hY + 4.6);   // nose / chin
+    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hX + 2.6, hY - 0.6, 1.1);       // eye
+    setColA(HAIR); lg.setLineWidth(1.8); lg.line(hX + 0.6, hY - 2.4, hX + 4.6, hY - 1.5);  // brow
+    lg.setLineWidth(3);
+    lg.arc('line', 'open', hX + 4.4, hY + 3, 3.2, -1.4, 1.0);                     // curled moustache
+    lg.circle('fill', hX + 7.2, hY + 3.4, 1.5);
     // turban
-    setColA(TURB); lg.ellipse('fill', hx, hy - 12, 15, 10);
-    lg.circle('fill', hx - 6, hy - 12, 7); lg.circle('fill', hx + 6, hy - 12, 7); lg.circle('fill', hx, hy - 17, 8);
-    setColA(TURBB); lg.rectangle('fill', hx - 13, hy - 10, 26, 3);
-    setColA(SASH); lg.circle('fill', hx, hy - 10, 2.2);
-    setColA([0.75, 0.85, 0.9]); lg.setLineWidth(2); lg.line(hx, hy - 19, hx + 3, hy - 32);
+    setColA(TURB); lg.ellipse('fill', hX - 1, hY - 6.5, 8.5, 6);
+    lg.circle('fill', hX - 4, hY - 7, 4.5); lg.circle('fill', hX + 3, hY - 7, 4.5); lg.circle('fill', hX - 0.5, hY - 10, 5);
+    setColA(TURBB); lg.rectangle('fill', hX - 8, hY - 6, 15, 2.2);
+    setColA(SASH); lg.circle('fill', hX - 0.5, hY - 6, 1.6);
+    setColA([0.75, 0.85, 0.9]); lg.setLineWidth(1.6); lg.line(hX - 0.5, hY - 11, hX + 1.5, hY - 18);
     lg.setLineWidth(1);
     lg.pop();
   }
 
-  // ---- the female servant in a long red robe + feathered headdress
   function drawServant(s) {
     const ROBE = [0.72, 0.20, 0.16], ROBED = [0.50, 0.13, 0.12], CREAM = [0.90, 0.85, 0.72],
       SASH = [0.86, 0.70, 0.30], SKIN = [0.82, 0.60, 0.44], HAIR = [0.10, 0.08, 0.09], FEATH = [0.78, 0.30, 0.32];
     const moving = Math.abs(s.vx) > 8;
-    const sway = moving ? Math.sin(s.runPhase) * 0.10 : Math.sin(T * 1.2) * 0.03;
-    const bob = moving ? Math.abs(Math.sin(s.runPhase)) * 2 : 0;
+    const sway = moving ? Math.sin(s.runPhase) * 0.9 : Math.sin(T * 1.2) * 0.3;
+    const bob = moving ? Math.abs(Math.sin(s.runPhase)) * 1.4 : 0;
     lg.push(); lg.translate(s.x, s.y - bob); lg.scale(s.facing, 1);
-    lg.setColor(0, 0, 0, 0.2); lg.ellipse('fill', 0, 2 + bob, 15, 4);
-    const hipy = -58, chy = -98;
-    // long swaying robe hides the legs
-    setColA(ROBE); lg.polygon('fill', -9, hipy, 9, hipy, 20 + sway * 14, 0, -18 + sway * 14, 0);
-    setColA(ROBED); lg.polygon('fill', -1, hipy, 6, hipy, 9 + sway * 14, 0, -1 + sway * 14, 0);
-    setColA(SASH); lg.setLineWidth(2.5); lg.line(-18 + sway * 14, -2, 20 + sway * 14, -2);
-    if (moving) {
-      const f = Math.sin(s.runPhase);
-      setColA([0.5, 0.35, 0.2]);
-      lg.ellipse('fill', 5 + f * 4 + sway * 14, -1, 4, 2.4);
-      lg.ellipse('fill', -5 - f * 4 + sway * 14, -1, 4, 2.4);
-    }
+    lg.setColor(0, 0, 0, 0.2); lg.ellipse('fill', 0, 2 + bob, 12, 3.5);
+    const hipY = -33, chY = -49;
+    // long swaying robe (hip → floor), same overall height as the hero
+    setColA(ROBE); lg.polygon('fill', -6, hipY, 6, hipY, 11 + sway, 0, -9 + sway, 0);
+    setColA(ROBED); lg.polygon('fill', 0, hipY, 5, hipY, 7 + sway, 0, 1 + sway, 0);
+    setColA(SASH); lg.setLineWidth(1.8); lg.line(-9 + sway, -1, 11 + sway, -1);
+    if (moving) { const f = Math.sin(s.runPhase); setColA([0.5, 0.35, 0.2]); lg.ellipse('fill', 3 + f * 3 + sway, -1, 3, 2); lg.ellipse('fill', -3 - f * 3 + sway, -1, 3, 2); }
     // bodice
-    setColA(ROBE); lg.polygon('fill', -9, hipy + 2, 9, hipy + 2, 8, chy + 4, -8, chy + 4);
-    lg.circle('fill', 0, chy + 4, 8);
-    setColA(SASH); lg.rectangle('fill', -10, hipy - 2, 20, 6);
-    setColA(mul(SASH, 0.85)); lg.polygon('fill', -3, hipy + 2, 3, hipy + 2, 5, hipy + 20, -5, hipy + 20);
-    // arms — cream sleeves, clasped in front when idle
-    if (!moving) {
-      segment(-7, chy + 6, 0, chy + 22, 3.4, 2.8, CREAM);
-      segment(7, chy + 6, 0, chy + 22, 3.4, 2.8, mul(CREAM, 0.94));
-      setColA(SKIN); lg.circle('fill', 0, chy + 22, 3);
-    } else {
-      const aa = armAngles(s, 0.25);
-      limbArm(-6, chy + 6, aa.b, aa.bh, CREAM, SKIN, 1);
-      limbArm(6, chy + 6, aa.f, aa.fh, CREAM, SKIN, 1);
-    }
-    // head + long hair
-    const hx = 0, hy = chy - 20;
-    setColA(HAIR);
-    lg.polygon('fill', -9, hy - 2, -11, hy + 24, -3, hy + 24, -3, hy);
-    lg.polygon('fill', 9, hy - 2, 11, hy + 20, 3, hy + 20, 3, hy);
-    lg.circle('fill', hx, hy - 4, 9);
-    setColA(SKIN); lg.circle('fill', hx, hy + 1, 7.6);
-    setColA([0.1, 0.08, 0.09]); lg.circle('fill', hx - 3, hy, 1.3); lg.circle('fill', hx + 3, hy, 1.3);
-    // tall headdress + feather + veil
-    setColA(CREAM); lg.polygon('fill', -9, hy - 6, 9, hy - 6, 7, hy - 21, -7, hy - 21);
-    setColA(SASH); lg.rectangle('fill', -9, hy - 8, 18, 3);
-    setColA(FEATH); lg.setLineWidth(2.6); lg.line(hx + 2, hy - 19, hx + 9, hy - 36);
+    setColA(ROBE); lg.polygon('fill', -6, hipY + 1, 6, hipY + 1, 6.5, chY - 2, -6.5, chY - 2); lg.circle('fill', 0, chY - 1.5, 6.2);
+    setColA(SASH); lg.rectangle('fill', -6.5, hipY - 1, 13, 3.5);
+    // arms clasped in front (profile, cream sleeves)
+    segment(0, chY + 2, 6, chY + 9, 3, 2.5, mul(CREAM, 0.9));
+    segment(0, chY + 4, 6, chY + 8, 2.8, 2.3, CREAM);
+    setColA(SKIN); lg.circle('fill', 6, chY + 8.5, 2.4);
+    // neck + profile head
+    const hX = 0, hY = chY - 9.5;
+    segment(0, chY - 4, hX, hY + 3, 2.3, 2.0, SKIN);
+    setColA(HAIR); lg.polygon('fill', hX - 2, hY - 4, hX - 8, hY + 14, hX - 2, hY + 12, hX - 1, hY);  // hair flows back
+    setColA(SKIN); lg.circle('fill', hX, hY, 5.8);
+    lg.polygon('fill', hX + 2.4, hY + 1, hX + 6, hY + 1.6, hX + 2.8, hY + 4);   // nose
+    setColA([0.1, 0.08, 0.09]); lg.circle('fill', hX + 2, hY - 0.4, 0.95);     // eye
+    // tall headdress + feather
+    setColA(CREAM); lg.polygon('fill', hX - 5, hY - 4, hX + 5, hY - 4, hX + 3.5, hY - 15, hX - 4.5, hY - 15);
+    setColA(SASH); lg.rectangle('fill', hX - 5, hY - 5.5, 10, 2);
+    setColA(FEATH); lg.setLineWidth(2); lg.line(hX + 1, hY - 13, hX + 6, hY - 25);
     lg.setLineWidth(1);
     lg.pop();
   }
 
-  // ---- the young prince Shahraman: a small hero
   function drawChild(c) {
     const TUNIC = [0.28, 0.44, 0.55], PANT = [0.34, 0.29, 0.20], SKIN = [0.86, 0.64, 0.47],
       HAIR = [0.12, 0.10, 0.09], SASH = [0.80, 0.55, 0.25];
-    const sc = 0.62;
-    const leg = legAngles(c);
-    const bob = Math.abs(c.vx) > 8 ? Math.abs(Math.sin(c.runPhase)) * 1.5 : Math.sin(T * 1.6) * 0.5;
-    lg.push(); lg.translate(c.x, c.y - bob); lg.scale(c.facing, 1);
-    lg.setColor(0, 0, 0, 0.2); lg.ellipse('fill', 0, 2, 10, 3);
-    const hipy = -30, chy = -56;
-    limbLeg(-3, hipy, leg.bT, leg.bK, mul(PANT, 0.82), [0.2, 0.15, 0.1], sc);
-    setColA(TUNIC); lg.polygon('fill', -8, hipy + 2, 8, hipy + 2, 9, chy + 4, -9, chy + 4);
-    lg.circle('fill', 0, chy + 2, 7);
-    setColA(SASH); lg.rectangle('fill', -8, hipy - 1, 16, 3);
-    limbLeg(3, hipy, leg.fT, leg.fK, PANT, [0.2, 0.15, 0.1], sc);
-    const aa = armAngles(c, 0.3);
-    limbArm(-5, chy + 4, aa.b, aa.bh, TUNIC, SKIN, sc);
-    limbArm(5, chy + 4, aa.f, aa.fh, TUNIC, SKIN, sc);
-    const hx = 0, hy = chy - 13;
-    setColA(SKIN); lg.circle('fill', hx, hy, 8);
-    setColA(HAIR); lg.circle('fill', hx - 1, hy - 4, 8);
-    lg.polygon('fill', -8, hy - 3, -9, hy + 5, -3, hy + 3, -2, hy - 2);
-    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hx + 2, hy, 1.3); lg.circle('fill', hx - 3, hy, 1.3);
+    const moving = Math.abs(c.vx) > 8;
+    const leg = legAngles(c), arm = armAngles(c, 0.32), sc = 0.66;
+    const bob = moving ? Math.abs(Math.sin(c.runPhase)) * 1.6 : Math.sin(T * 1.6) * 0.5;
+    lg.push(); lg.translate(c.x, c.y); lg.scale(c.facing * sc, sc);
+    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', 0, 2, 13, 4);
+    const hipY = -33 + bob, chY = -49 + bob;
+    limbLeg(-2, hipY, leg.bT, leg.bK, mul(PANT, 0.72), [0.2, 0.14, 0.1], 1);
+    limbArm(-1, chY, arm.b, arm.bh, mul(TUNIC, 0.82), mul(SKIN, 0.85), 1);
+    setColA(TUNIC); lg.polygon('fill', -5.6, hipY + 1.5, 5.6, hipY + 1.5, 7.2, chY - 2, -7.2, chY - 2); lg.circle('fill', 0, chY - 1.5, 6.8);
+    setColA(SASH); lg.setLineWidth(3); lg.line(-5.8, hipY - 0.5, 5.8, hipY - 0.5); lg.setLineWidth(1);
+    limbLeg(2, hipY, leg.fT, leg.fK, PANT, [0.2, 0.14, 0.1], 1);
+    limbArm(1, chY, arm.f, arm.fh, TUNIC, SKIN, 1);
+    const hX = 0, hY = chY - 9.5;
+    segment(0, chY - 4, hX, hY + 3, 2.6, 2.2, SKIN);
+    setColA(SKIN); lg.circle('fill', hX, hY, 6.2);
+    lg.polygon('fill', hX + 2.5, hY + 1, hX + 6.4, hY + 1.8, hX + 3, hY + 4.4);   // nose
+    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hX + 2.4, hY - 0.6, 1.0);       // eye
+    setColA(HAIR); lg.circle('fill', hX - 1, hY - 3.5, 6);
+    lg.polygon('fill', hX - 5, hY - 2, hX - 6.5, hY + 4, hX - 2, hY + 2, hX - 1.5, hY - 2);
     lg.pop();
   }
 
-  // ---- the moonlit Persian-palace balcony backdrop
-  function drawBalcony() {
-    const GOLD = [0.83, 0.66, 0.28], GOLDL = [0.97, 0.83, 0.44], GOLDD = [0.55, 0.42, 0.18],
-      WALL = [0.09, 0.11, 0.26], SKY = [0.04, 0.06, 0.16];
-    lg.gradientRect(0, 0, VW, VH, [0.08, 0.10, 0.22], [0.05, 0.06, 0.12]);
-    setColA(WALL); lg.rectangle('fill', 0, 0, VW, 372);
-    setColA(mul(GOLD, 1, 0.05)); lg.setLineWidth(1);
-    for (let x = 20; x < VW; x += 40) { lg.line(x, 0, x - 30, 372); lg.line(x, 0, x + 30, 372); }
-    const arches = [{ x: 300, w: 210 }, { x: 640, w: 250 }, { x: 980, w: 210 }];
-    for (const A of arches) {
-      const half = A.w / 2, springY = 200, tipY = 44, botY = 350;
-      setColA(SKY);
-      lg.rectangle('fill', A.x - half, springY, A.w, botY - springY);
-      lg.polygon('fill', A.x - half, springY, A.x, tipY, A.x + half, springY);
-      const rng = love.math.newRandomGenerator(Math.floor(A.x));
-      setColA([0.9, 0.95, 1.0], 0.9);
-      for (let i = 0; i < 7; i++) {
-        const sxp = A.x - half + 10 + rng.random() * (A.w - 20), syp = tipY + 26 + rng.random() * (botY - tipY - 34);
-        lg.circle('fill', sxp, syp, rng.random() < 0.3 ? 1.7 : 1);
-      }
-      setColA(GOLD); lg.setLineWidth(7);
-      lg.line(A.x - half, botY, A.x - half, springY); lg.line(A.x + half, botY, A.x + half, springY);
-      lg.line(A.x - half, springY, A.x, tipY); lg.line(A.x, tipY, A.x + half, springY);
-      setColA(GOLDL); lg.setLineWidth(2);
-      lg.line(A.x - half, springY, A.x, tipY); lg.line(A.x, tipY, A.x + half, springY);
-    }
-    // crescent moon (in the central arch) + a few stars
-    const mx = 692, my = 150;
-    setColA([0.98, 0.94, 0.7], 0.95); lg.circle('fill', mx, my, 22);
-    setColA(SKY); lg.circle('fill', mx + 8, my - 4, 20);
+  // The BACK layer: the night sky seen through the arches (moon + stars). Drawn
+  // first; the wall (front layer) then punches it down to just the openings.
+  function drawBalconyBack() {
+    lg.gradientRect(0, 0, VW, VH, [0.10, 0.13, 0.30], [0.05, 0.06, 0.13]);
+    const rng = love.math.newRandomGenerator(1234);
     setColA([0.9, 0.95, 1.0], 0.9);
-    lg.circle('fill', 620, 118, 1.6); lg.circle('fill', 762, 108, 1.4); lg.circle('fill', 656, 182, 1.2);
-    // twisted gold columns
+    for (let i = 0; i < 70; i++) { const x = rng.random() * VW, y = rng.random() * 350; lg.circle('fill', x, y, rng.random() < 0.22 ? 1.7 : 1); }
+    // crescent moon in the central arch (occluded by the wall/frame around it)
+    const mx = 660, my = 168;
+    setColA([0.97, 0.93, 0.7], 0.96); lg.circle('fill', mx, my, 26);
+    setColA([0.07, 0.09, 0.22]); lg.circle('fill', mx + 10, my - 6, 23);
+  }
+
+  // The FRONT layer: opaque wall covering everything EXCEPT the arch openings,
+  // then the gold frames, columns, balustrade and floor. Drawn AFTER the carpet
+  // so the carpet/flying hero read as being BEHIND the walls, in the sky.
+  function drawBalconyFront() {
+    const GOLD = [0.83, 0.66, 0.28], GOLDL = [0.97, 0.83, 0.44], GOLDD = [0.55, 0.42, 0.18], WALL = [0.09, 0.11, 0.26];
+    const A = L4_ARCHES, sp = L4_SPRING, tp = L4_TIP, bt = L4_BOT;
+    setColA(WALL);
+    // full-height wall strips beside / between the arches
+    lg.rectangle('fill', 0, 0, A[0].x - A[0].w / 2, 372);
+    lg.rectangle('fill', A[0].x + A[0].w / 2, 0, (A[1].x - A[1].w / 2) - (A[0].x + A[0].w / 2), 372);
+    lg.rectangle('fill', A[1].x + A[1].w / 2, 0, (A[2].x - A[2].w / 2) - (A[1].x + A[1].w / 2), 372);
+    lg.rectangle('fill', A[2].x + A[2].w / 2, 0, VW - (A[2].x + A[2].w / 2), 372);
+    lg.rectangle('fill', 0, 0, VW, tp);   // top band above the arch tips
+    for (const a of A) {                  // corner wedges beside each pointed top + wall below
+      const h = a.w / 2;
+      lg.polygon('fill', a.x - h, tp, a.x, tp, a.x - h, sp);
+      lg.polygon('fill', a.x + h, tp, a.x, tp, a.x + h, sp);
+      lg.rectangle('fill', a.x - h, bt, a.w, 372 - bt);
+    }
+    // faint lattice on the wall strips
+    setColA(mul(GOLD, 1, 0.05)); lg.setLineWidth(1);
+    for (let x = 20; x < VW; x += 40) { lg.line(x, 0, x - 26, 372); lg.line(x, 0, x + 26, 372); }
+    // gold arch frames
+    for (const a of A) {
+      const h = a.w / 2;
+      setColA(GOLD); lg.setLineWidth(7);
+      lg.line(a.x - h, bt, a.x - h, sp); lg.line(a.x + h, bt, a.x + h, sp);
+      lg.line(a.x - h, sp, a.x, tp); lg.line(a.x, tp, a.x + h, sp);
+      setColA(GOLDL); lg.setLineWidth(2);
+      lg.line(a.x - h, sp, a.x, tp); lg.line(a.x, tp, a.x + h, sp);
+    }
+    // twisted gold columns between the arches
     for (const cxp of [470, 810]) {
       setColA(GOLD); lg.rectangle('fill', cxp - 7, 60, 14, 300);
       setColA(GOLDD); lg.setLineWidth(2.4);
@@ -3442,12 +3439,9 @@
       setColA(GOLDL); lg.rectangle('fill', cxp - 7, 60, 3, 300);
       setColA(GOLD); lg.rectangle('fill', cxp - 11, 54, 22, 10); lg.rectangle('fill', cxp - 11, 356, 22, 10);
     }
-    // balustrade
+    // balustrade (railing) — you see sky through it beyond the arches
     setColA(GOLD); lg.rectangle('fill', 0, 352, VW, 8);
-    for (let x = 24; x < VW; x += 34) {
-      setColA(GOLD); lg.ellipse('fill', x, 372, 5, 12);
-      setColA(GOLDD); lg.rectangle('fill', x - 5, 366, 10, 3);
-    }
+    for (let x = 24; x < VW; x += 34) { setColA(GOLD); lg.ellipse('fill', x, 372, 5, 12); setColA(GOLDD); lg.rectangle('fill', x - 5, 366, 10, 3); }
     setColA(GOLD); lg.rectangle('fill', 0, 386, VW, 6);
     // marble floor
     lg.gradientRect(0, 392, VW, VH - 392, [0.15, 0.14, 0.21], [0.09, 0.08, 0.13]);
@@ -3458,14 +3452,6 @@
   }
 
   function drawCarpetAt(x, bodyY, s) { drawFlyingCarpet(x, bodyY + 44 * s, s); }
-
-  function drawL4Chars() {
-    if (l4.carpet) drawCarpetAt(l4.carpet.x, l4.carpet.y, 1.9);
-    if (l4.guard) drawGuard(l4.guard);
-    if (l4.servant) drawServant(l4.servant);
-    if (l4.child) drawChild(l4.child);
-    // (the hero is drawn by the shared drawScarf/drawHero after this)
-  }
 
   // ---- cutscene logic
   function walkToward(ch, tx, spd, dt) {
@@ -3506,36 +3492,37 @@
         if (l.line < 9) l4StartLine(l.line + 1);
         else { l.line = -1; l.phase = 4; l.t = 0; }
       }
-    } else if (l.phase === 4) {                // carpet flies in + the son runs in
-      if (!l.carpet) l.carpet = { x: 1440, y: 330 };
-      l.carpet.x = lerp(l.carpet.x, 700, Math.min(1, dt * 1.4));
-      l.carpet.y = lerp(l.carpet.y, 320, Math.min(1, dt * 1.4));
+    } else if (l.phase === 4) {                // carpet flies in (in the sky) + the son runs in
+      if (!l.carpet) l.carpet = { x: 1500, y: 300 };
+      l.carpet.x = lerp(l.carpet.x, 645, Math.min(1, dt * 1.4));
+      l.carpet.y = lerp(l.carpet.y, 300, Math.min(1, dt * 1.4));
       if (!l.child) l.child = mkChar4(-50, 1);
       walkToward(l.child, 360, 108, dt);
       player.vx = 0; player.facing = -1;
-      if (l.child.arrived && Math.abs(l.carpet.x - 700) < 10) { l.phase = 5; l4StartLine(10); }
+      if (l.child.arrived && Math.abs(l.carpet.x - 645) < 10) { l.phase = 5; l4StartLine(10); }
     } else if (l.phase === 5) {                // Shahraman pleads
       player.vx = 0; player.facing = -1;
       if (l4LineDone()) { l.line = -1; l.phase = 6; l4StartLine(11); }
     } else if (l.phase === 6) {                // the king: "I'm sorry"
       player.vx = 0; player.facing = -1;
       if (l4LineDone()) { l.line = -1; l.phase = 7; l.jt = 0; }
-    } else if (l.phase === 7) {                // walk to, then leap onto, the carpet
-      if (player.x < 618 && l.jt === 0) {
+    } else if (l.phase === 7) {                // step under the arch, then leap onto the carpet
+      const underX = l.carpet.x - 20;
+      if (player.x < underX - 4 && l.jt === 0) {
         player.state = 'ground';
-        walkToward(player, 624, 100, dt);
+        walkToward(player, underX, 100, dt);
       } else {
         l.jt += dt;
-        const k = clamp(l.jt / 0.8, 0, 1);
+        const k = clamp(l.jt / 0.85, 0, 1);
         player.state = 'air'; player.facing = 1; player.vx = 40;
-        player.x = lerp(624, l.carpet.x - 6, k);
-        player.y = lerp(GROUND4, l.carpet.y, k) - Math.sin(k * Math.PI) * 66;
+        player.x = lerp(underX, l.carpet.x - 6, k);
+        player.y = lerp(GROUND4, l.carpet.y, k) - Math.sin(k * Math.PI) * 70;
         if (k >= 1) { player.y = l.carpet.y; player.state = 'ground'; player.vx = 0; l.phase = 8; }
       }
-    } else if (l.phase === 8) {                // fly away
-      l.carpet.x += 170 * dt; l.carpet.y -= 95 * dt;
+    } else if (l.phase === 8) {                // fly UP through the arch into the sky (behind the walls)
+      l.carpet.x += 40 * dt; l.carpet.y -= 150 * dt;
       player.x = l.carpet.x - 6; player.y = l.carpet.y; player.facing = 1; player.vx = 0;
-      if (l.carpet.x > VW + 140 || l.carpet.y < -110) { l.phase = 9; l.t = 0; }
+      if (l.carpet.y < 20) { l.phase = 9; l.t = 0; }
     } else if (l.phase === 9) {                // fade to black + label
       l.fade2 = Math.min(1, l.fade2 + dt * 0.5);
     }
@@ -4432,7 +4419,7 @@
     lg.push();
     lg.scale(1 / PIX);
 
-    if (level === 1) drawBackground(cam); else if (level === 4) drawBalcony(); else drawBackground2(cam);
+    if (level === 1) drawBackground(cam); else if (level === 4) drawBalconyBack(); else drawBackground2(cam);
 
     lg.push();
     lg.translate(VW / 2, VH / 2);
@@ -4440,7 +4427,15 @@
     lg.translate(-cam.x, -cam.y);
 
     if (level === 4) {
-      drawL4Chars();
+      // BEHIND the walls: the carpet (and the hero once he's flying away in the sky)
+      if (l4.carpet) drawCarpetAt(l4.carpet.x, l4.carpet.y, 1.9);
+      if (l4.phase === 8) { drawScarf(); drawHero(player); }
+      drawBalconyFront();   // wall + frames + columns + balustrade + floor (occludes the sky layer)
+      // IN FRONT, on the balcony floor: the attendants and the standing hero
+      if (l4.guard) drawGuard(l4.guard);
+      if (l4.servant) drawServant(l4.servant);
+      if (l4.child) drawChild(l4.child);
+      if (l4.phase !== 8) { drawScarf(); drawHero(player); }
     } else {
       if (level === 1) drawCastle(CASTLE_X, PROM_Y);
       drawPlats();
@@ -4451,7 +4446,7 @@
     drawDusts();
     // during the stair-climb finale the real hero is replaced by the backlit
     // climber (drawn inside drawEnts2), so hide the normal hero + scarf
-    if (!(level === 2 && l2.endStage > 0)) {
+    if (level !== 4 && !(level === 2 && l2.endStage > 0)) {
       drawScarf();
       drawHero(player);
     }
