@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-26e';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26f';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -3689,6 +3689,10 @@
     // over there when a debug jump drops us straight into it.
     if (n === 3 || (DEBUG && n === 2)) { player.hasSword = true; player.drawT = 0; }
     player.spawnFloor = player.y; player.initGrace = 0.5; player.startGuard = 3.5;
+    // hard spawn-floor lock for the black halls: for the first seconds the hero
+    // physically cannot drop below the start floor (a bullet-proof net for any
+    // first-frame fall glitch on debug=3 loads). Doesn't block jumping.
+    player.l3SpawnLock = (n === 3) ? 4.5 : 0;
     // the safe spawn the start-guard returns to (guaranteed on solid ground)
     player.safeX = player.x; player.safeY = player.y;
     resetScarf(...neckPos(player));
@@ -3717,6 +3721,8 @@
       p.initGrace = Math.max(0, (p.initGrace || 0) - dt);
       p.startGuard = Math.max(0, (p.startGuard || 0) - dt);
     }
+    // the hard spawn-floor lock (Level 3) counts down in REAL time, no matter what
+    p.l3SpawnLock = Math.max(0, (p.l3SpawnLock || 0) - dt);
     if ((p.riposte || 0) <= 0) p.riposteHits = 0;
 
     if (p.dying) {
@@ -3912,6 +3918,15 @@
       p.facing = 1;   // face right (toward the level), exactly like a fresh spawn / R
       p.started = false;
       resetScarf(...neckPos(p));
+    }
+
+    // HARD spawn-floor lock (Level 3): during the first seconds the hero can never
+    // drop below the start floor. Runs before the kill check so a first-moment
+    // fall glitch can never cost a life. (The finale fall is much later, so the
+    // lock has long expired and is unaffected.)
+    if (level === 3 && (p.l3SpawnLock || 0) > 0 && p.vy > 0 && p.y > FLOOR3 + 40 && l3.end.stage === 0) {
+      p.y = FLOOR3; p.vy = 0; p.state = 'ground'; p.onGround = true; p.coyote = COYOTE;
+      p.started = false;   // re-freeze at the spawn, exactly like level 1's guard rail
     }
 
     // the finale fall through the shattered floor is intentional — don't "die"
