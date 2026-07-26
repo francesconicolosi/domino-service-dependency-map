@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-25g';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-26a';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -2928,7 +2928,9 @@
         // straight down the shaft. after a beat, begin the fade
         if (l3.end.t > 0.7) { l3.end.stage = 3; l3.end.t = 0; }
       } else if (l3.end.stage === 3) {
-        // hero falls into the dark; the overlay fades the scene to black
+        // hero falls into the dark; the overlay fades to black, then we cut to
+        // the "thirty days before" flashback cutscene (Level 4)
+        if (l3.end.t > 6.0) { initLevel(4); return; }
       }
     }
 
@@ -3206,9 +3208,427 @@
     }
   }
 
+  // ============================================================================
+  //  LEVEL 4 — "THIRTY DAYS BEFORE"  (Persian-palace balcony cutscene)
+  //  A scripted, non-playable flashback: the king takes his leave. All figures
+  //  are procedural, drawn in the hero's style with SOLID (segment) limbs and a
+  //  walk cycle. Subtitles carry the dialogue (Italian → English).
+  // ============================================================================
+  const GROUND4 = 545;
+
+  const L4_LINES = [
+    { who: 'SERVANT', text: 'My king, you cannot leave us. I beg you — reconsider.' },
+    { who: 'GUARD', text: 'My king, the Sea Peoples will come to attack us if you abandon the kingdom.' },
+    { who: 'HERO', text: 'My faithful servants, I know I have failed you — but I have a mission to fulfil. I know the royal guard will hold the kingdom together in my absence.' },
+    { who: 'GUARD', text: 'My lord, you are our king. We need you.' },
+    { who: 'HERO', text: 'I was never a king. I was never a prince. I have always been a street rat taken in by the royal family. My mission is to bring back the true queen of this realm.' },
+    { who: 'SERVANT', text: 'My lord, the queen is dead now. She has been buried; there is nothing more to be done. It is no one’s fault.' },
+    { who: 'HERO', text: 'There you are wrong, handmaiden. The fault is mine — and the curse my family has carried for generations. I must find who did this to us; who hides behind the witch’s symbol that tortured my queen’s mind until it drove her to that final act.' },
+    { who: 'SERVANT', text: 'My lord, little Shahraman — your son — needs you.' },
+    { who: 'GUARD', text: 'There is nothing that can be done now.' },
+    { who: 'HERO', text: 'No. There is still one thing I can do. The ancient manuscripts speak of a way into the place where Ahriman keeps the souls of witchcraft’s victims. That is where I am bound.' },
+    { who: 'SHAHRAMAN', text: 'Father, please — don’t go.' },
+    { who: 'HERO', text: 'I’m sorry.' },
+  ];
+
+  const l4 = {
+    phase: 0, t: 0, line: -1, lineT: 0, lineDur: 0, skip: false,
+    fade: 0, fade2: 0, jt: 0, guard: null, servant: null, child: null, carpet: null,
+  };
+  function mkChar4(x, facing) { return { x: x, y: GROUND4, vx: 0, facing: facing, runPhase: 0, arrived: false }; }
+
+  // ---- generic solid limbs (same look as the hero, parameterised colours)
+  function limbLeg(ox, oy, a1, a2, thighCol, bootCol, sc) {
+    sc = sc || 1;
+    const kx = ox + Math.sin(a1) * 17 * sc, ky = oy + Math.cos(a1) * 17 * sc;
+    const fx = kx + Math.sin(a2) * 16 * sc, fy = ky + Math.cos(a2) * 16 * sc;
+    segment(ox, oy, kx, ky, 4.8 * sc, 3.7 * sc, thighCol);
+    segment(kx, ky, fx, fy, 3.6 * sc, 2.9 * sc, thighCol);
+    const bx = lerp(kx, fx, 0.45), by = lerp(ky, fy, 0.45);
+    segment(bx, by, fx, fy, 3.4 * sc, 3.0 * sc, bootCol);
+    segment(fx - 0.5 * sc, fy - 0.6 * sc, fx + 6 * sc, fy - 0.2 * sc, 2.8 * sc, 1.9 * sc, bootCol);
+    return [fx, fy];
+  }
+  function limbArm(ox, oy, a1, a2, sleeveCol, skinCol, sc) {
+    sc = sc || 1;
+    const ex = ox + Math.sin(a1) * 14 * sc, ey = oy + Math.cos(a1) * 14 * sc;
+    const hx = ex + Math.sin(a2) * 13 * sc, hy = ey + Math.cos(a2) * 13 * sc;
+    segment(ox, oy, ex, ey, 3.6 * sc, 2.9 * sc, sleeveCol);
+    segment(ex, ey, hx, hy, 2.9 * sc, 2.4 * sc, sleeveCol);
+    setColA(skinCol); lg.circle('fill', hx, hy, 2.7 * sc);
+    return [hx, hy];
+  }
+  function legAngles(ch) {
+    const ph = ch.runPhase;
+    if (Math.abs(ch.vx) <= 8) return { fT: 0.10, fK: 0.04, bT: -0.12, bK: -0.20 };
+    const sF = Math.sin(ph), sB = Math.sin(ph + Math.PI);
+    const kneeF = 0.30 + 0.85 * Math.max(0, Math.sin(ph - 2.1));
+    const kneeB = 0.30 + 0.85 * Math.max(0, Math.sin(ph + Math.PI - 2.1));
+    return { fT: 0.82 * sF, fK: 0.82 * sF - kneeF, bT: 0.82 * sB, bK: 0.82 * sB - kneeB };
+  }
+  function armAngles(ch, base) {
+    if (Math.abs(ch.vx) <= 8) return { f: base, fh: base + 0.15, b: -base, bh: -base + 0.15 };
+    const sF = Math.sin(ch.runPhase), sB = Math.sin(ch.runPhase + Math.PI);
+    return { f: -0.5 * sF, fh: -0.5 * sF + 0.5, b: -0.5 * sB, bh: -0.5 * sB + 0.5 };
+  }
+
+  // ---- the burly turbaned palace guard (crossed arms when idle)
+  function drawGuard(g) {
+    const SKIN = [0.78, 0.52, 0.34], PANT = [0.58, 0.15, 0.13], SASH = [0.86, 0.68, 0.28],
+      TURB = [0.90, 0.87, 0.80], TURBB = [0.66, 0.16, 0.15], HAIR = [0.08, 0.06, 0.05];
+    const moving = Math.abs(g.vx) > 8;
+    const leg = legAngles(g);
+    lg.push(); lg.translate(g.x, g.y); lg.scale(g.facing, 1);
+    lg.setColor(0, 0, 0, 0.22); lg.ellipse('fill', 0, 2, 22, 5);
+    const hipy = -48, chy = -104;
+    limbLeg(-7, hipy, leg.bT, leg.bK, mul(PANT, 0.82), [0.26, 0.18, 0.12], 1.3);
+    // broad bare torso
+    setColA(SKIN);
+    lg.polygon('fill', -20, hipy + 4, 20, hipy + 4, 26, chy + 8, -24, chy + 8);
+    lg.circle('fill', 0, chy + 12, 22);
+    // pants waistband
+    setColA(PANT); lg.polygon('fill', -22, hipy - 6, 22, hipy - 6, 20, hipy + 14, -20, hipy + 14);
+    setColA(SASH); lg.rectangle('fill', -22, hipy - 8, 44, 8);
+    // sash across the chest
+    setColA(SASH); lg.setLineWidth(7); lg.line(-20, chy + 4, 20, hipy - 2);
+    // scimitar slung on the back
+    lg.push(); lg.translate(-15, chy - 4); lg.rotate(-0.5); drawScimitar(0.9); lg.pop();
+    limbLeg(7, hipy, leg.fT, leg.fK, PANT, [0.26, 0.18, 0.12], 1.3);
+    // arms — crossed over the chest when idle, swinging when walking
+    if (!moving) {
+      segment(-19, chy + 6, 15, chy + 18, 5.2, 4.2, mul(SKIN, 0.92));
+      segment(19, chy + 8, -15, chy + 20, 5.2, 4.2, SKIN);
+      setColA(SKIN); lg.circle('fill', 15, chy + 18, 5); lg.circle('fill', -15, chy + 20, 5);
+    } else {
+      const aa = armAngles(g, 0.3);
+      limbArm(-9, chy + 8, aa.b, aa.bh, SKIN, SKIN, 1.3);
+      limbArm(9, chy + 8, aa.f, aa.fh, SKIN, SKIN, 1.3);
+    }
+    // head
+    const hx = 2, hy = chy - 22;
+    setColA(SKIN); lg.circle('fill', hx, hy, 12);
+    // fierce brows + eyes
+    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hx - 4, hy - 1, 1.7); lg.circle('fill', hx + 4, hy - 1, 1.7);
+    setColA(HAIR); lg.setLineWidth(2.6); lg.line(hx - 9, hy - 5, hx - 1, hy - 3); lg.line(hx + 9, hy - 5, hx + 1, hy - 3);
+    // big curled moustache
+    setColA(HAIR); lg.setLineWidth(3.6);
+    lg.arc('line', 'open', hx - 6, hy + 6, 5, 0.1, 2.6);
+    lg.arc('line', 'open', hx + 6, hy + 6, 5, Math.PI - 2.6, Math.PI - 0.1);
+    lg.circle('fill', hx - 10, hy + 9, 1.8); lg.circle('fill', hx + 10, hy + 9, 1.8);
+    // turban
+    setColA(TURB); lg.ellipse('fill', hx, hy - 12, 15, 10);
+    lg.circle('fill', hx - 6, hy - 12, 7); lg.circle('fill', hx + 6, hy - 12, 7); lg.circle('fill', hx, hy - 17, 8);
+    setColA(TURBB); lg.rectangle('fill', hx - 13, hy - 10, 26, 3);
+    setColA(SASH); lg.circle('fill', hx, hy - 10, 2.2);
+    setColA([0.75, 0.85, 0.9]); lg.setLineWidth(2); lg.line(hx, hy - 19, hx + 3, hy - 32);
+    lg.setLineWidth(1);
+    lg.pop();
+  }
+
+  // ---- the female servant in a long red robe + feathered headdress
+  function drawServant(s) {
+    const ROBE = [0.72, 0.20, 0.16], ROBED = [0.50, 0.13, 0.12], CREAM = [0.90, 0.85, 0.72],
+      SASH = [0.86, 0.70, 0.30], SKIN = [0.82, 0.60, 0.44], HAIR = [0.10, 0.08, 0.09], FEATH = [0.78, 0.30, 0.32];
+    const moving = Math.abs(s.vx) > 8;
+    const sway = moving ? Math.sin(s.runPhase) * 0.10 : Math.sin(T * 1.2) * 0.03;
+    const bob = moving ? Math.abs(Math.sin(s.runPhase)) * 2 : 0;
+    lg.push(); lg.translate(s.x, s.y - bob); lg.scale(s.facing, 1);
+    lg.setColor(0, 0, 0, 0.2); lg.ellipse('fill', 0, 2 + bob, 15, 4);
+    const hipy = -58, chy = -98;
+    // long swaying robe hides the legs
+    setColA(ROBE); lg.polygon('fill', -9, hipy, 9, hipy, 20 + sway * 14, 0, -18 + sway * 14, 0);
+    setColA(ROBED); lg.polygon('fill', -1, hipy, 6, hipy, 9 + sway * 14, 0, -1 + sway * 14, 0);
+    setColA(SASH); lg.setLineWidth(2.5); lg.line(-18 + sway * 14, -2, 20 + sway * 14, -2);
+    if (moving) {
+      const f = Math.sin(s.runPhase);
+      setColA([0.5, 0.35, 0.2]);
+      lg.ellipse('fill', 5 + f * 4 + sway * 14, -1, 4, 2.4);
+      lg.ellipse('fill', -5 - f * 4 + sway * 14, -1, 4, 2.4);
+    }
+    // bodice
+    setColA(ROBE); lg.polygon('fill', -9, hipy + 2, 9, hipy + 2, 8, chy + 4, -8, chy + 4);
+    lg.circle('fill', 0, chy + 4, 8);
+    setColA(SASH); lg.rectangle('fill', -10, hipy - 2, 20, 6);
+    setColA(mul(SASH, 0.85)); lg.polygon('fill', -3, hipy + 2, 3, hipy + 2, 5, hipy + 20, -5, hipy + 20);
+    // arms — cream sleeves, clasped in front when idle
+    if (!moving) {
+      segment(-7, chy + 6, 0, chy + 22, 3.4, 2.8, CREAM);
+      segment(7, chy + 6, 0, chy + 22, 3.4, 2.8, mul(CREAM, 0.94));
+      setColA(SKIN); lg.circle('fill', 0, chy + 22, 3);
+    } else {
+      const aa = armAngles(s, 0.25);
+      limbArm(-6, chy + 6, aa.b, aa.bh, CREAM, SKIN, 1);
+      limbArm(6, chy + 6, aa.f, aa.fh, CREAM, SKIN, 1);
+    }
+    // head + long hair
+    const hx = 0, hy = chy - 20;
+    setColA(HAIR);
+    lg.polygon('fill', -9, hy - 2, -11, hy + 24, -3, hy + 24, -3, hy);
+    lg.polygon('fill', 9, hy - 2, 11, hy + 20, 3, hy + 20, 3, hy);
+    lg.circle('fill', hx, hy - 4, 9);
+    setColA(SKIN); lg.circle('fill', hx, hy + 1, 7.6);
+    setColA([0.1, 0.08, 0.09]); lg.circle('fill', hx - 3, hy, 1.3); lg.circle('fill', hx + 3, hy, 1.3);
+    // tall headdress + feather + veil
+    setColA(CREAM); lg.polygon('fill', -9, hy - 6, 9, hy - 6, 7, hy - 21, -7, hy - 21);
+    setColA(SASH); lg.rectangle('fill', -9, hy - 8, 18, 3);
+    setColA(FEATH); lg.setLineWidth(2.6); lg.line(hx + 2, hy - 19, hx + 9, hy - 36);
+    lg.setLineWidth(1);
+    lg.pop();
+  }
+
+  // ---- the young prince Shahraman: a small hero
+  function drawChild(c) {
+    const TUNIC = [0.28, 0.44, 0.55], PANT = [0.34, 0.29, 0.20], SKIN = [0.86, 0.64, 0.47],
+      HAIR = [0.12, 0.10, 0.09], SASH = [0.80, 0.55, 0.25];
+    const sc = 0.62;
+    const leg = legAngles(c);
+    const bob = Math.abs(c.vx) > 8 ? Math.abs(Math.sin(c.runPhase)) * 1.5 : Math.sin(T * 1.6) * 0.5;
+    lg.push(); lg.translate(c.x, c.y - bob); lg.scale(c.facing, 1);
+    lg.setColor(0, 0, 0, 0.2); lg.ellipse('fill', 0, 2, 10, 3);
+    const hipy = -30, chy = -56;
+    limbLeg(-3, hipy, leg.bT, leg.bK, mul(PANT, 0.82), [0.2, 0.15, 0.1], sc);
+    setColA(TUNIC); lg.polygon('fill', -8, hipy + 2, 8, hipy + 2, 9, chy + 4, -9, chy + 4);
+    lg.circle('fill', 0, chy + 2, 7);
+    setColA(SASH); lg.rectangle('fill', -8, hipy - 1, 16, 3);
+    limbLeg(3, hipy, leg.fT, leg.fK, PANT, [0.2, 0.15, 0.1], sc);
+    const aa = armAngles(c, 0.3);
+    limbArm(-5, chy + 4, aa.b, aa.bh, TUNIC, SKIN, sc);
+    limbArm(5, chy + 4, aa.f, aa.fh, TUNIC, SKIN, sc);
+    const hx = 0, hy = chy - 13;
+    setColA(SKIN); lg.circle('fill', hx, hy, 8);
+    setColA(HAIR); lg.circle('fill', hx - 1, hy - 4, 8);
+    lg.polygon('fill', -8, hy - 3, -9, hy + 5, -3, hy + 3, -2, hy - 2);
+    setColA([0.1, 0.08, 0.08]); lg.circle('fill', hx + 2, hy, 1.3); lg.circle('fill', hx - 3, hy, 1.3);
+    lg.pop();
+  }
+
+  // ---- the moonlit Persian-palace balcony backdrop
+  function drawBalcony() {
+    const GOLD = [0.83, 0.66, 0.28], GOLDL = [0.97, 0.83, 0.44], GOLDD = [0.55, 0.42, 0.18],
+      WALL = [0.09, 0.11, 0.26], SKY = [0.04, 0.06, 0.16];
+    lg.gradientRect(0, 0, VW, VH, [0.08, 0.10, 0.22], [0.05, 0.06, 0.12]);
+    setColA(WALL); lg.rectangle('fill', 0, 0, VW, 372);
+    setColA(mul(GOLD, 1, 0.05)); lg.setLineWidth(1);
+    for (let x = 20; x < VW; x += 40) { lg.line(x, 0, x - 30, 372); lg.line(x, 0, x + 30, 372); }
+    const arches = [{ x: 300, w: 210 }, { x: 640, w: 250 }, { x: 980, w: 210 }];
+    for (const A of arches) {
+      const half = A.w / 2, springY = 200, tipY = 44, botY = 350;
+      setColA(SKY);
+      lg.rectangle('fill', A.x - half, springY, A.w, botY - springY);
+      lg.polygon('fill', A.x - half, springY, A.x, tipY, A.x + half, springY);
+      const rng = love.math.newRandomGenerator(Math.floor(A.x));
+      setColA([0.9, 0.95, 1.0], 0.9);
+      for (let i = 0; i < 7; i++) {
+        const sxp = A.x - half + 10 + rng.random() * (A.w - 20), syp = tipY + 26 + rng.random() * (botY - tipY - 34);
+        lg.circle('fill', sxp, syp, rng.random() < 0.3 ? 1.7 : 1);
+      }
+      setColA(GOLD); lg.setLineWidth(7);
+      lg.line(A.x - half, botY, A.x - half, springY); lg.line(A.x + half, botY, A.x + half, springY);
+      lg.line(A.x - half, springY, A.x, tipY); lg.line(A.x, tipY, A.x + half, springY);
+      setColA(GOLDL); lg.setLineWidth(2);
+      lg.line(A.x - half, springY, A.x, tipY); lg.line(A.x, tipY, A.x + half, springY);
+    }
+    // crescent moon (in the central arch) + a few stars
+    const mx = 692, my = 150;
+    setColA([0.98, 0.94, 0.7], 0.95); lg.circle('fill', mx, my, 22);
+    setColA(SKY); lg.circle('fill', mx + 8, my - 4, 20);
+    setColA([0.9, 0.95, 1.0], 0.9);
+    lg.circle('fill', 620, 118, 1.6); lg.circle('fill', 762, 108, 1.4); lg.circle('fill', 656, 182, 1.2);
+    // twisted gold columns
+    for (const cxp of [470, 810]) {
+      setColA(GOLD); lg.rectangle('fill', cxp - 7, 60, 14, 300);
+      setColA(GOLDD); lg.setLineWidth(2.4);
+      for (let y = 64; y < 356; y += 12) lg.line(cxp - 7, y, cxp + 7, y + 8);
+      setColA(GOLDL); lg.rectangle('fill', cxp - 7, 60, 3, 300);
+      setColA(GOLD); lg.rectangle('fill', cxp - 11, 54, 22, 10); lg.rectangle('fill', cxp - 11, 356, 22, 10);
+    }
+    // balustrade
+    setColA(GOLD); lg.rectangle('fill', 0, 352, VW, 8);
+    for (let x = 24; x < VW; x += 34) {
+      setColA(GOLD); lg.ellipse('fill', x, 372, 5, 12);
+      setColA(GOLDD); lg.rectangle('fill', x - 5, 366, 10, 3);
+    }
+    setColA(GOLD); lg.rectangle('fill', 0, 386, VW, 6);
+    // marble floor
+    lg.gradientRect(0, 392, VW, VH - 392, [0.15, 0.14, 0.21], [0.09, 0.08, 0.13]);
+    setColA(mul(GOLD, 1, 0.10)); lg.setLineWidth(1);
+    for (let y = 430; y < VH; y += 48) lg.line(0, y, VW, y);
+    setColA([0.9, 0.7, 0.4], 0.04); lg.ellipse('fill', VW / 2, 560, 360, 90);
+    lg.setLineWidth(1);
+  }
+
+  function drawCarpetAt(x, bodyY, s) { drawFlyingCarpet(x, bodyY + 44 * s, s); }
+
+  function drawL4Chars() {
+    if (l4.carpet) drawCarpetAt(l4.carpet.x, l4.carpet.y, 1.9);
+    if (l4.guard) drawGuard(l4.guard);
+    if (l4.servant) drawServant(l4.servant);
+    if (l4.child) drawChild(l4.child);
+    // (the hero is drawn by the shared drawScarf/drawHero after this)
+  }
+
+  // ---- cutscene logic
+  function walkToward(ch, tx, spd, dt) {
+    const d = tx - ch.x;
+    if (Math.abs(d) < 3) { ch.x = tx; ch.vx = 0; ch.arrived = true; return true; }
+    const dir = d > 0 ? 1 : -1;
+    ch.vx = spd * dir; ch.facing = dir; ch.x += ch.vx * dt;
+    ch.runPhase += Math.abs(ch.vx) * dt * 0.05;
+    return false;
+  }
+  function l4StartLine(i) {
+    l4.line = i; l4.lineT = 0;
+    l4.lineDur = 2.6 + L4_LINES[i].text.split(' ').length * 0.4;
+  }
+  function l4LineDone() { return l4.lineT >= l4.lineDur || l4.skip; }
+
+  function updateL4(dt) {
+    const l = l4; l.t += dt;
+    player.t += dt;
+    if (Math.abs(player.vx) > 8) player.runPhase += Math.abs(player.vx) * dt * 0.05;
+    if (l.line >= 0) l.lineT += dt;
+
+    if (l.phase === 0) {                       // "thirty days before" card
+      if (l.t > 2.8 || l.skip) { l.phase = 1; l.t = 0; }
+    } else if (l.phase === 1) {                // fade in + the king walks to centre
+      l.fade = Math.min(1, l.fade + dt * 0.7);
+      player.state = 'ground';
+      const done = walkToward(player, 500, 82, dt);
+      if (done) { player.vx = 0; if (l.fade >= 1) { l.phase = 2; l.t = 0; } }
+    } else if (l.phase === 2) {                // guard + servant enter from the right
+      const a = walkToward(l.servant, 720, 66, dt);
+      const b = walkToward(l.guard, 908, 70, dt);
+      player.vx = 0; player.facing = 1;
+      if (a && b) { l.phase = 3; l4StartLine(0); }
+    } else if (l.phase === 3) {                // main dialogue (lines 0..9)
+      player.vx = 0; player.facing = 1;
+      if (l4LineDone()) {
+        if (l.line < 9) l4StartLine(l.line + 1);
+        else { l.line = -1; l.phase = 4; l.t = 0; }
+      }
+    } else if (l.phase === 4) {                // carpet flies in + the son runs in
+      if (!l.carpet) l.carpet = { x: 1440, y: 330 };
+      l.carpet.x = lerp(l.carpet.x, 700, Math.min(1, dt * 1.4));
+      l.carpet.y = lerp(l.carpet.y, 320, Math.min(1, dt * 1.4));
+      if (!l.child) l.child = mkChar4(-50, 1);
+      walkToward(l.child, 360, 108, dt);
+      player.vx = 0; player.facing = -1;
+      if (l.child.arrived && Math.abs(l.carpet.x - 700) < 10) { l.phase = 5; l4StartLine(10); }
+    } else if (l.phase === 5) {                // Shahraman pleads
+      player.vx = 0; player.facing = -1;
+      if (l4LineDone()) { l.line = -1; l.phase = 6; l4StartLine(11); }
+    } else if (l.phase === 6) {                // the king: "I'm sorry"
+      player.vx = 0; player.facing = -1;
+      if (l4LineDone()) { l.line = -1; l.phase = 7; l.jt = 0; }
+    } else if (l.phase === 7) {                // walk to, then leap onto, the carpet
+      if (player.x < 618 && l.jt === 0) {
+        player.state = 'ground';
+        walkToward(player, 624, 100, dt);
+      } else {
+        l.jt += dt;
+        const k = clamp(l.jt / 0.8, 0, 1);
+        player.state = 'air'; player.facing = 1; player.vx = 40;
+        player.x = lerp(624, l.carpet.x - 6, k);
+        player.y = lerp(GROUND4, l.carpet.y, k) - Math.sin(k * Math.PI) * 66;
+        if (k >= 1) { player.y = l.carpet.y; player.state = 'ground'; player.vx = 0; l.phase = 8; }
+      }
+    } else if (l.phase === 8) {                // fly away
+      l.carpet.x += 170 * dt; l.carpet.y -= 95 * dt;
+      player.x = l.carpet.x - 6; player.y = l.carpet.y; player.facing = 1; player.vx = 0;
+      if (l.carpet.x > VW + 140 || l.carpet.y < -110) { l.phase = 9; l.t = 0; }
+    } else if (l.phase === 9) {                // fade to black + label
+      l.fade2 = Math.min(1, l.fade2 + dt * 0.5);
+    }
+    l.skip = false;
+  }
+
+  // ---- subtitles
+  function wrapText(text, font, maxW) {
+    const words = text.split(' '); const out = []; let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (cur && font.getWidth(test) > maxW) { out.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+  const L4_NAMES = { HERO: 'The King', GUARD: 'Royal Guard', SERVANT: 'Handmaiden', SHAHRAMAN: 'Shahraman' };
+  const L4_COLS = { HERO: [1.0, 0.86, 0.5], GUARD: [0.93, 0.44, 0.34], SERVANT: [0.96, 0.62, 0.72], SHAHRAMAN: [0.6, 0.86, 1.0] };
+  function speakerHead(who) {
+    if (who === 'HERO') return { x: player.x, y: player.y - 118 };
+    if (who === 'GUARD' && l4.guard) return { x: l4.guard.x, y: l4.guard.y - 136 };
+    if (who === 'SERVANT' && l4.servant) return { x: l4.servant.x, y: l4.servant.y - 128 };
+    if (who === 'SHAHRAMAN' && l4.child) return { x: l4.child.x, y: l4.child.y - 80 };
+    return null;
+  }
+  function drawSubtitle(line) {
+    const col = L4_COLS[line.who] || [1, 1, 1];
+    lg.setFont(FONT_HUD);
+    const lines = wrapText(line.text, FONT_HUD, VW * 0.66);
+    const lh = 22, boxW = VW * 0.72, bx = (VW - boxW) / 2;
+    const boxH = 42 + lines.length * lh + 10;
+    const by = VH - boxH - 26;
+    lg.setColor(0.03, 0.02, 0.05, 0.85); lg.rectangle('fill', bx, by, boxW, boxH);
+    lg.setColor(col[0], col[1], col[2], 0.95); lg.rectangle('fill', bx, by, boxW, 3);
+    lg.setFont(FONT_SUB); lg.setColor(col[0], col[1], col[2], 1);
+    lg.print(L4_NAMES[line.who] || '', bx + 18, by + 9);
+    lg.setFont(FONT_HUD); lg.setColor(0.96, 0.94, 0.9, 1);
+    for (let i = 0; i < lines.length; i++) lg.print(lines[i], bx + 18, by + 40 + i * lh);
+    lg.setColor(0.72, 0.68, 0.6, 0.4 + 0.35 * Math.sin(T * 4));
+    lg.print('▸', bx + boxW - 26, by + boxH - 24);
+    // marker above whoever is speaking
+    const h = speakerHead(line.who);
+    if (h) {
+      const bob = Math.sin(T * 4) * 3;
+      lg.setColor(col[0], col[1], col[2], 0.95);
+      lg.polygon('fill', h.x - 8, h.y - 10 + bob, h.x + 8, h.y - 10 + bob, h.x, h.y + bob);
+    }
+  }
+  function drawL4Overlay() {
+    const l = l4;
+    if (l.phase === 0) {
+      lg.setColor(0, 0, 0, 1); lg.rectangle('fill', 0, 0, VW, VH);
+      const a = smooth(clamp(l.t / 0.7, 0, 1)) * smooth(clamp((2.8 - l.t) / 0.7, 0, 1));
+      if (FONT_SUB) { lg.setFont(FONT_SUB); lg.setColor(0.9, 0.87, 0.8, a); printSpaced('THIRTY  DAYS  BEFORE', VW / 2, VH * 0.46, FONT_SUB, 6, 1); }
+      return;
+    }
+    if (l.fade < 1) { lg.setColor(0, 0, 0, 1 - l.fade); lg.rectangle('fill', 0, 0, VW, VH); }
+    if (l.line >= 0) drawSubtitle(L4_LINES[l.line]);
+    if (l.phase === 9) {
+      lg.setColor(0, 0, 0, clamp(l.fade2, 0, 1)); lg.rectangle('fill', 0, 0, VW, VH);
+      if (l.fade2 >= 1 && FONT_SUB) {
+        lg.setFont(FONT_SUB); lg.setColor(0.86, 0.82, 0.9, 0.92);
+        printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 - 6, FONT_SUB, 6, 1);
+        lg.setFont(FONT_HUD); lg.setColor(0.7, 0.68, 0.76, 0.8);
+        const m = 'press  R  to  replay';
+        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
+      }
+    }
+  }
+
+  function initL4() {
+    cine.on = false; cine.stage = 0; cine.t = 0;
+    cine.titleA = 0; cine.subA = 0; cine.boxA = 0; cine.hintA = 0;
+    musicVol = 0.3;
+    if (windSrc) windSrc.setVolume(0);
+    if (musicSrc) { musicSrc.stop(); musicSrc.setVolume(0.3); musicSrc.play(); }
+    player = newPlayer(170, GROUND4);
+    player.state = 'ground'; player.onGround = true; player.started = true;
+    player.hasSword = false; player.facing = 1;
+    resetScarf(...neckPos(player));
+    cam.x = VW / 2; cam.y = VH / 2; cam.zoom = 1;
+    l4.phase = 0; l4.t = 0; l4.line = -1; l4.lineT = 0; l4.lineDur = 0; l4.skip = false;
+    l4.fade = 0; l4.fade2 = 0; l4.jt = 0;
+    l4.guard = mkChar4(1360, -1); l4.servant = mkChar4(1290, -1);
+    l4.child = null; l4.carpet = null;
+    introT = 999;   // suppress the platformer intro/location overlays
+  }
+
   // -------------------------------------------------------------- LEVEL MGMT
   function initLevel(n) {
     level = n;
+    if (n === 4) { initL4(); return; }
     if (n === 1) { plats = plats1; checkpoints = checkpoints1; }
     else if (n === 2) { plats = plats2; checkpoints = checkpoints2; }
     else { plats = plats3; checkpoints = checkpoints3; }
@@ -3675,13 +4095,10 @@
         // the magic carpet descends after the hero — always visible (foreshadow)
         drawRescueCarpet();
         if (l3.end.stage === 3 && a >= 1) {
+          // dramatic beat before the flashback cut (fades back out near t≈6)
           lg.setFont(FONT_SUB);
-          lg.setColor(0.80, 0.78, 0.86, clamp((l3.end.t - 2.4) / 1.2, 0, 1));
-          printSpaced('THE  SHADOW  FALLS', VW / 2, VH / 2 - 18, FONT_SUB, 6, 1);
-          lg.setFont(FONT_HUD);
-          lg.setColor(0.7, 0.68, 0.76, clamp((l3.end.t - 3.4) / 1.0, 0, 1));
-          const m = 'TO  BE  CONTINUED   ·   press  R  to  replay';
-          lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 20);
+          lg.setColor(0.80, 0.78, 0.86, clamp((l3.end.t - 2.4) / 1.2, 0, 1) * clamp((6.0 - l3.end.t) / 0.8, 0, 1));
+          printSpaced('THE  SHADOW  FALLS', VW / 2, VH / 2 - 6, FONT_SUB, 6, 1);
         }
       }
       if (l3.gameOver) {
@@ -3709,6 +4126,9 @@
     lg.setColor(0, 0, 0, 0.16);
     lg.rectangle('fill', 0, 0, VW, 26);
     lg.rectangle('fill', 0, VH - 26, VW, 26);
+
+    // Level 4 cutscene: title card, subtitles and final fade sit on top of all
+    if (level === 4) drawL4Overlay();
   }
 
   // -------------------------------------------------------------- LOVE CALLBACKS
@@ -3792,7 +4212,7 @@
       if (m) {
         DEBUG = true;
         const n = Number(decodeURIComponent(m[1]));
-        if (Number.isFinite(n) && n >= 1 && n <= 3) startLevel = Math.floor(n);
+        if (Number.isFinite(n) && n >= 1 && n <= 4) startLevel = Math.floor(n);
       }
     } catch (e) {}
 
@@ -3968,6 +4388,9 @@
     // let a later R-restart of level 1 bring it back
     if (showCredit && introT > 10.5) showCredit = false;
 
+    // Level 4 is a scripted cutscene — its own update, no platformer physics
+    if (level === 4) { updateL4(dt); updateScarf(dt); updateParticles(dt); return; }
+
     // GAME OVER freezes the world; only R (keypressed) restarts the level
     if (level === 2 && l2.gameOver) return;
     if (level === 3 && l3.gameOver) return;
@@ -4009,18 +4432,22 @@
     lg.push();
     lg.scale(1 / PIX);
 
-    if (level === 1) drawBackground(cam); else drawBackground2(cam);
+    if (level === 1) drawBackground(cam); else if (level === 4) drawBalcony(); else drawBackground2(cam);
 
     lg.push();
     lg.translate(VW / 2, VH / 2);
     lg.scale(cam.zoom);
     lg.translate(-cam.x, -cam.y);
 
-    if (level === 1) drawCastle(CASTLE_X, PROM_Y);
-    drawPlats();
-    if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
-    if (level === 2) drawEnts2();
-    if (level === 3) drawEnts3();
+    if (level === 4) {
+      drawL4Chars();
+    } else {
+      if (level === 1) drawCastle(CASTLE_X, PROM_Y);
+      drawPlats();
+      if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
+      if (level === 2) drawEnts2();
+      if (level === 3) drawEnts3();
+    }
     drawDusts();
     // during the stair-climb finale the real hero is replaced by the backlit
     // climber (drawn inside drawEnts2), so hide the normal hero + scarf
@@ -4074,8 +4501,10 @@
   love.keypressed = function (key) {
     if (key === 'escape') { love.event.quit(); }
     // debug (?debug=…): number keys jump straight to a level
-    if (DEBUG && (key === '1' || key === '2' || key === '3')) { initLevel(Number(key)); return; }
+    if (DEBUG && (key === '1' || key === '2' || key === '3' || key === '4')) { initLevel(Number(key)); return; }
     if (key === 'r') { initLevel(level); return; }
+    // Level 4 cutscene: advance the dialogue / skip beats
+    if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
     if (key === 'return' && level === 1 && cine.on && cine.stage >= 3) { initLevel(2); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
     const riposteReady = (player && (player.riposte || 0) > 0 && (player.riposteHits || 0) > 0);
@@ -4103,6 +4532,7 @@
     player: function () { return player; },
     l2: function () { return l2; },
     l3: function () { return l3; },
+    l4: function () { return l4; },
     giveSword: function () { player.hasSword = true; player.drawT = 0; },
     drawHero: function () { drawHero(player); },
     drawSkel: function (sk) { drawSkel(sk); },
