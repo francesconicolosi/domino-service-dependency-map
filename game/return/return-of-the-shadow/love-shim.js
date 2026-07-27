@@ -407,10 +407,98 @@
     try { node.start(0); } catch (e) { /* ignore */ }
   };
 
+  // A looping music source backed by an audio FILE (mp3/ogg/…) rather than a
+  // procedurally generated buffer — same interface as Source
+  // (setLooping/setVolume/setPitch/play/stop) so callers don't care which kind
+  // they got. It's built on an HTMLAudioElement rather than fetch()+decode:
+  //   • the file must load from file:// (double-clicking index.html), where
+  //     fetch/XHR are blocked by the browser but a media element is not;
+  //   • a media element flips iOS into the "playback" session, so it's heard
+  //     even with the ringer/mute switch on (same trick as _silentEl);
+  //   • streaming a media element avoids decoding the whole track into RAM.
+  //
+  // Volume is the wrinkle: on iOS HTMLMediaElement.volume is read-only, so a
+  // directly-played element can't fade. Over http(s) we therefore route the
+  // element through a WebAudio GainNode (gain works everywhere, incl. iOS) and
+  // let masterGain apply the master volume. Over file:// that routing is
+  // silenced by opaque-origin tainting, so there we play the element directly
+  // and scale el.volume — file:// is a desktop-only convenience where
+  // el.volume is honored anyway.
+  const streamSources = [];
+  const _fileProto = (typeof location !== 'undefined' && location.protocol === 'file:');
+  function StreamSource(url) {
+    this.url = url;
+    this.looping = false;
+    this.volume = 1;          // crossfade volume the game sets each frame
+    this.pitch = 1;
+    this.playing = false;
+    this.wantPlay = false;
+    this.direct = _fileProto; // file:// → play the element directly (see above)
+    this.node = null;         // MediaElementAudioSourceNode (routed mode)
+    this.gain = null;
+    this.el = new Audio();
+    this.el.preload = 'auto';
+    this.el.setAttribute('playsinline', '');
+    this.el.loop = false;
+    // direct mode: el.volume IS the control (start silent). routed mode: the
+    // GainNode is the control, so the element runs at unity into the graph.
+    this.el.volume = this.direct ? 0 : 1;
+    this.el.src = url;
+    streamSources.push(this);
+    pendingSources.push(this);   // so the unlock gesture kicks off playback
+  }
+  StreamSource.prototype._route = function () {
+    if (this.direct || this.node || !audioCtx) return;
+    try {
+      this.node = audioCtx.createMediaElementSource(this.el);
+      this.gain = audioCtx.createGain();
+      this.gain.gain.value = this.volume;
+      this.node.connect(this.gain).connect(audioOut());
+    } catch (e) {
+      // routing unavailable — fall back to controlling el.volume directly
+      this.direct = true; this._applyVolume();
+    }
+  };
+  StreamSource.prototype._applyVolume = function () {
+    if (this.direct) {
+      let v = this.volume * _masterVol;
+      if (v < 0) v = 0; else if (v > 1) v = 1;   // HTMLMediaElement.volume must be 0..1
+      try { this.el.volume = v; } catch (e) { /* ignore */ }
+    } else if (this.gain) {
+      this.gain.gain.value = this.volume;         // masterGain (audioOut) applies master
+    }
+  };
+  StreamSource.prototype.setLooping = function (b) { this.looping = b; this.el.loop = b; };
+  StreamSource.prototype.setVolume = function (v) { this.volume = v; this._applyVolume(); };
+  StreamSource.prototype.setPitch = function (p) { this.pitch = p; try { this.el.playbackRate = p; } catch (e) {} };
+  StreamSource.prototype.play = function () {
+    this.wantPlay = true;
+    if (!audioUnlocked) return;   // media playback needs a user gesture; starts on unlock
+    this._route();
+    const self = this;
+    const pr = this.el.play();
+    // leave playing=false on rejection so a later unlock gesture retries
+    if (pr && pr.then) pr.then(function () { self.playing = true; }, function () { self.playing = false; });
+    else this.playing = true;
+  };
+  StreamSource.prototype.stop = function () {
+    this.wantPlay = false;
+    try { this.el.pause(); this.el.currentTime = 0; } catch (e) {}
+    this.playing = false;
+  };
+  // Restart playback from the top without interrupting it — used so a looping
+  // theme that's been running silently begins at bar 1 when it's faded in.
+  StreamSource.prototype.rewind = function () { try { this.el.currentTime = 0; } catch (e) {} };
+
   love.audio = {
     newSource: function (sd /*, type */) { return new Source(sd); },
+    newStreamSource: function (url) { return new StreamSource(url); },
     newSound: function (sd) { return new Sfx(sd); },
-    setMasterVolume: function (v) { _masterVol = Math.max(0, Math.min(1, v)); if (masterGain) masterGain.gain.value = _masterVol; },
+    setMasterVolume: function (v) {
+      _masterVol = Math.max(0, Math.min(1, v));
+      if (masterGain) masterGain.gain.value = _masterVol;
+      for (const s of streamSources) s._applyVolume();   // direct-mode elements aren't behind masterGain
+    },
     getMasterVolume: function () { return _masterVol; }
   };
 
