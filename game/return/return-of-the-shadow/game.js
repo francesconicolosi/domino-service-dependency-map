@@ -191,10 +191,11 @@
     { x: 2900, y: FLOOR5, w: 760,  h: 1400 },    // seg5 2900..3660 (carpet + rock at ~3320)
     // LAVA PIT 4: 3660..3820
     { x: 3820, y: FLOOR5, w: 980,  h: 1400 },    // knight arena 3820..4800
-    // LONG LAVA RIVER: 4800..11600 (impassable on foot — flown over on the carpet)
-    { x: 11600, y: FLOOR5, w: 400, h: 1400 },    // the far lip, where the DOOR OF LIGHT stands
+    // LONG LAVA RIVER: 4800..25200 (impassable on foot — flown over on the carpet;
+    // ~20400px wide, roughly triple the original crossing so the flight lasts longer)
+    { x: 25200, y: FLOOR5, w: 400, h: 1400 },    // the far lip, where the DOOR OF LIGHT stands
   ];
-  const DOOR_LIGHT_X = 11640;   // the giant door of light at the end of the river flight
+  const DOOR_LIGHT_X = 25240;   // the giant door of light at the end of the river flight
   let checkpoints5 = [
     { x: 120, y: FLOOR5 }, { x: 1660, y: FLOOR5 }, { x: 2300, y: FLOOR5 },
     { x: 2960, y: FLOOR5 }, { x: 3900, y: FLOOR5 },
@@ -205,7 +206,7 @@
     { x0: 1420, x1: 1580, y: 452, emit: true },
     { x0: 1880, x1: 2040, y: 452, emit: true },
     { x0: 3660, x1: 3820, y: 452, emit: true },
-    { x0: 4800, x1: 11600, y: 452, river: true },   // the long river (no pit-balls; the flight has its own bolts)
+    { x0: 4800, x1: 25200, y: 452, river: true },   // the long river (no pit-balls; the flight has its own bolts)
   ];
 
   let level = 1;
