@@ -4860,14 +4860,16 @@
       }
     } else if (l.phase === 8) {                // fly up into the sky (behind the walls) while fading out
       // rise only within the arch (never up to the wall top) and fade to black
-      // concurrently, so the hero is fully hidden before it could clear the wall
+      // concurrently, so the hero is fully hidden before it could clear the wall.
+      // Once the screen is fully black, go straight to Level 5 instead of showing
+      // the old end-card / replay prompt.
       l.carpet.y = Math.max(178, l.carpet.y - 120 * dt);
       l.carpet.x += 22 * dt;
       player.x = l.carpet.x - 6; player.y = l.carpet.y; player.facing = 1; player.vx = 0;
       l.fade2 = Math.min(1, l.fade2 + dt * 0.9);
-      if (l.fade2 >= 1) { l.phase = 9; l.t = 0; }
-    } else if (l.phase === 9) {                // fade to black + label
-      l.fade2 = Math.min(1, l.fade2 + dt * 0.5);
+      if (l.fade2 >= 1) { initLevel(5); return; }
+    } else if (l.phase === 9) {                // legacy safeguard: never show the old end card
+      initLevel(5); return;
     }
     l.skip = false;
   }
@@ -4933,13 +4935,6 @@
     if (l.line >= 0) drawSubtitle(L4_LINES[l.line]);
     if (l.phase >= 8) {   // fade to black grows during the fly-away (hides the hero fully)
       lg.setColor(0, 0, 0, clamp(l.fade2, 0, 1)); lg.rectangle('fill', 0, 0, VW, VH);
-      if (l.phase === 9 && l.fade2 >= 1 && FONT_SUB) {
-        lg.setFont(FONT_SUB); lg.setColor(0.86, 0.82, 0.9, 0.92);
-        printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 - 6, FONT_SUB, 6, 1);
-        lg.setFont(FONT_HUD); lg.setColor(0.7, 0.68, 0.76, 0.8);
-        const m = 'press  R  to  replay';
-        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
-      }
     }
   }
 
