@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-27f';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-28-L5c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -157,6 +157,55 @@
   ];
   let checkpoints3 = [
     { x: 120, y: FLOOR3 }, { x: 2300, y: FLOOR3 }, { x: 3300, y: FLOOR3 }, { x: 3860, y: FLOOR3 },
+  ];
+
+  // -------------------------------------------------------------- LEVEL 5: THE LAVA CAVERNS
+  // The hero wakes in a molten cave. A long floor punched with lava pits (which
+  // spit lava balls and kill on contact), skeletons to shove in, a barred door
+  // opened from a hidden basement button, the buried magic carpet under a rock,
+  // a mounted Lava Knight guarding the fire-sword power, and a wide lava river
+  // the freed carpet must fly across.
+  const FLOOR5 = 384;
+  let plats5 = [
+    // wake area + first lava gauntlet (floor with pit gaps)
+    { x: -300, y: FLOOR5, w: 1120, h: 1400 },   // -300..820   (hero wakes at ~120)
+    // LAVA PIT 1: 820..980
+    { x: 980,  y: FLOOR5, w: 440,  h: 1400 },    // 980..1420
+    // LAVA PIT 2: 1420..1580
+    { x: 1580, y: FLOOR5, w: 300,  h: 1400 },    // 1580..1880  (skeleton stretch, before pit 3)
+    // LAVA PIT 3: 1880..2040 (moved well left of the door / button hole)
+    // --- the barred-door approach + a deep labyrinth descent to the hidden button ---
+    { x: 2040, y: FLOOR5, w: 280, h: 1400 },      // THICK ROCK between the lava and the hole (2040..2320)
+    { x: 2320, y: FLOOR5, w: 160, h: 26 },        // A: thin approach walkway 2320..2480 (over the labyrinth)
+    // DROP-IN gap 2480..2560 (fall into the labyrinth below)
+    // B: the solid door pillar; its LEFT face (x2560) is climbable, so the hero
+    //    climbs smoothly out of the labyrinth and mantles onto the top by the door.
+    { x: 2560, y: FLOOR5, w: 340, h: 1400, climbL: true, climbBot: 1260 }, // 2560..2900 (door at 2850)
+    // the winding, oblique DESCENT far DOWN — well clear of the lava (280px of rock away)
+    { x: 2380, y: 560,  w: 180, h: 18 },          // L1  2380..2560 (catches the drop)
+    { x: 2320, y: 730,  w: 200, h: 18 },          // L2  2320..2520
+    { x: 2400, y: 900,  w: 160, h: 18 },          // L3  2400..2560
+    { x: 2320, y: 1070, w: 240, h: 18 },          // L4  2320..2560 — button room (button at 2380), climb B's face at the right end
+    { x: 2320, y: 1200, w: 580, h: 120 },         // bottom safety floor 2320..2900
+    // DOOR gate at x≈2850 (added in initEnts5)
+    { x: 2900, y: FLOOR5, w: 760,  h: 1400 },    // seg5 2900..3660 (carpet + rock at ~3320)
+    // LAVA PIT 4: 3660..3820
+    { x: 3820, y: FLOOR5, w: 980,  h: 1400 },    // knight arena 3820..4800
+    // LONG LAVA RIVER: 4800..11600 (impassable on foot — flown over on the carpet)
+    { x: 11600, y: FLOOR5, w: 400, h: 1400 },    // the far lip, where the DOOR OF LIGHT stands
+  ];
+  const DOOR_LIGHT_X = 11640;   // the giant door of light at the end of the river flight
+  let checkpoints5 = [
+    { x: 120, y: FLOOR5 }, { x: 1660, y: FLOOR5 }, { x: 2300, y: FLOOR5 },
+    { x: 2960, y: FLOOR5 }, { x: 3900, y: FLOOR5 },
+  ];
+  // lava pools that fill the pit gaps (surface Y a touch below the floor lip)
+  const LAVA5 = [
+    { x0: 820,  x1: 980,  y: 452, emit: true },
+    { x0: 1420, x1: 1580, y: 452, emit: true },
+    { x0: 1880, x1: 2040, y: 452, emit: true },
+    { x0: 3660, x1: 3820, y: 452, emit: true },
+    { x0: 4800, x1: 11600, y: 452, river: true },   // the long river (no pit-balls; the flight has its own bolts)
   ];
 
   let level = 1;
@@ -567,6 +616,47 @@
         lg.setColor(1.0, 0.72, 0.4, level === 3 ? 0.30 * l3.litT : 0.30);
         lg.rectangle('fill', p.x, p.y, p.w, 2);
         if (level === 2 || l3.litT > 0.05) drawFlags(p.x, p.y, p.w, rng);
+      } else if (level === 5) {
+        // dark basalt cavern rock with a lava-lit rim
+        const thin = p.h < 60;   // a floating ledge vs. a full-height rock body
+        lg.setColor(0.14, 0.10, 0.11, 1);
+        lg.rectangle('fill', p.x, p.y, p.w, p.h);
+        lg.setColor(0.19, 0.14, 0.15, 1);
+        lg.rectangle('fill', p.x, p.y, p.w, Math.min(p.h, 40));
+        // scattered fissures — ONLY within a full-height rock body (never below a
+        // thin floating ledge, where they'd hang in mid-air)
+        if (!thin) {
+          const bodyH = Math.min(p.h, 900);
+          lg.setColor(0.06, 0.045, 0.05, 0.7);
+          const nCr = Math.max(2, Math.floor(p.w / 120));
+          for (let ci = 0; ci < nCr; ci++) {
+            let cx = p.x + 12 + rng.random() * (p.w - 24), cy = p.y + 16 + rng.random() * bodyH * 0.5;
+            lg.setLineWidth(2);
+            for (let s = 0; s < 3; s++) {
+              const nx = cx + (rng.random() - 0.5) * 22, ny = cy + 14 + rng.random() * 28;
+              if (ny > p.y + p.h - 4) break;   // keep the crack inside the rock body
+              lg.line(cx, cy, nx, ny); cx = nx; cy = ny;
+            }
+          }
+          lg.setLineWidth(1);
+        }
+        // warm lava-lit top edge
+        lg.setColor(1.0, 0.5, 0.16, 0.5);
+        lg.rectangle('fill', p.x, p.y, p.w, 2);
+        lg.setColor(1.0, 0.4, 0.12, 0.14);
+        lg.rectangle('fill', p.x, p.y, p.w, 8);
+        // climbable LEFT face — a ladder of small jutting handhold rocks so the
+        // player can see the wall can be climbed
+        if (p.climbL) {
+          const yEnd = Math.min((p.climbBot != null ? p.climbBot : p.y + p.h), p.y + p.h - 20);
+          const crng = love.math.newRandomGenerator((pi + 1) * 131 + 7);
+          for (let y = p.y + HOLDSTEP; y < yEnd; y += HOLDSTEP) {
+            const ww = 8 + crng.random() * 7;
+            lg.setColor(0.23, 0.16, 0.15, 1); lg.rectangle('fill', p.x - ww, y, ww + 3, 6);
+            lg.setColor(1.0, 0.5, 0.2, 0.45); lg.rectangle('fill', p.x - ww, y, ww + 3, 2);
+            lg.setColor(0, 0, 0, 0.4); lg.rectangle('fill', p.x - ww, y + 5, ww + 3, 2);
+          }
+        }
       } else {
         // extend the pillar far below its collision body so its base is never
         // visibly cut off when the camera drops during a fall (fades to dark)
@@ -940,6 +1030,7 @@
       deadFade: 0, dying: false,
       hp: 3, inv: 0, atkT: 0, drawT: 0, hasSword: false,
       blockT: 0, riposte: 0, riposteHits: 0, blockFlash: 0,
+      sheathed: false, swordIdle: 0,   // sword rests in the back scabbard after 5s idle
       iks: { hf: {}, hb: {}, ff: {}, fb: {} },
       iksState: null,
       turnT: 0, turnDur: 0.2, turnFlip: false, climbPh: 0,
@@ -1056,6 +1147,46 @@
     return o;
   }
 
+  // The hero waking on the cave floor and getting up: a four-phase animation
+  // that uses the arms and legs — lie curled → plant a hand and stir → push up
+  // onto bent legs → rise to a crouch → stand. `k` (0→1) is the wake progress;
+  // `o.rot` tilts the whole body from lying flat to upright (applied in drawHero).
+  function wakePose(k) {
+    const o = basePose();
+    if (k < 0.30) {                       // lie sprawled on the ground, arms resting flat
+      const b = Math.sin(T * 1.8) * 0.05;
+      o.rot = 1.46; o.bob = 3;
+      o.legF = [0.55, -0.60]; o.legB = [0.30, -0.42];     // legs extended along the ground, slight bend
+      o.armF = [0.50 + b, 0.26]; o.armB = [0.26, 0.06];   // arms lying flat on the ground (not overhead)
+      o.lean = -0.04;
+    } else if (k < 0.56) {                // plant a hand and push the torso up
+      const u = smooth((k - 0.30) / 0.26);
+      o.rot = lerp(1.46, 0.86, u);
+      o.bob = lerp(3, 9, u);
+      o.legF = [lerp(0.55, 0.98, u), lerp(-0.60, -1.10, u)];   // front knee draws in under the body
+      o.legB = [lerp(0.30, -0.28, u), lerp(-0.42, -0.60, u)];
+      o.armB = [lerp(0.26, 1.55, u), lerp(0.06, 1.10, u)];     // back hand stays planted, torso rises off it
+      o.armF = [lerp(0.50, 0.95, u), lerp(0.26, 1.25, u)];     // front arm swings forward for balance
+      o.lean = lerp(-0.04, 0.22, u);
+    } else if (k < 0.84) {                // push off the hand up into a deep crouch
+      const u = smooth((k - 0.56) / 0.28);
+      o.rot = lerp(0.86, 0.10, u);
+      o.bob = lerp(9, 15, u);
+      o.legF = [lerp(0.98, 1.00, u), lerp(-1.10, -1.30, u)];
+      o.legB = [lerp(-0.28, -0.98, u), lerp(-0.60, -1.34, u)];
+      o.armB = [lerp(1.55, -0.35, u), lerp(1.10, -0.10, u)];   // hand pushes off, arm returns to the side
+      o.armF = [lerp(0.95, 0.55, u), lerp(1.25, 1.05, u)];
+      o.lean = lerp(0.22, 0.10, u);
+    } else {                              // straighten up out of the crouch
+      const u = smooth((k - 0.84) / 0.16);
+      const crouch = { bob: 15, lean: 0.10, legF: [1.00, -1.30], legB: [-0.98, -1.34], armF: [0.55, 1.05], armB: [-0.35, -0.10] };
+      const m = mixPose(crouch, basePose(), u);
+      o.bob = m.bob; o.lean = m.lean; o.legF = m.legF; o.legB = m.legB; o.armF = m.armF; o.armB = m.armB;
+      o.rot = lerp(0.10, 0, u);
+    }
+    return o;
+  }
+
   function pickHold(F, wantY, loY, hiY) {
     const base = F.ytop + HOLDSTEP;
     let y = base + Math.floor((wantY - base) / HOLDSTEP + 0.5) * HOLDSTEP;
@@ -1079,6 +1210,9 @@
     const t = p.t;
     let o = basePose();
     if (p.state !== 'climb' && p.state !== 'hang') p.iksState = null;
+
+    // Level 5 wake-up: the hero is getting up off the cave floor
+    if (level === 5 && l5.wake && l5.wake.active) return wakePose(l5.wake.rise || 0);
 
     if (p.state === 'ground') {
       if (p.landT > 0) return poseLand();
@@ -1323,25 +1457,85 @@
     return [best1, best2];
   }
 
+  // A curved steel scimitar. `a` is the blade's base direction (body-local
+  // sin/cos convention); the blade bows toward its back (spine) as it nears the
+  // flared tip, with the cutting edge along the inner belly. Shared by the hero,
+  // the skeletons and the loose sword pickups so every blade reads the same.
   function drawSwordAt(x, y, a) {
-    const bx = Math.sin(a), by = Math.cos(a);
-    const px = Math.sin(a + Math.PI / 2), py = Math.cos(a + Math.PI / 2);
-    lg.setColor(0.42, 0.32, 0.16, 1);
-    lg.setLineWidth(3);
-    lg.line(x - bx * 4, y - by * 4, x + bx * 2, y + by * 2);
-    lg.setColor(0.55, 0.42, 0.20, 1);
-    lg.line(x + bx * 2 - px * 4.5, y + by * 2 - py * 4.5, x + bx * 2 + px * 4.5, y + by * 2 + py * 4.5);
-    lg.setColor(0.76, 0.78, 0.84, 1);
-    lg.setLineWidth(3.2);
-    lg.line(x + bx * 3, y + by * 3, x + bx * 27, y + by * 27);
-    lg.setColor(0.95, 0.97, 1.0, 0.85);
-    lg.setLineWidth(1.2);
-    lg.line(x + bx * 4, y + by * 4 - 0.8, x + bx * 26, y + by * 26 - 0.8);
+    const bx = Math.sin(a), by = Math.cos(a);                          // blade axis
+    const px = Math.sin(a + Math.PI / 2), py = Math.cos(a + Math.PI / 2); // perpendicular
+    // grip + pommel
+    lg.setColor(0.30, 0.22, 0.12, 1); lg.setLineWidth(3);
+    lg.line(x - bx * 5, y - by * 5, x + bx * 2, y + by * 2);
+    lg.setColor(0.20, 0.15, 0.09, 1); lg.circle('fill', x - bx * 5, y - by * 5, 1.8);
+    // curved crossguard (quillon)
+    lg.setColor(0.62, 0.48, 0.22, 1); lg.setLineWidth(2.6);
+    lg.line(x + bx * 2 - px * 5, y + by * 2 - py * 5, x + bx * 2 + px * 5, y + by * 2 + py * 5);
+    lg.setColor(0.80, 0.64, 0.30, 1); lg.circle('fill', x + bx * 2, y + by * 2, 1.9);
+    // curved blade — spine (back) and edge (belly) meeting at a flared tip
+    const L = 30, CURVE = 9, N = 8;
+    const baseX = x + bx * 3, baseY = y + by * 3;
+    const spine = [], edge = [], mids = [];
+    for (let i = 0; i <= N; i++) {
+      const s = i / N;
+      const w = (1 - s) * 2.6 + (s > 0.86 ? 1.4 : 0.5);   // taper, slight tip flare
+      const cur = CURVE * s * s;                            // curvature grows to the tip
+      const cx = baseX + bx * (L * s) + px * cur;
+      const cy = baseY + by * (L * s) + py * cur;
+      mids.push(cx, cy);
+      spine.push(cx + px * w, cy + py * w);   // back edge (outer)
+      edge.push(cx - px * w, cy - py * w);    // cutting edge (inner belly)
+    }
+    const poly = spine.slice();
+    for (let i = edge.length - 2; i >= 0; i -= 2) { poly.push(edge[i], edge[i + 1]); }
+    lg.setColor(0.74, 0.77, 0.83, 1); lg.polygon('fill', poly);
+    // bright spine highlight
+    lg.setColor(0.96, 0.98, 1.0, 0.9); lg.setLineWidth(1.3);
+    for (let i = 0; i < spine.length - 2; i += 2) lg.line(spine[i], spine[i + 1], spine[i + 2], spine[i + 3]);
+    // darker fuller down the centreline
+    lg.setColor(0.52, 0.55, 0.62, 0.8); lg.setLineWidth(1);
+    for (let i = 0; i < mids.length - 2; i += 2) lg.line(mids[i], mids[i + 1], mids[i + 2], mids[i + 3]);
     lg.setLineWidth(1);
   }
 
   function drawHeldSword(hx, hy, forearmA) {
     drawSwordAt(hx, hy, forearmA + 0.35);
+  }
+
+  // Flames wreathing the charged Fire-Sword blade. `a` is the blade direction
+  // (body-local sin/cos convention). Drawn in the hero's local space.
+  function drawBladeFire(hx, hy, a) {
+    const bx = Math.sin(a), by = Math.cos(a);                          // along the blade
+    const px = Math.sin(a + Math.PI / 2), py = Math.cos(a + Math.PI / 2); // perpendicular
+    const bx0 = hx + bx * 6, by0 = hy + by * 6;   // start a little out from the hand
+    // slim heat glow hugging the blade (not a big blob near the body)
+    for (let i = 1; i <= 6; i++) {
+      const d = 6 + i * 4.2;
+      lg.setColor(1.0, 0.42, 0.10, 0.09);
+      lg.circle('fill', hx + bx * d, hy + by * d, 4.6);
+    }
+    // flickering flame tongues licking off the edge, growing toward the tip
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const d = 4 + i * (28 / n);
+      const flick = Math.sin(T * 16 + i * 1.7) * 0.5 + 0.5;
+      const side = (i % 2 === 0) ? 1 : -1;
+      const bxp = bx0 + bx * d, byp = by0 + by * d;                    // point along blade
+      const len = 5 + flick * 7;
+      const tipx = bxp + (bx * 0.7 + px * side * 0.7) * len;
+      const tipy = byp + (by * 0.7 + py * side * 0.7) * len;
+      lg.setColor(1.0, 0.38, 0.07, 0.5);
+      lg.polygon('fill', bxp - px * side * 1.8, byp - py * side * 1.8,
+        bxp + px * side * 1.8, byp + py * side * 1.8, tipx, tipy);
+      lg.setColor(1.0, 0.85, 0.4, 0.75);
+      lg.polygon('fill', bxp - px * side * 0.9, byp - py * side * 0.9,
+        bxp + px * side * 0.9, byp + py * side * 0.9,
+        bxp + (bx * 0.7 + px * side * 0.7) * len * 0.55, byp + (by * 0.7 + py * side * 0.7) * len * 0.55);
+    }
+    // bright white-hot core running down the blade
+    lg.setColor(1.0, 0.78, 0.35, 0.85); lg.setLineWidth(2);
+    lg.line(bx0, by0, hx + bx * 30, hy + by * 30);
+    lg.setLineWidth(1);
   }
 
   // Overhead slash choreography (from the GIF reference). Blade angle uses the
@@ -1438,7 +1632,7 @@
       o.armB = [-0.15, -0.45];
       o.lean = -0.05;
       if (ground) { o.legF = [0.34, 0.06]; o.legB = [-0.34, -0.30]; }
-    } else if (p.hasSword && p.state === 'ground' && Math.abs(p.vx) < 30) {
+    } else if (p.hasSword && !p.sheathed && p.state === 'ground' && Math.abs(p.vx) < 30) {
       // en-garde guard: blade held ready down-forward, subtle breathing
       const br = Math.sin(p.t * 1.6) * 0.02;
       o.armF = [GUARD_A - 0.50, GUARD_A - 0.35 + br];
@@ -1453,6 +1647,8 @@
 
     lg.push();
     lg.translate(p.x, p.y);
+    // wake-up: tilt the whole body up from lying flat to standing (pivot = feet)
+    if (o.rot) lg.rotate(-o.rot * p.facing);
     lg.scale(p.facing, 1);
 
     let hipX = o.lean * 3, hipY = -33 + o.bob;
@@ -1465,6 +1661,27 @@
       o.legF = ik2(hipX, hipY, o.ik.ff[0], o.ik.ff[1], 17, 16, 'leg');
       o.armB = ik2(chX, chY, o.ik.hb[0], o.ik.hb[1], 14, 13, 'arm');
       o.armF = ik2(chX, chY, o.ik.hf[0], o.ik.hf[1], 14, 13, 'arm');
+    }
+
+    // sword sheathed on the back — the scabbard runs along the back edge with
+    // BOTH ends poking clear of the body: the chape below the hip and the hilt
+    // above the shoulder (drawn behind the torso, on the back/left side)
+    if (p.hasSword && p.sheathed && (p.drawT || 0) <= 0) {
+      const bx0 = hipX - 9, by0 = hipY + 5;   // chape (below the hip, back edge)
+      const bx1 = chX - 9, by1 = chY - 3;     // scabbard mouth (at the shoulder)
+      let ux = bx1 - bx0, uy = by1 - by0; const ul = Math.hypot(ux, uy) || 1; ux /= ul; uy /= ul;
+      const pxp = -uy, pyp = ux;
+      lg.setColor(0.19, 0.14, 0.09, 1); lg.setLineWidth(6); lg.line(bx0, by0, bx1, by1);   // scabbard body
+      lg.setColor(0.36, 0.27, 0.16, 1); lg.setLineWidth(2.4); lg.line(bx0, by0, bx1, by1); // rib highlight
+      lg.setColor(0.60, 0.50, 0.30, 1); lg.circle('fill', bx0, by0, 2.4);                  // metal chape
+      // hilt above the shoulder: grip + gold curved crossguard + pommel
+      const gx = bx1 + ux * 4, gy = by1 + uy * 4, tx = bx1 + ux * 15, ty = by1 + uy * 15;
+      lg.setColor(0.32, 0.23, 0.12, 1); lg.setLineWidth(3.4); lg.line(gx, gy, tx, ty);
+      lg.setColor(0.22, 0.16, 0.09, 1); lg.circle('fill', tx, ty, 2.4);                    // pommel
+      lg.setColor(0.70, 0.55, 0.26, 1); lg.setLineWidth(2.8);
+      lg.line(gx - pxp * 5.5, gy - pyp * 5.5, gx + pxp * 5.5, gy + pyp * 5.5);              // crossguard
+      lg.setColor(0.86, 0.70, 0.34, 1); lg.circle('fill', gx, gy, 1.8);                    // guard boss
+      lg.setLineWidth(1);
     }
 
     drawLeg(hipX, hipY, o.legB[0], o.legB[1], true);
@@ -1514,7 +1731,7 @@
 
     drawLeg(hipX, hipY, o.legF[0], o.legF[1], false);
     const hf = drawArm(chX, chY, o.armF[0], o.armF[1], false);
-    if (p.hasSword && (p.drawT || 0) <= DRAW_DUR * 0.45) {
+    if (p.hasSword && !p.sheathed && (p.drawT || 0) <= DRAW_DUR * 0.45) {
       const au = (p.atkT || 0) > 0 ? (1 - p.atkT / ATK_DUR) : null;
       const empowered = (p.riposte || 0) > 0 && (p.riposteHits || 0) > 0;
       if (au !== null && au > 0.24 && au < 0.66) {
@@ -1530,6 +1747,10 @@
         lg.circle('fill', hf[0], hf[1], 5);
       }
       drawHeldSword(hf[0], hf[1], o.armF[1]);
+      // Fire-Sword charged: the blade blazes with flame
+      if (level === 5 && p.lavaSword && (p.lavaCharge || 0) > 0) {
+        drawBladeFire(hf[0], hf[1], o.armF[1] + 0.35);
+      }
       if ((p.blockT || 0) > 0 && (p.blockFlash || 0) <= 0) {
         // faint shield guard held in front while blocking (before any impact)
         const bp = 0.5 + 0.5 * Math.sin(T * 10);
@@ -1584,7 +1805,7 @@
     }
     // closed portcullis gates (Level 2 / 3) block horizontally — they span floor
     // to ceiling, so a full-height solid is enough to bar the way
-    const gateSet = level === 2 ? l2.gates : (level === 3 ? l3.gates : null);
+    const gateSet = level === 2 ? l2.gates : (level === 3 ? l3.gates : (level === 5 ? l5.gates : null));
     if (gateSet) {
       for (const g of gateSet) {
         if ((g.openT || 0) > 0.82) continue;   // raised enough to walk under
@@ -1693,6 +1914,7 @@
   const studio = { active: false, t: 0 };
   let showCredit = false;
   let DEBUG = false;   // enabled by ?debug=… — unlocks number-key level switching
+  let IMMORTAL = false;   // enabled by ?immortal=true — the hero never takes damage
 
   function startCine(p) {
     cine.on = true; cine.stage = 1; cine.t = 0;
@@ -1732,7 +1954,7 @@
   }
 
   // -------------------------------------------------------------- PLAYER UPDATE
-  function killPlayer(p) { if (!p.dying) { p.dying = true; p.deadFade = 0; } }
+  function killPlayer(p) { if (IMMORTAL) return; if (!p.dying) { p.dying = true; p.deadFade = 0; } }
 
   function respawnPlayer(p) {
     p.x = respawn.x; p.y = respawn.y;
@@ -1741,6 +1963,8 @@
     p.ledge = null; p.face = null; p.mant = null;
     p.hp = 3; p.inv = 1.2; p.atkT = 0; p.drawT = 0;
     p.blockT = 0; p.riposte = 0; p.riposteHits = 0;
+    p.sheathed = false; p.swordIdle = 0;   // respawn with the blade drawn and ready
+    p.lavaSink = null;
     resetScarf(...neckPos(p));
   }
 
@@ -1766,6 +1990,7 @@
   }
 
   function hurtPlayer(p, dir) {
+    if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
     if ((p.inv || 0) > 0 || p.dying) return;
     p.hp = (p.hp || 3) - 1;
     p.inv = 1.1;
@@ -3257,6 +3482,1032 @@
   }
 
   // ============================================================================
+  //  LEVEL 5 — THE LAVA CAVERNS
+  //  The King wakes deep in a molten cave (a getting-up cutscene). Lava pits spit
+  //  fire-balls and kill on contact; skeletons are fought with the blade (a hit
+  //  knocks them back — into a pit if one is near). A barred door is opened from
+  //  a hidden basement button. The buried magic carpet lies under a rock too
+  //  heavy to shift — only the Lava Knight's Fire-Sword can break it: BLOCK
+  //  charges the sword with three lava bullets, each loosed by an ATTACK swing.
+  //  Once the rock is gone the freed carpet flies him over the blocking lava river.
+  // ============================================================================
+  const KNIGHT_L = 3900, KNIGHT_R = 4720;
+  const l5 = {
+    skels: [], biters: [], door: null, gates: [], button: null,
+    lava: [], balls: [], bullets: [],
+    rock: null, carpet: null, knight: null, swordPickup: null,
+    lives: 3, gameOver: false, msg: '', msgT: 0,
+    wake: { active: false, stage: 0, t: 0, rise: 0 },
+    dialog: { text: '', t: 0, dur: 0 },
+    end: { stage: 0, t: 0 }, flight: null, carpetNear: false,
+    riverHinted: false, doorHinted: false, carpetHinted: false, _hitThisSwing: false,
+  };
+  function l5toast(s) { l5.msg = s; l5.msgT = 3.2; }
+  // the hero's spoken lines use the game's usual subtitle dialog box ("The King")
+  function l5say(text, dur) { l5.dialog = { text: text, t: 0, dur: dur || 5 }; }
+
+  function lavaAt(x) {
+    for (const L of LAVA5) if (x > L.x0 && x < L.x1) return L;
+    return null;
+  }
+
+  // the Middle-Eastern battle theme underscores the whole of Level 5 (including
+  // the cutscenes and the final light-door screen); the ambient theme is silenced
+  function driveL5BattleTheme(dt, target) {
+    windVol = lerp(windVol, 0, Math.min(1, dt * 2.5)); if (windSrc) windSrc.setVolume(windVol);
+    if (musicSrc) { musicVol = lerp(musicVol, 0, Math.min(1, dt * 1.2)); musicSrc.setVolume(musicVol); }
+    if (battleSrc) {
+      if (!bossWasFighting && battleSrc.rewind) battleSrc.rewind();
+      bossWasFighting = true;
+      battleVol = lerp(battleVol, target, Math.min(1, dt * 0.9));
+      battleSrc.setVolume(battleVol);
+    }
+  }
+
+  function initEnts5() {
+    l5.skels = [
+      newSkel(1740, 1600, 1860, true),   // before pit 3 — knock it into the lava
+      newSkel(2180, 2070, 2300, true),   // on the thick approach rock
+      newSkel(1180, 1010, 1400, true),   // patrols by pit 2
+      newSkel(2420, 2340, 2500, true),   // labyrinth: L2 ledge guard
+      newSkel(2470, 2410, 2550, true),   // labyrinth: L3 ledge guard
+    ];
+    for (const s of l5.skels) s.y = floorAt(s.x, 0) || FLOOR5;
+    // two flying heads haunting the labyrinth
+    l5.biters = [newBiter(2450, 620), newBiter(2400, 980)];
+    // the barred door + the hidden button (deep in the labyrinth) that opens it
+    l5.door = { id: 'D', x: 2850, w: 20, yTop: 40, yBot: FLOOR5, openT: 0, locked: true, open: false };
+    l5.gates = [l5.door];
+    l5.button = { x: 2380, y: 1070, w: 54, pressed: false };
+    l5.lava = LAVA5;
+    l5.balls = []; l5.bullets = [];
+    // the magic carpet, pinned under a heavy boulder
+    l5.rock = { x: 3320, y: FLOOR5, w: 128, hp: 3, destroyed: false, hitT: 0 };
+    l5.carpet = { x: 3320, y: FLOOR5 - 22, state: 'pinned', t: 0 };
+    // the mounted Lava Knight patrolling the arena
+    l5.knight = {
+      x: KNIGHT_R - 60, y: FLOOR5, dir: -1, hp: 5, state: 'gallop',
+      active: true, dead: false, deadT: 0, hitCool: 0, ph: 0, flash: 0, swing: 0,
+      volley: 3, fireCool: 2.6, pauseT: 0, bolts: [],
+    };
+    l5.swordPickup = null;
+    l5.lives = 3; l5.gameOver = false; l5.msg = ''; l5.msgT = 0;
+    l5.wake = { active: true, stage: 0, t: 0, rise: 0 };
+    l5.dialog = { text: '', t: 0, dur: 0 };
+    l5.end = { stage: 0, t: 0 }; l5.flight = null; l5.carpetNear = false;
+    l5.riverHinted = false; l5.doorHinted = false; l5.carpetHinted = false;
+    l5._hitThisSwing = false;
+  }
+
+  // ---- the slow wake-up cutscene (black bands, hero gets up off the cave floor)
+  function updateWake5(dt) {
+    const w = l5.wake, p = player;
+    w.t += dt;
+    p.vx = 0; p.vy = 0; p.onGround = true; p.state = 'ground'; p.facing = 1;
+    if (p.spawnFloor != null) p.y = p.spawnFloor;
+    if (w.stage === 0) {                       // full black, hold
+      w.rise = 0;
+      if (w.t > 1.3) { w.stage = 1; w.t = 0; }
+    } else if (w.stage === 1) {                // dim glow — the hero lies still
+      w.rise = 0;
+      if (w.t > 2.4) { w.stage = 2; w.t = 0; }
+    } else if (w.stage === 2) {                // the hero gets up (arms + legs)
+      w.rise = smooth(clamp(w.t / 3.0, 0, 1));
+      if (w.t > 3.0) { w.stage = 3; w.t = 0; w.rise = 1; }
+    } else {                                   // bands retract, play begins
+      w.rise = 1;
+      if (w.t > 0.9) { w.active = false; l5say('Where am I…?  Lava on every side — how far did I fall?', 5); }
+    }
+  }
+
+  // ---- lava-ball emitters: pits belch arcing globs of molten rock
+  function spawnLavaBalls(dt) {
+    for (const L of l5.lava) {
+      if (!L.emit) continue;
+      L.cool = (L.cool || 0.6 + love.math.random() * 1.4) - dt;
+      if (L.cool <= 0 && l5.balls.length < 120) {
+        L.cool = L.river ? 0.5 + love.math.random() * 0.9 : 1.1 + love.math.random() * 1.9;
+        const bx = L.x0 + 20 + love.math.random() * (L.x1 - L.x0 - 40);
+        l5.balls.push({ x: bx, y: L.y, vx: (love.math.random() - 0.5) * 90,
+          vy: -(430 + love.math.random() * 210), r: 7 + love.math.random() * 4, t: 0 });
+      }
+    }
+  }
+
+  function updateEnts5(dt) {
+    const p = player;
+    l5.msgT = Math.max(0, l5.msgT - dt);
+    updateFireCharge(p, dt);   // Fire-Sword: 2s BLOCK hold recharges it (on the ground too)
+    // while a scripted beat plays (wake / carpet flight) the hero is invulnerable
+    const safe = l5.wake.active || (l5.carpet && l5.carpet.state === 'riding') || l5.end.stage > 0;
+
+    // --- instant death: the hero's feet touch molten lava (same fiery burst the
+    //     skeletons throw up when they're shoved in)
+    if (!safe && !p.dying && !IMMORTAL) {
+      const L = lavaAt(p.x);
+      if (L && p.y > L.y - 6 && floorAt(p.x, p.y - 20) === undefined) {
+        spawnLavaSplash(p.x, L.y, 18);
+        spawnLavaSplash(p.x, L.y, 10);
+        spawnDust(p.x, L.y - 10, 8, 1.2);
+        if (sfxHit) sfxHit.play(0.55, 0.7);
+        p.lavaSink = L.y;   // sink down into the lava (like the skeletons vanishing)
+        killPlayer(p);
+      }
+    }
+
+    // --- lava balls
+    spawnLavaBalls(dt);
+    for (let i = l5.balls.length - 1; i >= 0; i--) {
+      const b = l5.balls[i];
+      b.t += dt; b.vy += 1200 * dt;
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      const L = lavaAt(b.x);
+      // a ball falling back into lava vanishes; only real (non-splash) balls
+      // throw up a small splash — splash droplets never spawn more (no cascade)
+      if (b.vy > 0 && L && b.y > L.y) {
+        if (!b.splash) spawnLavaSplash(b.x, L.y, 3);
+        l5.balls.splice(i, 1); continue;
+      }
+      if (b.y > FLOOR5 + 700 || b.t > 4) { l5.balls.splice(i, 1); continue; }
+      // only real, rising/arcing balls can burn the hero (cosmetic splashes don't)
+      if (!b.splash && !safe && !p.dying && (p.inv || 0) <= 0 && Math.abs(b.x - p.x) < b.r + 12
+        && b.y > heroTop(p) && b.y < p.y) {
+        hurtPlayer(p, b.x < p.x ? -1 : 1);
+        l5.balls.splice(i, 1);
+      }
+    }
+
+    // --- skeletons: fought exactly like the keep (blade stuns + knocks back);
+    //     a struck skeleton slides, and if the blow sends it over a pit it falls
+    //     into the lava. There is NO walk-into shove — you must use the sword.
+    for (const sk of l5.skels) updateSkel(sk, dt, p);
+    for (const sk of l5.skels) {
+      if (sk.state === 'gone' || sk.state === 'pile') continue;
+      if (sk.state === 'fall') {
+        const L = lavaAt(sk.x);
+        if (L && sk.y > L.y) { spawnLavaSplash(sk.x, L.y, 8); sk.state = 'gone'; }
+      }
+    }
+    // --- flying heads haunting the labyrinth
+    for (const bt of l5.biters) updateBiter(bt, dt, p);
+
+    // --- hero sword swing (same combat as L2/L3: the blade stuns skeletons and
+    //     hurls them back; the fire blade also looses a lava bullet per swing)
+    const au = 1 - (p.atkT || 0) / ATK_DUR;
+    if ((p.atkT || 0) > 0 && au > 0.30 && au < 0.56) {
+      let didHit = false;
+      for (const sk of l5.skels) {
+        if (sk.state === 'patrol' || sk.state === 'windup' || sk.state === 'strike') {
+          const dx = sk.x - p.x;
+          if (dx * p.facing > 0 && Math.abs(dx) < 52 && Math.abs(sk.y - p.y) < 60) {
+            sk.state = 'stun'; sk.t = 0; sk.vx = p.facing * 520; didHit = true;   // strong shove toward the pit
+            spawnDust(sk.x - p.facing * 8, sk.y - 34, 4, 0.8);
+          }
+        }
+      }
+      for (const bt of l5.biters) {   // the blade also cuts down flying heads
+        if (bt.state === 'dead') continue;
+        const dx = bt.x - p.x;
+        if (dx * p.facing > 0 && Math.abs(dx) < 56 && Math.abs(bt.y - (p.y - 30)) < 52) {
+          bt.state = 'dead'; bt.dead = 0; spawnDust(bt.x, bt.y, 7, 1.0); didHit = true;
+        }
+      }
+      if (tryHitKnight(p)) didHit = true;
+      if (didHit && !l5._hitThisSwing) l5._hitThisSwing = true;
+    }
+    if ((p.atkT || 0) <= 0) l5._hitThisSwing = false;
+
+    // --- hidden button opens the door permanently
+    const bt = l5.button;
+    if (bt && !bt.pressed) {
+      if (p.onGround && Math.abs(p.x - bt.x) < bt.w * 0.5 + 10 && Math.abs(p.y - bt.y) < 14) {
+        bt.pressed = true; l5.door.open = true; l5.door.locked = false;
+        if (sfxHit) sfxHit.play(0.5, 0.7);
+        l5toast('A hidden mechanism grinds — the barred door swings open');
+      }
+    }
+    if (l5.door) l5.door.openT = clamp(l5.door.openT + (l5.door.open ? 1 : -1) * dt * 1.6, 0, 1);
+    // door hint when the hero reaches it still barred
+    if (l5.door && !l5.door.open && Math.abs(p.x - l5.door.x) < 60 && p.onGround && !l5.doorHinted) {
+      l5toast('Barred fast — the release must be hidden below'); l5.doorHinted = true;
+    }
+
+    // dialog timer (the usual subtitle box)
+    if (l5.dialog && l5.dialog.dur > 0) l5.dialog.t += dt;
+
+    // --- the buried carpet + the boulder pinning it
+    const rk = l5.rock, cp = l5.carpet;
+    if (rk) rk.hitT = Math.max(0, rk.hitT - dt);
+    if (cp && cp.state === 'pinned' && !l5.carpetHinted
+      && Math.abs(p.x - cp.x) < 90 && p.onGround) {
+      l5.carpetHinted = true;   // the King works out what happened, in English
+      l5say('The carpet must have saved me during the fall — but then this boulder must have crushed it. And it is far too heavy to move.', 7);
+    }
+    if (cp && cp.state === 'free') {
+      cp.t += dt;
+      // hover just above the rubble; a label invites the hero to ride
+      l5.carpetNear = (Math.abs(p.x - cp.x) < 130 && p.onGround);
+      if (Math.abs(p.x - cp.x) < 70 && p.onGround && keyUp()) {
+        cp.state = 'riding'; cp.t = 0;
+        startFlight5();
+        l5toast('The carpet lifts — away, over the fire!');
+      }
+    } else { l5.carpetNear = false; }
+
+    // --- the mounted Lava Knight
+    updateKnight(dt, p);
+
+    // --- the dropped fire-sword: grants the lava-bullet power
+    const sp = l5.swordPickup;
+    if (sp && !sp.taken && Math.abs(p.x - sp.x) < 30 && Math.abs(p.y - sp.y) < 60) {
+      sp.taken = true; p.lavaSword = true; p.lavaCharge = 0;
+      p.sheathed = false; p.swordIdle = 0; p.drawT = DRAW_DUR;   // raise the new blade
+      l5toast('The Fire-Sword!  BLOCK to charge it, then ATTACK to loose 3 lava bullets');
+    }
+
+    // --- hero lava bullets
+    for (let i = l5.bullets.length - 1; i >= 0; i--) {
+      const bu = l5.bullets[i];
+      bu.t += dt; bu.x += bu.vx * dt; bu.y += bu.vy * dt;
+      let gone = bu.t > 1.7;
+      if (rk && !rk.destroyed && Math.abs(bu.x - rk.x) < rk.w * 0.5 + 6
+        && bu.y > FLOOR5 - 96 && bu.y < FLOOR5 + 4) {
+        rk.hp -= 1; rk.hitT = 0.28; gone = true;
+        spawnLavaSplash(bu.x, bu.y, 6);
+        if (sfxHit) sfxHit.play(0.5, 0.8);
+        if (rk.hp <= 0) {
+          rk.destroyed = true; l5.carpet.state = 'free';
+          spawnDust(rk.x, FLOOR5, 18, 1.6); spawnLavaSplash(rk.x, FLOOR5 - 30, 14);
+          l5toast('The boulder bursts — the magic carpet is free!');
+        }
+      }
+      for (const sk of l5.skels) {
+        if (sk.state === 'patrol' || sk.state === 'windup' || sk.state === 'strike') {
+          if (Math.abs(bu.x - sk.x) < 24 && Math.abs(bu.y - (sk.y - 26)) < 36) {
+            sk.state = 'stun'; sk.t = 0; sk.vx = Math.sign(bu.vx) * 380; gone = true;
+          }
+        }
+      }
+      for (const bt of l5.biters) {
+        if (bt.state !== 'dead' && Math.abs(bu.x - bt.x) < 22 && Math.abs(bu.y - bt.y) < 22) {
+          bt.state = 'dead'; bt.dead = 0; spawnDust(bt.x, bt.y, 6, 0.9); gone = true;
+        }
+      }
+      if (gone) l5.bullets.splice(i, 1);
+    }
+
+    // --- the lava river: too wide to leap
+    if (!l5.riverHinted && p.x > 4650 && p.x < 4820 && p.onGround) {
+      l5.riverHinted = true;
+      l5toast('A river of lava — far too wide to cross on foot');
+    }
+
+    // --- finale card once the carpet lands on the far side
+    if (l5.end.stage > 0) l5.end.t += dt;
+  }
+
+  function tryHitKnight(p) {
+    const k = l5.knight;
+    if (!k || k.dead || !k.active || k.hitCool > 0) return false;
+    if (Math.abs(p.x - k.x) > 74) return false;
+    if (p.facing !== (k.x < p.x ? -1 : 1)) return false;
+    if (p.y < FLOOR5 - 96) return false;
+    k.hp -= 1; k.hitCool = 0.5; k.flash = 0.3;
+    if (sfxHit) sfxHit.play(0.6, 0.85 + love.math.random() * 0.1);
+    const away = (p.x >= k.x) ? 1 : -1;
+    p.vx = away * 300; p.vy = -150; p.state = 'air'; p.t = 0; p.inv = Math.max(p.inv || 0, 0.35);
+    spawnDust(k.x, k.y - 60, 8, 1.1);
+    if (k.hp <= 0) {
+      k.dead = true; k.deadT = 0; k.active = false; k.bolts.length = 0;
+      l5.swordPickup = { x: k.x, y: FLOOR5 - 26, taken: false };
+      l5toast('The Lava Knight is unhorsed — take its burning sword');
+    } else {
+      l5toast('Lava Knight struck!  ' + k.hp + ' blow' + (k.hp === 1 ? '' : 's') + ' remain');
+    }
+    return true;
+  }
+
+  function updateKnight(dt, p) {
+    const k = l5.knight;
+    if (!k) return;
+    k.flash = Math.max(0, k.flash - dt);
+    k.hitCool = Math.max(0, k.hitCool - dt);
+    if (k.dead) { k.deadT += dt; return; }
+    if (l5.wake.active) return;
+    const speed = 132 + (5 - k.hp) * 12;   // a touch faster the more wounded it is
+    k.x += k.dir * speed * dt;
+    k.ph += speed * dt * 0.02;
+    if (k.x < KNIGHT_L) { k.x = KNIGHT_L; k.dir = 1; }
+    else if (k.x > KNIGHT_R) { k.x = KNIGHT_R; k.dir = -1; }
+    // the horse tramples a grounded hero it runs into (jump the charge to dodge)
+    if (!p.dying && (p.inv || 0) <= 0 && k.hitCool <= 0
+      && Math.abs(p.x - k.x) < 48 && p.y > FLOOR5 - 74) {
+      k.hitCool = 0.7; k.swing = 0.3;
+      hurtPlayer(p, k.dir);
+      spawnDust(p.x, p.y - 30, 6, 1.0);
+    }
+    k.swing = Math.max(0, k.swing - dt);
+
+    // --- ranged attack: loose THREE lava bullets, then pause, then repeat ---
+    if (k.pauseT > 0) {
+      k.pauseT -= dt;
+      if (k.pauseT <= 0) { k.volley = 3; k.fireCool = 0.3; }   // start the next cycle
+    } else {
+      k.fireCool -= dt;
+      if (k.fireCool <= 0 && k.volley > 0) {
+        // aim from the rider's raised blade toward the hero
+        const ox = k.x + k.dir * 18, oy = FLOOR5 - 96;
+        const tx = p.x, ty = p.y - 30;
+        const dx = tx - ox, dy = ty - oy, d = Math.hypot(dx, dy) || 1;
+        const spd = 400;
+        k.bolts.push({ x: ox, y: oy, vx: dx / d * spd, vy: dy / d * spd, t: 0, r: 7 });
+        k.swing = 0.3;
+        if (sfxSwing) sfxSwing.play(0.4, 0.7);
+        k.volley -= 1;
+        k.fireCool = 0.55;                       // slower gap between the three shots
+        if (k.volley <= 0) k.pauseT = 4.0;       // a long pause after the burst
+      }
+    }
+    // move the knight's lava bolts; they burn the hero on contact
+    for (let i = k.bolts.length - 1; i >= 0; i--) {
+      const b = k.bolts[i];
+      b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.t > 2.6 || b.y > FLOOR5 + 40 || b.x < KNIGHT_L - 400 || b.x > KNIGHT_R + 400) { k.bolts.splice(i, 1); continue; }
+      if (!p.dying && (p.inv || 0) <= 0 && Math.abs(b.x - p.x) < b.r + 11 && b.y > heroTop(p) && b.y < p.y) {
+        hurtPlayer(p, b.vx < 0 ? -1 : 1);
+        spawnLavaSplash(b.x, b.y, 4);
+        k.bolts.splice(i, 1);
+      }
+    }
+  }
+
+  function spawnLavaSplash(x, y, n) {
+    if (l5.balls.length > 140) return;   // safety cap — splashes are cosmetic
+    for (let i = 0; i < n; i++) {
+      l5.balls.push({ x: x + (love.math.random() - 0.5) * 24, y: y - 4,
+        vx: (love.math.random() - 0.5) * 260, vy: -(120 + love.math.random() * 260),
+        r: 3 + love.math.random() * 4, t: 0, splash: true });
+    }
+  }
+
+  // one lava bullet loosed straight ahead as the charged fire-blade swings
+  function fireLavaBullet(p) {
+    const hx = p.x + p.facing * 18, hy = p.y - 32;
+    l5.bullets.push({ x: hx, y: hy, vx: p.facing * 660, vy: -24, t: 0, r: 6 });
+    if (sfxSwing) sfxSwing.play(0.5, 0.6);
+  }
+
+  // ------------------------------------------------------------------ L5 art
+  function drawLava5() {
+    // only draw the on-screen slice of each pool (the river can be very long)
+    const camL = cam.x - VW * 0.62 / cam.zoom - 40, camR = cam.x + VW * 0.62 / cam.zoom + 40;
+    for (const L of l5.lava) {
+      if (L.x1 < camL || L.x0 > camR) continue;
+      const x0 = Math.max(L.x0, camL), x1 = Math.min(L.x1, camR), w = x1 - x0;
+      if (w <= 0) continue;
+      // molten body — a deep, seemingly ENDLESS column that fades from bright red
+      // toward the cave's near-black, so the bottom is never visible from inside.
+      // Everything is clamped to the pit's own borders (never spills onto the rock).
+      const DEPTH = 1600, N = 26;
+      for (let i = 0; i < N; i++) {
+        const k = i / N;
+        lg.setColor(lerp(0.55, 0.055, k), lerp(0.14, 0.02, k), lerp(0.05, 0.02, k), 1);
+        lg.rectangle('fill', x0, L.y + i * (DEPTH / N), w, DEPTH / N + 1);
+      }
+      // bright hot upper band
+      lg.setColor(0.9, 0.32, 0.07, 1);
+      lg.rectangle('fill', x0, L.y, w, 40);
+      // rolling bright surface crust — clamped so it can't overrun the pit borders
+      lg.setColor(1.0, 0.62, 0.14, 0.95);
+      const step = 22;
+      for (let x = Math.floor(x0 / step) * step; x < x1; x += step) {
+        if (x < L.x0) continue;
+        const yy = L.y + Math.sin(x * 0.05 + T * 3) * 4 + Math.sin(x * 0.13 + T * 5) * 2;
+        lg.rectangle('fill', Math.max(x, x0), yy, Math.min(step, x1 - Math.max(x, x0)), 6);
+      }
+      // glow haze rising off the surface (within the pit)
+      lg.setColor(1.0, 0.5, 0.12, 0.10);
+      lg.rectangle('fill', x0, L.y - 50, w, 50);
+      // hot vertical cracks in the upper body (kept inside the borders)
+      lg.setColor(1.0, 0.85, 0.4, 0.5 + 0.3 * Math.sin(T * 4 + L.x0));
+      for (let x = Math.max(x0 + 16, L.x0 + 16); x < x1 - 4; x += 46) {
+        lg.rectangle('fill', x, L.y + 12, 3, 30 + Math.sin(T * 3 + x) * 8);
+      }
+    }
+  }
+
+  function drawLavaBalls() {
+    for (const b of l5.balls) {
+      lg.setColor(1.0, 0.5, 0.12, 0.18); lg.circle('fill', b.x, b.y, b.r * 2.1);
+      lg.setColor(0.95, 0.32, 0.06, 1); lg.circle('fill', b.x, b.y, b.r);
+      lg.setColor(1.0, 0.82, 0.3, 1); lg.circle('fill', b.x - b.r * 0.25, b.y - b.r * 0.25, b.r * 0.5);
+    }
+  }
+
+  function drawLavaBullets() {
+    for (const bu of l5.bullets) {
+      // motion trail
+      lg.setColor(1.0, 0.45, 0.1, 0.18);
+      lg.circle('fill', bu.x - bu.vx * 0.012, bu.y - bu.vy * 0.012, bu.r * 1.6);
+      lg.setColor(1.0, 0.55, 0.12, 0.4); lg.circle('fill', bu.x, bu.y, bu.r * 1.7);
+      lg.setColor(1.0, 0.35, 0.08, 1); lg.circle('fill', bu.x, bu.y, bu.r);
+      lg.setColor(1.0, 0.92, 0.5, 1); lg.circle('fill', bu.x - 1.5, bu.y - 1.5, bu.r * 0.45);
+    }
+  }
+
+  function drawButton5() {
+    const b = l5.button;
+    if (!b) return;
+    const h = b.pressed ? 2 : 6;
+    lg.setColor(0.16, 0.13, 0.13, 1);
+    lg.rectangle('fill', b.x - b.w / 2 - 4, b.y - 2, b.w + 8, 4);
+    lg.setColor(b.pressed ? 0.5 : 0.78, 0.24, 0.14, 1);
+    lg.rectangle('fill', b.x - b.w / 2, b.y - h, b.w, h);
+    lg.setColor(1.0, 0.6, 0.3, b.pressed ? 0.3 : 0.7 + 0.3 * Math.sin(T * 5));
+    lg.rectangle('fill', b.x - b.w / 2, b.y - h, b.w, 1.6);
+  }
+
+  function drawRockCarpet5() {
+    const rk = l5.rock, cp = l5.carpet;
+    // the carpet peeking from under the rock (or hovering, once free)
+    if (cp) {
+      if (cp.state === 'pinned') {
+        // a red-gold corner poking out from beneath the boulder
+        lg.setColor(0.58, 0.12, 0.17, 1);
+        lg.polygon('fill', cp.x - 70, FLOOR5 - 6, cp.x - 30, FLOOR5 - 14, cp.x - 26, FLOOR5 - 2, cp.x - 74, FLOOR5 + 2);
+        lg.setColor(0.86, 0.69, 0.32, 1);
+        lg.setLineWidth(2); lg.line(cp.x - 70, FLOOR5 - 6, cp.x - 30, FLOOR5 - 14); lg.setLineWidth(1);
+      } else if (cp.state === 'free') {
+        const gy = FLOOR5 - 60 + Math.sin(T * 1.6) * 6;
+        lg.setColor(1.0, 0.8, 0.4, 0.10 + 0.05 * Math.sin(T * 3));
+        lg.circle('fill', cp.x, gy - 6, 60);
+        drawFlyingCarpet(cp.x, gy, 1.5);
+      }
+    }
+    if (rk && !rk.destroyed) {
+      const jolt = rk.hitT > 0 ? (love.math.random() - 0.5) * 5 * (rk.hitT / 0.28) : 0;
+      const x = rk.x + jolt, w = rk.w;
+      lg.setColor(0, 0, 0, 0.3); lg.ellipse('fill', x, FLOOR5 + 2, w * 0.55, 8);
+      lg.setColor(0.20, 0.18, 0.21, 1);
+      lg.polygon('fill', x - w / 2, FLOOR5, x - w * 0.38, FLOOR5 - 78,
+        x - w * 0.05, FLOOR5 - 96, x + w * 0.34, FLOOR5 - 80, x + w / 2, FLOOR5);
+      lg.setColor(0.29, 0.27, 0.31, 1);
+      lg.polygon('fill', x - w * 0.32, FLOOR5 - 66, x - w * 0.05, FLOOR5 - 84,
+        x + w * 0.20, FLOOR5 - 70, x + w * 0.02, FLOOR5 - 52);
+      lg.setColor(0.10, 0.09, 0.11, 1); lg.setLineWidth(2);
+      lg.line(x - w * 0.2, FLOOR5 - 20, x - w * 0.05, FLOOR5 - 58);
+      lg.line(x + w * 0.1, FLOOR5 - 10, x + w * 0.18, FLOOR5 - 62);
+      lg.setLineWidth(1);
+      if (rk.hitT > 0) {   // fresh cracks glowing after a bullet strike
+        lg.setColor(1.0, 0.5, 0.15, rk.hitT / 0.28);
+        lg.setLineWidth(2);
+        lg.line(x - w * 0.15, FLOOR5 - 30, x + w * 0.1, FLOOR5 - 66);
+        lg.setLineWidth(1);
+      }
+    }
+  }
+
+  // The Lava Knight: a black steed wreathed in embers, ridden by an armoured
+  // rider with a molten scimitar. Fully procedural, drawn in profile.
+  function drawKnight5() {
+    const k = l5.knight;
+    if (!k || (k.dead && k.deadT > 1.4)) return;
+    const fade = k.dead ? clamp(1 - k.deadT * 0.7, 0, 1) : 1;
+    const f = k.dir;   // facing = travel direction
+    lg.push();
+    lg.translate(k.x, k.y);
+    lg.scale(f, 1);
+    if (k.flash > 0) lg.setColor(1, 1, 1, 1);   // (flash handled per-part below)
+    const HIDE = [0.10, 0.09, 0.12], HIDE2 = [0.15, 0.13, 0.17], EMBER = [0.95, 0.4, 0.1];
+    const fl = k.flash > 0 ? 1.6 : 1;
+    const bodyC = [HIDE[0] * fl, HIDE[1] * fl, HIDE[2] * fl, fade];
+    const legC = [HIDE2[0] * fl, HIDE2[1] * fl, HIDE2[2] * fl, fade];
+    const gallop = Math.sin(k.ph) ;
+    // ground shadow
+    lg.setColor(0, 0, 0, 0.28 * fade); lg.ellipse('fill', 0, 2, 62, 9);
+    // --- horse legs (two pairs, galloping)
+    for (const pair of [[-30, 0.0], [34, Math.PI]]) {
+      const px = pair[0], phase = pair[1];
+      const sw = Math.sin(k.ph * 2 + phase) * 16;
+      segment(px, -46, px + sw * 0.4, -20, 5, 4, legC);
+      segment(px + sw * 0.4, -20, px + sw, -2, 4, 3, legC);
+      const sw2 = Math.sin(k.ph * 2 + phase + 1.0) * 16;
+      segment(px + 8, -46, px + 8 + sw2 * 0.4, -20, 5, 4, bodyC);
+      segment(px + 8 + sw2 * 0.4, -20, px + 8 + sw2, -2, 4, 3, bodyC);
+    }
+    // --- horse body
+    setColA(bodyC);
+    lg.polygon('fill', -44, -58, 40, -60, 48, -42, 34, -34, -40, -36, -50, -48);
+    lg.ellipse('fill', -6, -50, 46, 20);
+    // tail streaming with embers
+    setColA(legC);
+    lg.polygon('fill', -44, -56, -70, -40 + gallop * 4, -66, -30, -42, -44);
+    lg.setColor(EMBER[0], EMBER[1], EMBER[2], 0.5 * fade);
+    lg.circle('fill', -68, -36 + gallop * 4, 3);
+    // neck + head, reaching forward
+    setColA(bodyC);
+    lg.polygon('fill', 40, -62, 62, -86, 74, -80, 58, -54, 44, -50);
+    lg.polygon('fill', 66, -84, 86, -82, 84, -70, 66, -72);   // muzzle
+    // glowing eye + fiery mane
+    lg.setColor(1.0, 0.55, 0.12, fade); lg.circle('fill', 70, -78, 2.2);
+    lg.setColor(EMBER[0], EMBER[1], EMBER[2], 0.75 * fade);
+    for (let i = 0; i < 5; i++) lg.circle('fill', 40 + i * 5, -70 - i * 3 + Math.sin(T * 6 + i) * 2, 3.2);
+    // --- rider (seated), armoured, with a molten scimitar
+    const ry = -66;   // saddle top
+    const lean = k.swing > 0 ? Math.sin((1 - k.swing / 0.3) * Math.PI) * 0.4 : 0;
+    lg.push();
+    lg.translate(-2, ry);
+    lg.rotate(lean * 0.2);
+    setColA([0.13 * fl, 0.12 * fl, 0.16, fade]);
+    lg.polygon('fill', -12, 0, 12, 0, 9, -34, -9, -34);   // torso
+    segment(-6, -6, -14, 16, 5, 4, legC);                 // near leg down the flank
+    // sword arm raised with a glowing blade
+    const armA = -0.5 - lean;
+    const hx = 8 + Math.cos(armA) * 20, hy = -30 + Math.sin(armA) * 20;
+    segment(6, -28, hx, hy, 4.5, 3.5, legC);
+    // a molten glow behind the blade, then the SAME curved scimitar the hero
+    // wields — same shape/orientation (drawSwordAt uses the body-local sin/cos
+    // convention, so armA maps to a = PI/2 - armA)
+    lg.setColor(1.0, 0.45, 0.1, 0.4 * fade);
+    lg.circle('fill', hx + Math.cos(armA) * 26, hy + Math.sin(armA) * 26, 13);
+    drawSwordAt(hx, hy, Math.PI / 2 - armA);
+    // hot molten tint over the steel blade
+    lg.setColor(1.0, 0.5, 0.12, 0.45 * fade); lg.setLineWidth(3);
+    lg.line(hx + Math.cos(armA) * 6, hy + Math.sin(armA) * 6, hx + Math.cos(armA) * 34, hy + Math.sin(armA) * 34);
+    lg.setLineWidth(1);
+    // helmed head
+    setColA([0.16 * fl, 0.14 * fl, 0.18, fade]);
+    lg.circle('fill', 0, -40, 8);
+    lg.polygon('fill', -8, -40, 8, -40, 6, -52, -6, -52);   // crest
+    lg.setColor(1.0, 0.4, 0.1, fade); lg.circle('fill', 4, -40, 1.8);   // eye slit glow
+    lg.pop();
+    lg.pop();
+  }
+
+  function drawEnts5() {
+    drawLava5();
+    drawButton5();
+    for (const g of l5.gates) drawGate(g);
+    drawRockCarpet5();
+    for (const sk of l5.skels) drawSkel(sk);
+    for (const bt of l5.biters) drawBiter(bt);
+    drawKnight5();
+    // the knight's flung lava bolts
+    if (l5.knight && l5.knight.bolts) {
+      for (const b of l5.knight.bolts) {
+        lg.setColor(1.0, 0.45, 0.1, 0.22); lg.circle('fill', b.x - b.vx * 0.012, b.y - b.vy * 0.012, b.r * 1.7);
+        lg.setColor(0.95, 0.32, 0.06, 1); lg.circle('fill', b.x, b.y, b.r);
+        lg.setColor(1.0, 0.82, 0.35, 1); lg.circle('fill', b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.5);
+      }
+    }
+    if (l5.swordPickup && !l5.swordPickup.taken) {
+      const sp = l5.swordPickup, g = 0.6 + 0.4 * Math.sin(T * 4);
+      lg.setColor(1.0, 0.5, 0.15, 0.25 * g); lg.circle('fill', sp.x, sp.y - 14, 16);
+      lg.push(); lg.translate(0, Math.sin(T * 3) * 2);
+      drawSwordAt(sp.x, sp.y, -1.1);
+      // molten tint over the blade
+      lg.setColor(1.0, 0.45, 0.1, 0.5 * g);
+      lg.circle('fill', sp.x + 12, sp.y - 20, 5);
+      lg.pop();
+    }
+    drawLavaBalls();
+    drawLavaBullets();
+    // the carpet-flight entities (heads, rising bolts, the door of light)
+    if (l5.flight && l5.flight.active) drawFlightEnts();
+  }
+
+  // dim, red-lit cave backdrop with distant molten glow
+  function drawBackground5(cam) {
+    for (let i = 0; i <= 16; i++) {
+      const k = i / 16;
+      lg.setColor(0.09 + 0.09 * k, 0.045 + 0.02 * k, 0.05 + 0.02 * k, 1);
+      lg.rectangle('fill', 0, VH * k, VW, VH / 16 + 1);
+    }
+    // rough cave-wall silhouettes (parallax)
+    const par = 0.3;
+    let ox = (-cam.x * par) % 420;
+    if (ox < 0) ox += 420;
+    lg.setColor(0.11, 0.06, 0.07, 1);
+    for (let i = -1; i <= 4; i++) {
+      const ax = ox + i * 420;
+      lg.polygon('fill', ax, VH, ax + 40, 300, ax + 120, 360, ax + 210, 250, ax + 300, 340, ax + 380, 300, ax + 420, VH);
+    }
+    // distant lava glow pooling along the cavern floor
+    lg.setColor(0.7, 0.24, 0.06, 0.10 + 0.04 * Math.sin(T * 1.3));
+    lg.rectangle('fill', 0, VH * 0.72, VW, VH * 0.28);
+    // stalactites hanging from the ceiling
+    let ox2 = (-cam.x * 0.5) % 260;
+    if (ox2 < 0) ox2 += 260;
+    lg.setColor(0.08, 0.05, 0.06, 1);
+    for (let i = -1; i <= 6; i++) {
+      const ax = ox2 + i * 260;
+      lg.polygon('fill', ax, 0, ax + 24, 0, ax + 12, 70 + (i % 3) * 26);
+    }
+  }
+
+  function drawL5Overlay() {
+    const p = player;
+    // during a cinematic with black bands (the wake-up), the HUD is hidden
+    const hudOff = l5.wake.active;
+    if (!hudOff) {
+    // hearts + lives (mirrors L2/L3)
+    lg.setFont(FONT_HUD);
+    for (let i = 1; i <= 3; i++) {
+      const hx = 30 + (i - 1) * 36, hy = 32;
+      const full = (p.hp || 0) >= i;
+      if (full) lg.setColor(0.85, 0.16, 0.22, 1); else lg.setColor(0.25, 0.10, 0.13, 0.8);
+      lg.circle('fill', hx - 5, hy - 3, 6.5); lg.circle('fill', hx + 5, hy - 3, 6.5);
+      lg.polygon('fill', hx - 11, hy - 0.5, hx + 11, hy - 0.5, hx, hy + 12);
+      lg.setColor(1, 1, 1, full ? 0.35 : 0.12); lg.circle('fill', hx - 6.5, hy - 5, 2);
+    }
+    lg.setColor(0.9, 0.83, 0.8, 0.9);
+    lg.print('LIVES', 30, 52, 0, 0.85, 0.85);
+    for (let i = 0; i < Math.max(0, l5.lives || 0); i++) {
+      const lx = 108 + i * 22, ly = 60;
+      lg.setColor(0.62, 0.5, 0.5, 1);
+      lg.polygon('fill', lx - 6, ly + 6, lx + 6, ly + 6, lx, ly - 3);
+      lg.setColor(0.94, 0.86, 0.84, 1); lg.circle('fill', lx, ly - 4, 3.2);
+    }
+    // fire-sword power indicator + charge pips
+    if (p.lavaSword) {
+      lg.setColor(1.0, 0.5, 0.15, 0.9);
+      lg.print('FIRE-SWORD', 30, 78, 0, 0.85, 0.85);
+      const charged = p.lavaCharge || 0;
+      for (let i = 0; i < 3; i++) {
+        const cx = 118 + i * 16, cy = 84;
+        if (i < charged) { lg.setColor(1.0, 0.45, 0.12, 1); lg.circle('fill', cx, cy, 5); lg.setColor(1.0, 0.9, 0.5, 1); lg.circle('fill', cx - 1.4, cy - 1.4, 2); }
+        else { lg.setColor(0.4, 0.2, 0.12, 0.7); lg.circle('line', cx, cy, 5); }
+      }
+      lg.setColor(0.85, 0.7, 0.6, 0.7);
+      lg.print(charged > 0 ? 'ATTACK to fire' : 'BLOCK to charge', 178, 78, 0, 0.8, 0.8);
+    }
+    // Lava Knight health bar
+    if (l5.knight && !l5.knight.dead) {
+      const k = l5.knight;
+      lg.setColor(0.95, 0.4, 0.2, 0.95);
+      const gm = 'LAVA  KNIGHT';
+      lg.print(gm, VW / 2 - FONT_HUD.getWidth(gm) / 2, 22);
+      const bw = 300, bx = VW / 2 - bw / 2, by = 42;
+      lg.setColor(0.2, 0.06, 0.04, 0.8); lg.rectangle('fill', bx, by, bw, 10);
+      lg.setColor(0.95, 0.35, 0.12, 1); lg.rectangle('fill', bx, by, bw * clamp(k.hp / 5, 0, 1), 10);
+      lg.setColor(1, 0.8, 0.4, 0.5); lg.rectangle('fill', bx, by, bw, 2);
+    }
+    }   // end HUD (hidden during the wake cutscene)
+    // toast
+    if (l5.msgT > 0) {
+      lg.setColor(0.96, 0.88, 0.78, Math.min(1, l5.msgT));
+      lg.print(l5.msg, VW / 2 - FONT_HUD.getWidth(l5.msg) / 2, VH - 96);
+    }
+    // the hero's spoken lines — the game's usual subtitle dialog box ("The King")
+    if (l5.dialog && l5.dialog.dur > 0 && l5.dialog.t < l5.dialog.dur) {
+      drawSubtitle({ who: 'HERO', text: l5.dialog.text });
+    }
+    // "Press UP to use the carpet" prompt when standing by the freed carpet
+    if (l5.carpetNear && l5.carpet && l5.carpet.state === 'free') {
+      const sx = VW / 2 + (l5.carpet.x - cam.x) * cam.zoom;
+      const sy = VH / 2 + (l5.carpet.y - 96 - cam.y) * cam.zoom;
+      const m = 'Press  ▲  to use the carpet';
+      lg.setFont(FONT_HUD);
+      const tw = FONT_HUD.getWidth(m), bob = Math.sin(T * 4) * 3;
+      lg.setColor(0.05, 0.03, 0.02, 0.8);
+      lg.rectangle('fill', sx - tw / 2 - 10, sy - 14 + bob, tw + 20, 26);
+      lg.setColor(1.0, 0.72, 0.4, 0.95);
+      lg.rectangle('fill', sx - tw / 2 - 10, sy - 14 + bob, tw + 20, 2);
+      lg.setColor(0.98, 0.92, 0.82, 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(T * 4)));
+      lg.print(m, sx - tw / 2, sy - 8 + bob);
+    }
+    // wake-up cutscene: black bands + fade + location card
+    const w = l5.wake;
+    if (w.active) {
+      const bandH = (w.stage >= 3) ? 58 * clamp((0.9 - w.t) / 0.9, 0, 1) : 58;
+      let blackA = 0;
+      if (w.stage === 0) blackA = 1;
+      else if (w.stage === 1) blackA = clamp(1 - w.t / 1.4, 0.34, 1);
+      else blackA = 0.34 * clamp(1 - w.t / 1.2, 0, 1);
+      if (blackA > 0) { lg.setColor(0.03, 0.0, 0.0, blackA); lg.rectangle('fill', 0, 0, VW, VH); }
+      if (bandH > 0) {
+        lg.setColor(0.02, 0.0, 0.0, 0.96);
+        lg.rectangle('fill', 0, 0, VW, bandH);
+        lg.rectangle('fill', 0, VH - bandH, VW, bandH);
+      }
+      if (w.stage >= 1 && FONT_LOC) {
+        const a = (w.stage === 1) ? clamp((w.t - 0.4) / 1.0, 0, 1)
+          : clamp(1 - w.t / 1.4, 0, 1);
+        lg.setFont(FONT_LOC);
+        lg.setColor(0.95, 0.8, 0.62, a);
+        printSpaced('THE  LAVA  CAVERNS  ·  THE  DEEP', VW / 2, VH * 0.18, FONT_LOC, 5, 1);
+      }
+    }
+    // finale — the King has passed into the door of light; hold on WHITE with a
+    // black label
+    if (l5.end.stage >= 5) {
+      lg.setColor(1, 1, 1, 1); lg.rectangle('fill', 0, 0, VW, VH);   // full white
+      const a = clamp((l5.end.t - 0.6) / 1.2, 0, 1);
+      if (a > 0 && FONT_SUB) {
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.08, 0.07, 0.10, a);
+        printSpaced('THE  KING  PASSES  INTO  THE  REALM  OF  LIGHT', VW / 2, VH / 2 - 22, FONT_SUB, 4, 0.82);
+        lg.setColor(0.16, 0.14, 0.18, a);
+        printSpaced('TO  BE  CONTINUED', VW / 2, VH / 2 + 18, FONT_SUB, 6, 1);
+        lg.setFont(FONT_HUD);
+        lg.setColor(0.3, 0.28, 0.32, a * 0.8);
+        const m = 'press  R  to  replay';
+        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 54);
+      }
+    } else if (l5.end.stage > 0) {
+      const a = clamp(l5.end.t / 2.0, 0, 1);
+      lg.setColor(0.02, 0.0, 0.0, a * 0.92); lg.rectangle('fill', 0, 0, VW, VH);
+      if (a >= 1 && FONT_SUB) {
+        lg.setFont(FONT_SUB);
+        lg.setColor(0.96, 0.7, 0.4, clamp((l5.end.t - 2.2) / 1.2, 0, 1));
+        printSpaced('OUT  OF  THE  DEEP', VW / 2, VH / 2 - 6, FONT_SUB, 6, 1);
+        lg.setFont(FONT_HUD);
+        lg.setColor(0.85, 0.8, 0.78, 0.8);
+        const m = 'press  R  to  replay';
+        lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
+      }
+    }
+    if (l5.gameOver) {
+      lg.setColor(0.04, 0.0, 0.0, 0.9); lg.rectangle('fill', 0, 0, VW, VH);
+      lg.setFont(FONT_SUB); lg.setColor(0.85, 0.2, 0.12, 1);
+      printSpaced('GAME  OVER', VW / 2, VH / 2 - 28, FONT_SUB, 6, 1);
+      lg.setFont(FONT_HUD); lg.setColor(0.9, 0.86, 0.82, 0.9);
+      const m = 'Press  R  to  try  again';
+      lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
+    }
+  }
+
+  // ---------------------------------------------------------------- CARPET FLIGHT
+  // A SEAMLESS continuation of the level: the King simply lifts off on the carpet
+  // and flies right over the level's own long lava river. Flying-head enemies
+  // sweep in from the right and lava bolts rise from the river; he flies up /
+  // down / left / right to dodge and looses charged lava bullets to destroy the
+  // heads. At the far end a giant door of light swallows him → fade to white.
+  const FL = { TOP: 96, BOT: 400, RIVER: 452, ALT: 236, CAMY: 252, SCROLL: 268, VFLY: 340, HFLY: 175 };
+
+  function startFlight5() {
+    l5.flight = {
+      active: true, phase: 'lift', t: 0,
+      heads: [], upBolts: [], headCool: 1.4, boltCool: 1.2,
+      startX: player.x, y0: player.y, doorX: DOOR_LIGHT_X, whiteA: 0,
+    };
+    player.state = 'cine'; player.vx = 0; player.vy = 0; player.facing = 1;
+    player.sheathed = false; player.swordIdle = 0;   // fire-sword out for the flight
+    player.lavaSword = true; player.lavaCharge = 3;  // start charged so you can fire at once
+    player.hp = 3; player.inv = 0.6; player.blockHold = 0;
+    l5.bullets.length = 0;
+  }
+
+  function flightHurt(p) {
+    if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
+    if ((p.inv || 0) > 0 || p.dying) return;
+    p.hp = (p.hp || 3) - 1; p.inv = 1.1; p.blockFlash = 0.2;
+    spawnDust(p.x, p.y, 5, 0.9);
+    if (sfxHit) sfxHit.play(0.5, 1.0);
+    if (p.hp <= 0) {
+      l5.lives = (l5.lives || 0) - 1;
+      if (l5.lives <= 0) { l5.gameOver = true; return; }
+      // restart the flight from the lift-off (back at the carpet)
+      p.hp = 3; p.inv = 1.6;
+      const f = l5.flight;
+      f.phase = 'lift'; f.t = 0; f.heads.length = 0; f.upBolts.length = 0;
+      f.startX = l5.carpet.x; f.y0 = FLOOR5; player.x = l5.carpet.x; player.y = FLOOR5;
+      l5.bullets.length = 0; player.lavaCharge = 3; player.blockHold = 0;
+      l5toast('Struck down over the fire — take flight again');
+    }
+  }
+
+  // 1-second HOLD-to-charge; you cannot shoot while charging (applies on the
+  // ground too, wherever the Fire-Sword is used)
+  const CHARGE_TIME = 1.0;
+  function updateFireCharge(p, dt) {
+    if (!(level === 5 && p.lavaSword)) return;
+    const blocking = love.keyboard.isDown('c');
+    if (blocking && (p.lavaCharge || 0) < 3) {
+      p.blockHold = (p.blockHold || 0) + dt;
+      p.blockT = Math.max(p.blockT || 0, 0.15);   // hold the block pose while charging
+      if (p.blockHold >= CHARGE_TIME) {
+        p.lavaCharge = 3; p.blockHold = 0; p.blockFlash = 0.28;
+        l5toast('The Fire-Sword blazes — 3 lava bullets ready');
+      }
+    } else {
+      p.blockHold = 0;
+    }
+  }
+  // true while the block is being held to recharge (blocks shooting)
+  function fireCharging(p) { return (p.blockHold || 0) > 0; }
+
+  function updateFlightEnts(dt) {
+    const f = l5.flight, p = player;
+    for (let i = f.heads.length - 1; i >= 0; i--) {
+      const h = f.heads[i];
+      h.t += dt;
+      if (h.state === 'dead') { h.dead += dt; if (h.dead > 0.5) f.heads.splice(i, 1); continue; }
+      h.x += h.vx * dt;
+      h.y = clamp(h.y + h.vy * dt + Math.sin((T + h.ph) * 3) * 26 * dt, FL.TOP, FL.BOT);
+      if (h.x < cam.x - VW * 0.72) { f.heads.splice(i, 1); continue; }
+      if ((p.inv || 0) <= 0 && Math.abs(h.x - p.x) < 24 && Math.abs(h.y - (p.y - 18)) < 24) {
+        flightHurt(p); h.state = 'dead'; h.dead = 0;
+      }
+    }
+    for (let i = f.upBolts.length - 1; i >= 0; i--) {
+      const b = f.upBolts[i];
+      b.t += dt; b.vy += 55 * dt; b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.y < FL.TOP - 90 || b.t > 4.5) { f.upBolts.splice(i, 1); continue; }
+      if ((p.inv || 0) <= 0 && Math.abs(b.x - p.x) < b.r + 12 && Math.abs(b.y - (p.y - 18)) < b.r + 18) {
+        flightHurt(p); f.upBolts.splice(i, 1);
+      }
+    }
+    for (let i = l5.bullets.length - 1; i >= 0; i--) {
+      const bu = l5.bullets[i];
+      bu.t += dt; bu.x += bu.vx * dt; bu.y += bu.vy * dt;
+      let gone = bu.t > 1.6 || bu.x > cam.x + VW * 0.62;
+      for (const h of f.heads) {
+        if (h.state === 'dead') continue;
+        if (Math.abs(bu.x - h.x) < 24 && Math.abs(bu.y - h.y) < 24) {
+          h.state = 'dead'; h.dead = 0; gone = true;
+          spawnDust(h.x, h.y, 6, 0.9);
+          if (sfxHit) sfxHit.play(0.5, 1.2);
+        }
+      }
+      if (gone) l5.bullets.splice(i, 1);
+    }
+  }
+
+  function updateFlight5(dt) {
+    const f = l5.flight, p = player, cp = l5.carpet;
+    f.t += dt; cp.t += dt;
+    p.inv = Math.max(0, (p.inv || 0) - dt);
+    p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
+    p.blockT = Math.max(0, (p.blockT || 0) - dt);
+    p.atkT = Math.max(-1, (p.atkT || 0) - dt);
+    p.drawT = Math.max(0, (p.drawT || 0) - dt);
+    p.lavaCharge = p.lavaCharge || 0;
+    p.state = 'ground'; p.onGround = true; p.vx = 0; p.facing = 1;   // standing pose on the carpet
+    cp.x = p.x; cp.y = p.y;
+
+    if (f.phase === 'lift') {
+      const k = smooth(clamp(f.t / 1.3, 0, 1));
+      p.y = lerp(f.y0, FL.ALT, k);
+      p.x = f.startX + f.t * 140;
+      cam.x = lerp(cam.x, p.x + 190, Math.min(1, dt * 3)); cam.y = lerp(cam.y, FL.CAMY, Math.min(1, dt * 3)); cam.zoom = 1;
+      if (f.t > 1.3) { f.phase = 'run'; f.t = 0; }
+      return;
+    }
+
+    if (f.phase === 'run') {
+      updateFireCharge(p, dt);
+      const up = keyUp(), down = keyDown(), left = keyLeft(), right = keyRight();
+      let vy = 0; if (up) vy -= FL.VFLY; if (down) vy += FL.VFLY;
+      p.y = clamp(p.y + vy * dt, FL.TOP, FL.BOT);
+      let vx = FL.SCROLL; if (right) vx += FL.HFLY; if (left) vx -= FL.HFLY * 0.8;
+      p.x += vx * dt;
+      cam.x = lerp(cam.x, p.x + 190, Math.min(1, dt * 4)); cam.y = FL.CAMY; cam.zoom = 1;
+
+      // spawn heads sweeping in from the right
+      f.headCool -= dt;
+      if (f.headCool <= 0) {
+        f.headCool = 0.7 + love.math.random() * 0.85;
+        const hy = FL.TOP + 24 + love.math.random() * (FL.BOT - FL.TOP - 48);
+        f.heads.push({ x: cam.x + VW * 0.60, y: hy, vx: -(135 + love.math.random() * 80),
+          vy: (love.math.random() - 0.5) * 46, ph: love.math.random() * 6, t: 0,
+          phase: love.math.random() * 6.28, state: 'chase', bite: 0, hurt: 0, dead: 0 });
+      }
+      // lava bolts rising from the river below the King
+      f.boltCool -= dt;
+      if (f.boltCool <= 0) {
+        f.boltCool = 0.5 + love.math.random() * 0.65;
+        const bx = p.x + (love.math.random() - 0.3) * 340;
+        f.upBolts.push({ x: bx, y: FL.RIVER, vx: (love.math.random() - 0.5) * 40,
+          vy: -(255 + love.math.random() * 130), r: 7, t: 0 });
+      }
+      updateFlightEnts(dt);
+      if (p.x >= f.doorX - 100) { f.phase = 'enter'; f.t = 0; }
+      return;
+    }
+
+    if (f.phase === 'enter') {
+      // the King flies into the giant door of light; everything fades to WHITE
+      p.x += 150 * dt; p.y = lerp(p.y, FL.ALT - 10, Math.min(1, dt * 2));
+      cam.x = lerp(cam.x, p.x + 190, Math.min(1, dt * 4)); cam.y = FL.CAMY;
+      f.whiteA = Math.min(1, (f.whiteA || 0) + dt * 0.7);
+      updateFlightEnts(dt);
+      if (f.t > 2.4) { f.phase = 'done'; f.t = 0; if (l5.end.stage < 5) { l5.end.stage = 5; l5.end.t = 0; } }
+      return;
+    }
+    // done
+    f.whiteA = 1;
+    if (l5.end.stage >= 5) l5.end.t += dt;
+  }
+
+  // the giant DOOR OF LIGHT at the end of the river (drawn in world space)
+  function drawDoorOfLight(x) {
+    const top = 118, bot = 522, w = 130, springY = top + w / 2;
+    for (let i = 7; i >= 1; i--) {   // outer radiance
+      lg.setColor(1.0, 0.96, 0.82, 0.05);
+      lg.rectangle('fill', x - w / 2 - i * 12, top - i * 12, w + i * 24, (bot - top) + i * 24);
+    }
+    lg.setColor(1.0, 0.98, 0.9, 0.9);
+    lg.rectangle('fill', x - w / 2, springY, w, bot - springY);
+    lg.arc('fill', x, springY, w / 2, Math.PI, 2 * Math.PI);
+    lg.setColor(1.0, 1.0, 1.0, 0.95);
+    lg.rectangle('fill', x - w / 2 + 16, springY, w - 32, bot - springY - 8);
+    lg.arc('fill', x, springY, w / 2 - 16, Math.PI, 2 * Math.PI);
+    // radiant beams streaming out
+    lg.setColor(1.0, 0.98, 0.85, 0.10);
+    for (let k = 0; k < 7; k++) {
+      const a = -Math.PI / 2 + (k - 3) * 0.28;
+      lg.polygon('fill', x, springY + 40, x + Math.cos(a) * 900 - 20, springY + 40 + Math.sin(a) * 900, x + Math.cos(a) * 900 + 20, springY + 40 + Math.sin(a) * 900);
+    }
+    // golden frame
+    lg.setColor(0.95, 0.85, 0.45, 0.9); lg.setLineWidth(5);
+    lg.line(x - w / 2, springY, x - w / 2, bot); lg.line(x + w / 2, springY, x + w / 2, bot);
+    lg.arc('line', 'open', x, springY, w / 2, Math.PI, 2 * Math.PI);
+    lg.setLineWidth(1);
+  }
+
+  // flight entities, drawn INSIDE the level's camera transform (from drawEnts5)
+  function drawFlightEnts() {
+    const f = l5.flight;
+    if (!f || !f.active) return;
+    drawDoorOfLight(f.doorX);
+    for (const b of f.upBolts) {
+      lg.setColor(1.0, 0.45, 0.1, 0.22); lg.circle('fill', b.x - b.vx * 0.01, b.y - b.vy * 0.01, b.r * 1.8);
+      lg.setColor(0.95, 0.32, 0.06, 1); lg.circle('fill', b.x, b.y, b.r);
+      lg.setColor(1.0, 0.82, 0.35, 1); lg.circle('fill', b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.5);
+    }
+    for (const h of f.heads) drawBiter(h);
+  }
+
+  // the flight's own HUD (hearts, lives, fire-sword charge, distance)
+  function drawFlightOverlay() {
+    const p = player;
+    lg.setFont(FONT_HUD);
+    for (let i = 1; i <= 3; i++) {
+      const hx = 30 + (i - 1) * 36, hy = 32;
+      const full = (p.hp || 0) >= i;
+      if (full) lg.setColor(0.85, 0.16, 0.22, 1); else lg.setColor(0.25, 0.10, 0.13, 0.8);
+      lg.circle('fill', hx - 5, hy - 3, 6.5); lg.circle('fill', hx + 5, hy - 3, 6.5);
+      lg.polygon('fill', hx - 11, hy - 0.5, hx + 11, hy - 0.5, hx, hy + 12);
+      lg.setColor(1, 1, 1, full ? 0.35 : 0.12); lg.circle('fill', hx - 6.5, hy - 5, 2);
+    }
+    lg.setColor(0.9, 0.83, 0.8, 0.9); lg.print('LIVES', 30, 52, 0, 0.85, 0.85);
+    for (let i = 0; i < Math.max(0, l5.lives || 0); i++) {
+      const lx = 108 + i * 22, ly = 60;
+      lg.setColor(0.62, 0.5, 0.5, 1); lg.polygon('fill', lx - 6, ly + 6, lx + 6, ly + 6, lx, ly - 3);
+      lg.setColor(0.94, 0.86, 0.84, 1); lg.circle('fill', lx, ly - 4, 3.2);
+    }
+    if (p.lavaSword) {
+      lg.setColor(1.0, 0.5, 0.15, 0.9); lg.print('FIRE-SWORD', 30, 78, 0, 0.85, 0.85);
+      const charged = p.lavaCharge || 0;
+      for (let i = 0; i < 3; i++) {
+        const cx = 118 + i * 16, cy = 84;
+        if (i < charged) { lg.setColor(1.0, 0.45, 0.12, 1); lg.circle('fill', cx, cy, 5); lg.setColor(1.0, 0.9, 0.5, 1); lg.circle('fill', cx - 1.4, cy - 1.4, 2); }
+        else { lg.setColor(0.4, 0.2, 0.12, 0.7); lg.circle('line', cx, cy, 5); }
+      }
+      // charging: a 0→2s hold meter; otherwise the hint
+      if ((p.blockHold || 0) > 0) {
+        lg.setColor(0.85, 0.7, 0.6, 0.7); lg.print('CHARGING…', 178, 78, 0, 0.8, 0.8);
+        lg.setColor(0.3, 0.15, 0.08, 0.8); lg.rectangle('fill', 178, 90, 90, 5);
+        lg.setColor(1.0, 0.6, 0.15, 1); lg.rectangle('fill', 178, 90, 90 * clamp(p.blockHold / 2.0, 0, 1), 5);
+      } else {
+        lg.setColor(0.85, 0.7, 0.6, 0.7); lg.print(charged > 0 ? 'ATTACK to fire  ·  hold BLOCK 2s to recharge' : 'hold BLOCK 2s to charge', 178, 78, 0, 0.8, 0.8);
+      }
+    }
+    // flight progress bar (distance to the door of light)
+    if (l5.flight.phase === 'run' || l5.flight.phase === 'lift') {
+      const prog = clamp((p.x - l5.flight.startX) / (l5.flight.doorX - l5.flight.startX), 0, 1);
+      const bw = 300, bx = VW / 2 - bw / 2, by = 26;
+      lg.setColor(0.2, 0.06, 0.04, 0.7); lg.rectangle('fill', bx, by, bw, 8);
+      lg.setColor(0.8, 0.75, 0.5, 1); lg.rectangle('fill', bx, by, bw * prog, 8);
+      lg.setColor(0.9, 0.85, 0.75, 0.9);
+      const m = 'ACROSS  THE  LAVA  RIVER';
+      lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, 40);
+    }
+    if (l5.msgT > 0) {
+      lg.setColor(0.96, 0.88, 0.78, Math.min(1, l5.msgT));
+      lg.print(l5.msg, VW / 2 - FONT_HUD.getWidth(l5.msg) / 2, VH - 96);
+    }
+    if (p.blockFlash > 0 && (p.hp || 0) >= 0) {
+      lg.setColor(0.9, 0.2, 0.15, clamp(p.blockFlash / 0.2, 0, 1) * 0.25);
+      lg.rectangle('fill', 0, 0, VW, VH);
+    }
+    // fade to WHITE as the King enters the door of light
+    if ((l5.flight.whiteA || 0) > 0) {
+      lg.setColor(1, 1, 1, clamp(l5.flight.whiteA, 0, 1));
+      lg.rectangle('fill', 0, 0, VW, VH);
+    }
+    if (l5.gameOver) {
+      lg.setColor(0.04, 0.0, 0.0, 0.9); lg.rectangle('fill', 0, 0, VW, VH);
+      lg.setFont(FONT_SUB); lg.setColor(0.85, 0.2, 0.12, 1);
+      printSpaced('GAME  OVER', VW / 2, VH / 2 - 28, FONT_SUB, 6, 1);
+      lg.setFont(FONT_HUD); lg.setColor(0.9, 0.86, 0.82, 0.9);
+      const m = 'Press  R  to  try  again';
+      lg.print(m, VW / 2 - FONT_HUD.getWidth(m) / 2, VH / 2 + 24);
+    }
+  }
+
+  // ============================================================================
   //  LEVEL 4 — "THIRTY DAYS BEFORE"  (Persian-palace balcony cutscene)
   //  A scripted, non-playable flashback: the king takes his leave. All figures
   //  are procedural, drawn in the hero's style with SOLID (segment) limbs and a
@@ -3598,6 +4849,12 @@
   const L4_NAMES = { HERO: 'The King', GUARD: 'Royal Guard', SERVANT: 'Handmaiden', SHAHRAMAN: 'Shahraman' };
   const L4_COLS = { HERO: [1.0, 0.86, 0.5], GUARD: [0.93, 0.44, 0.34], SERVANT: [0.96, 0.62, 0.72], SHAHRAMAN: [0.6, 0.86, 1.0] };
   function speakerHead(who) {
+    // Level 5 draws overlays in screen space over a scrolling camera, so convert
+    // the hero's world position to screen coordinates for the speaker marker.
+    if (who === 'HERO' && level === 5) {
+      return { x: VW / 2 + (player.x - cam.x) * cam.zoom,
+               y: VH / 2 + (player.y - 70 - cam.y) * cam.zoom };
+    }
     if (who === 'HERO') return { x: player.x, y: player.y - 118 };
     if (who === 'GUARD' && l4.guard) return { x: l4.guard.x, y: l4.guard.y - 136 };
     if (who === 'SERVANT' && l4.servant) return { x: l4.servant.x, y: l4.servant.y - 128 };
@@ -3678,6 +4935,7 @@
     if (n === 4) { initL4(); return; }
     if (n === 1) { plats = plats1; checkpoints = checkpoints1; }
     else if (n === 2) { plats = plats2; checkpoints = checkpoints2; }
+    else if (n === 5) { plats = plats5; checkpoints = checkpoints5; }
     else { plats = plats3; checkpoints = checkpoints3; }
     buildLevel();
     respawn = { x: checkpoints[0].x, y: checkpoints[0].y };
@@ -3690,6 +4948,7 @@
     }
     if (n === 2) initEnts2();
     if (n === 3) initEnts3();
+    if (n === 5) initEnts5();
     // snap the spawn onto the actual floor under the checkpoint and start
     // grounded, so the hero can never show a mid-air "falling" pose at the start
     const groundY = floorAt(checkpoints[0].x, checkpoints[0].y - 4);
@@ -3709,7 +4968,7 @@
     // the hero carries the sword learned in the keep into the black halls.
     // Level 2 normally teaches the sword via its pickup puzzle, so only hand it
     // over there when a debug jump drops us straight into it.
-    if (n === 3 || (DEBUG && n === 2)) { player.hasSword = true; player.drawT = 0; }
+    if (n === 3 || n === 5 || (DEBUG && n === 2)) { player.hasSword = true; player.drawT = 0; }
     player.spawnFloor = player.y; player.initGrace = 0.5; player.startGuard = 3.5;
     // hard spawn-floor lock for the black halls: for the first seconds the hero
     // physically cannot drop below the start floor (a bullet-proof net for any
@@ -3720,6 +4979,10 @@
     resetScarf(...neckPos(player));
     cam.x = player.x + 70; cam.y = player.y - 130; cam.zoom = 1;
     introT = 0;
+    // Level 5 opens on its own wake-up cutscene, which draws the black bands and
+    // location card — suppress the generic platformer intro overlays. The King
+    // wakes with his sword sheathed on his back (drawn with ATTACK).
+    if (n === 5) { introT = 999; player.started = true; player.sheathed = true; player.swordIdle = 5; }
   }
   love.initLevel = initLevel;
 
@@ -3733,8 +4996,15 @@
     p.drawT = Math.max(0, (p.drawT || 0) - dt);
     p.inv = Math.max(0, (p.inv || 0) - dt);
     p.blockT = Math.max(0, (p.blockT || 0) - dt);
+    p.lavaCool = Math.max(0, (p.lavaCool || 0) - dt);
     p.riposte = Math.max(0, (p.riposte || 0) - dt);
     p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
+    // sword idle → after 5s unused, sheathe it on the back (drawn/attacked out again)
+    if (p.hasSword && !p.dying) {
+      const busy = (p.atkT || 0) > 0 || (p.drawT || 0) > 0 || (p.blockT || 0) > 0;
+      if (busy) p.swordIdle = 0; else p.swordIdle = (p.swordIdle || 0) + dt;
+      if (!p.sheathed && p.swordIdle > 5) p.sheathed = true;
+    }
     // the spawn guard rails only count down ONCE the hero actually starts moving
     // — otherwise, on a dark level where you take a few seconds to get oriented,
     // the guard would expire while the hero is still frozen at the spawn, leaving
@@ -3761,7 +5031,12 @@
     }
 
     if (p.dying) {
-      p.deadFade = p.deadFade + dt * 1.6;
+      // dying in lava: the King sinks down into the molten pool (like the skeletons)
+      if (p.lavaSink != null) {
+        p.vx = 0; p.y = p.y + 200 * dt;
+        if (Math.floor(T * 12) % 2 === 0) spawnLavaSplash(p.x, p.lavaSink, 2);
+      }
+      p.deadFade = p.deadFade + dt * (p.lavaSink != null ? 1.9 : 1.6);
       if (p.deadFade >= 1) {
         // in the keep, dying costs a life; run out of lives → game over
         if (level === 2 && !l2.gameOver) {
@@ -3771,6 +5046,10 @@
         if (level === 3 && !l3.gameOver) {
           l3.lives = (l3.lives || 0) - 1;
           if (l3.lives <= 0) { l3.gameOver = true; p.deadFade = 1; return; }
+        }
+        if (level === 5 && !l5.gameOver) {
+          l5.lives = (l5.lives || 0) - 1;
+          if (l5.lives <= 0) { l5.gameOver = true; p.deadFade = 1; return; }
         }
         respawnPlayer(p); p.dying = false; p.deadFade = 0.999;
       }
@@ -3957,7 +5236,10 @@
     }
 
     // the finale fall through the shattered floor is intentional — don't "die"
-    if (p.y > respawn.y + 720 && !(level === 3 && l3.end.stage >= 2)) killPlayer(p);
+    // Level 5's labyrinth descends deep, so allow a longer fall before it counts
+    // as falling out of the world
+    const fallLimit = (level === 5) ? 1040 : 720;
+    if (p.y > respawn.y + fallLimit && !(level === 3 && l3.end.stage >= 2)) killPlayer(p);
 
     if (p.x < 14) { p.x = 14; p.vx = Math.max(0, p.vx); }
 
@@ -4194,6 +5476,11 @@
       }
     }
 
+    if (level === 5) {
+      if (l5.flight && l5.flight.active && l5.flight.phase !== 'done') drawFlightOverlay();
+      else drawL5Overlay();
+    }
+
     if (cine.boxA > 0) {
       const h = 58 * smooth(cine.boxA);
       lg.setColor(0.02, 0.015, 0.04, 0.96);
@@ -4297,8 +5584,11 @@
       if (m) {
         DEBUG = true;
         const n = Number(decodeURIComponent(m[1]));
-        if (Number.isFinite(n) && n >= 1 && n <= 4) startLevel = Math.floor(n);
+        if (Number.isFinite(n) && n >= 1 && n <= 5) startLevel = Math.floor(n);
       }
+      // ?immortal=true — the hero cannot be hurt or die (debug aid; combine like
+      // ?debug=5&immortal=true)
+      if (/[?&]immortal=(true|1|yes)\b/i.test(window.location.search || '')) IMMORTAL = true;
     } catch (e) {}
 
     initLevel(startLevel);
@@ -4479,6 +5769,21 @@
     // GAME OVER freezes the world; only R (keypressed) restarts the level
     if (level === 2 && l2.gameOver) return;
     if (level === 3 && l3.gameOver) return;
+    if (level === 5 && l5.gameOver) { updateParticles(dt); return; }
+
+    // Level 5 scripted beats: the wake-up cutscene and the carpet flight bypass
+    // the platformer physics (the hero is frozen / carried)
+    if (level === 5 && l5.wake.active) {
+      updateWake5(dt); updateEnts5(dt); updateScarf(dt); updateParticles(dt); updateCamera(dt, player);
+      driveL5BattleTheme(dt, 0.42);   // the battle theme underscores the whole level
+      return;
+    }
+    if (level === 5 && l5.flight && l5.flight.active) {
+      if (!l5.gameOver) updateFlight5(dt);
+      updateScarf(dt); updateParticles(dt);
+      driveL5BattleTheme(dt, 0.6);
+      return;
+    }
 
     updatePlayer(dt, player);
     updateScarf(dt);
@@ -4487,6 +5792,7 @@
 
     if (level === 2) updateEnts2(dt);
     if (level === 3) updateEnts3(dt);
+    if (level === 5) updateEnts5(dt);
 
     if (level === 1) {
       let target = 0.28 * (0.55 + 0.45 * gust());   // gentler wind
@@ -4507,7 +5813,9 @@
       // the cut into Level 4.
       const bossEngaged = (level === 3 && l3.boss && l3.boss.active && !l3.boss.dead);   // live fight
       const bossAftermath = (level === 3 && l3.end && l3.end.stage > 0);                  // finale → SHADOW FALLS
-      const battleOn = bossEngaged || bossAftermath;
+      // the battle theme underscores the WHOLE of Level 5 (a lava-cave gauntlet)
+      const l5Battle = (level === 5 && !l5.wake.active);
+      const battleOn = bossEngaged || bossAftermath || l5Battle;
       musicVol = lerp(musicVol, battleOn ? 0.0 : 0.36, Math.min(1, dt * (battleOn ? 1.5 : 0.6)));
       musicSrc.setVolume(musicVol);
       if (battleSrc) {
@@ -4535,7 +5843,7 @@
     lg.push();
     lg.scale(1 / PIX);
 
-    if (level === 1) drawBackground(cam); else if (level === 4) drawBalconyBack(); else drawBackground2(cam);
+    if (level === 1) drawBackground(cam); else if (level === 4) drawBalconyBack(); else if (level === 5) drawBackground5(cam); else drawBackground2(cam);
 
     lg.push();
     lg.translate(VW / 2, VH / 2);
@@ -4558,13 +5866,25 @@
       if (level === 1) drawFlyingCarpet(-120, 1420, 1.7);   // magic carpet hovering over the high left cliff
       if (level === 2) drawEnts2();
       if (level === 3) drawEnts3();
+      if (level === 5) drawEnts5();
     }
     drawDusts();
     // during the stair-climb finale the real hero is replaced by the backlit
     // climber (drawn inside drawEnts2), so hide the normal hero + scarf
     if (level !== 4 && !(level === 2 && l2.endStage > 0)) {
-      drawScarf();
-      drawHero(player);
+      // Level 5: the carpet flight seats the hero atop the flying carpet. (The
+      // wake-up "getting up" is handled inside drawHero via wakePose/o.rot.)
+      if (level === 5 && l5.carpet && l5.carpet.state === 'riding') {
+        // carpet drawn at the hero's feet (its internal hover lifts it), so the
+        // King rides ON TOP of it, not below
+        drawFlyingCarpet(player.x, player.y + 74, 1.5);
+        drawScarf(); drawHero(player);
+      } else if (level === 5 && l5.wake.active) {
+        drawHero(player);   // no scarf while the body is tilted, getting up
+      } else {
+        drawScarf();
+        drawHero(player);
+      }
     }
 
     lg.pop();
@@ -4612,7 +5932,7 @@
   love.keypressed = function (key) {
     if (key === 'escape') { love.event.quit(); }
     // debug (?debug=…): number keys jump straight to a level
-    if (DEBUG && (key === '1' || key === '2' || key === '3' || key === '4')) { initLevel(Number(key)); return; }
+    if (DEBUG && (key === '1' || key === '2' || key === '3' || key === '4' || key === '5')) { initLevel(Number(key)); return; }
     if (key === 'r') { initLevel(level); return; }
     // Level 4 cutscene: advance the dialogue / skip beats
     if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
@@ -4622,20 +5942,52 @@
     // 'return'); space works too for parity with the game's other confirms.
     if ((key === 'return' || key === 'space') && level === 3 && l3.end && l3.end.waiting) { initLevel(4); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
+    // CARPET FLIGHT: ATTACK looses a charged lava bullet forward (with the sword
+    // swing animation). Recharge is a 2s BLOCK hold (updateFireCharge) — and you
+    // cannot shoot while charging.
+    if (level === 5 && l5.flight && l5.flight.active && l5.flight.phase === 'run' && !l5.gameOver) {
+      if ((key === 'x' || key === 'f') && player.lavaSword && (player.lavaCharge || 0) > 0 && !fireCharging(player)) {
+        fireLavaBullet(player); player.lavaCharge -= 1;
+        player.atkT = ATK_DUR;   // swing the sword as it shoots
+        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 2s to recharge');
+      }
+      return;
+    }
+    const l5busy = (level === 5 && (l5.wake.active || (l5.flight && l5.flight.active)));
+    const swordLevel = (level === 2 || level === 3 || level === 5);
+    // if the blade is sheathed on the back, an ATTACK (or block) first DRAWS it
+    // back into the usual position instead of striking
+    if ((key === 'x' || key === 'f' || key === 'c') && swordLevel && player.hasSword && player.sheathed && !l5busy
+      && (player.state === 'ground' || player.state === 'air')) {
+      player.sheathed = false; player.swordIdle = 0; player.drawT = DRAW_DUR;
+      if (sfxSwing) sfxSwing.play(0.3, 1.25);
+      return;
+    }
+    const hasFire = (level === 5 && player.lavaSword);
     const riposteReady = (player && (player.riposte || 0) > 0 && (player.riposteHits || 0) > 0);
-    if ((key === 'x' || key === 'f') && (level === 2 || level === 3) && player.hasSword
+    if ((key === 'x' || key === 'f') && swordLevel && player.hasSword && !l5busy && !(hasFire && fireCharging(player))
       && (player.state === 'ground' || player.state === 'air')
       && (player.drawT || 0) <= 0
       && ((player.atkT || 0) <= -0.10 || riposteReady)) {   // riposte bypasses cooldown → double attack
+      player.swordIdle = 0;
       player.atkT = ATK_DUR;
       player.blockT = 0;
       if (player.onGround) player.vx += player.facing * (riposteReady ? 80 : 45);
       if (sfxSwing) sfxSwing.play(riposteReady ? 0.44 : 0.38, (riposteReady ? 0.85 : 0.95) + love.math.random() * 0.18);
+      // Fire-Sword: a charged swing looses one of its three lava bullets
+      if (hasFire && (player.lavaCharge || 0) > 0) {
+        fireLavaBullet(player);
+        player.lavaCharge -= 1;
+        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 2s to recharge');
+      }
     }
-    // block / parry (Level 2 / 3, with a sword)
-    if (key === 'c' && (level === 2 || level === 3) && player.hasSword && (player.atkT || 0) <= 0
-      && (player.state === 'ground' || player.state === 'air')) {
+    // block / parry (Level 2 / 3, with a sword). On Level 5 the Fire-Sword's
+    // recharge is a 2-second BLOCK HOLD (handled continuously in updateFireCharge),
+    // so a tap here does nothing for it.
+    if (key === 'c' && swordLevel && player.hasSword && !l5busy && !hasFire
+      && (player.atkT || 0) <= 0 && (player.state === 'ground' || player.state === 'air')) {
       player.blockT = BLOCK_DUR;
+      player.swordIdle = 0;
     }
   };
 
@@ -4649,7 +6001,9 @@
       return level === 4
         || (level === 1 && cine.on)
         || (level === 2 && (l2.endStage || 0) > 0)
-        || (level === 3 && (l3.end.stage || 0) > 0);
+        || (level === 3 && (l3.end.stage || 0) > 0)
+        || (level === 5 && (l5.wake.active || l5.end.stage > 0
+            || (l5.flight && l5.flight.active && l5.flight.phase !== 'run')));
     },
   };
 
@@ -4659,6 +6013,7 @@
     l2: function () { return l2; },
     l3: function () { return l3; },
     l4: function () { return l4; },
+    l5: function () { return l5; },
     giveSword: function () { player.hasSword = true; player.drawT = 0; },
     drawHero: function () { drawHero(player); },
     drawSkel: function (sk) { drawSkel(sk); },

@@ -73,7 +73,9 @@
   // action buttons bottom-right: Jump + Attack + Block
   makeButton('JUMP', 'space', { round: true, tap: true, style: { right: P + 'px', bottom: (P + 8) + 'px', width: (S + 18) + 'px', height: (S + 18) + 'px' }, font: '15px' });
   makeButton('ATK',  'x',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: P + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
-  makeButton('BLK',  'c',     { round: true, tap: true, style: { right: (P + S + 34) + 'px', bottom: (P + S + 24) + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
+  // BLK is a HOLD button (not a tap): L2/L3 read the press edge for a parry, and
+  // Level 5's Fire-Sword reads the held key for its 2-second charge.
+  makeButton('BLK',  'c',     { round: true, style: { right: (P + S + 34) + 'px', bottom: (P + S + 24) + 'px', width: S + 'px', height: S + 'px' }, font: '15px' });
 
   // small utility taps top-right: Restart + Enter (castle) — always available,
   // including during cutscenes
