@@ -30,3 +30,6 @@ node_modules
 
 ### Mac OS ###
 .DS_Store
+
+### SMS port third-party toolchain (devkitSMS + rebuilt libs) ###
+smstoolchain/

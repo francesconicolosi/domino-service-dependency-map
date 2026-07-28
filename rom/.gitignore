@@ -1,0 +1,10 @@
+# SMS build artifacts
+*.sms
+*.rel
+*.ihx
+*.map
+*.sym
+*.lst
+*.asm
+*.noi
+*.lk
