@@ -34,7 +34,7 @@
   const JBUF = 0.13;
   const SCARF_N = 6;          // cape node count (fewer = shorter cape)
   const SCARF_SEG = 5.0;      // cape segment rest length; max cape ≈ (SCARF_N-1)*SCARF_SEG
-  const BUILD = '2026-07-28-L5c';  // shown on-screen (bottom-left) so a stale cached copy is obvious
+  const BUILD = '2026-07-29-L6';  // shown on-screen (bottom-left) so a stale cached copy is obvious
 
   const CINE_TRIGGER_X = 5980;
   const CINE_STOP_X = 6180;
@@ -180,7 +180,7 @@
     // DROP-IN gap 2480..2560 (fall into the labyrinth below)
     // B: the solid door pillar; its LEFT face (x2560) is climbable, so the hero
     //    climbs smoothly out of the labyrinth and mantles onto the top by the door.
-    { x: 2560, y: FLOOR5, w: 340, h: 1400, climbL: true, climbBot: 1260 }, // 2560..2900 (door at 2850)
+    { x: 2560, y: FLOOR5, w: 340, h: 1400, climbL: true, climbBot: 1200 }, // 2560..2900 (door at 2850); ladder stops at the basement floor (y1200)
     // the winding, oblique DESCENT far DOWN — well clear of the lava (280px of rock away)
     { x: 2380, y: 560,  w: 180, h: 18 },          // L1  2380..2560 (catches the drop)
     { x: 2320, y: 730,  w: 200, h: 18 },          // L2  2320..2520
@@ -619,10 +619,17 @@
       } else if (level === 5) {
         // dark basalt cavern rock with a lava-lit rim
         const thin = p.h < 60;   // a floating ledge vs. a full-height rock body
+        // thin ledges are drawn with a solid stone body under them so they read
+        // as carved steps of ground, not thin bars floating over a hole
+        const drawH = thin ? Math.max(p.h, 52) : p.h;
         lg.setColor(0.14, 0.10, 0.11, 1);
-        lg.rectangle('fill', p.x, p.y, p.w, p.h);
+        lg.rectangle('fill', p.x, p.y, p.w, drawH);
         lg.setColor(0.19, 0.14, 0.15, 1);
-        lg.rectangle('fill', p.x, p.y, p.w, Math.min(p.h, 40));
+        lg.rectangle('fill', p.x, p.y, p.w, Math.min(drawH, 40));
+        if (thin) {   // a shaded underside so the step looks solid and grounded
+          lg.setColor(0.07, 0.05, 0.06, 1);
+          lg.rectangle('fill', p.x, p.y + drawH - 4, p.w, 4);
+        }
         // scattered fissures — ONLY within a full-height rock body (never below a
         // thin floating ledge, where they'd hang in mid-air)
         if (!thin) {
@@ -1915,6 +1922,25 @@
   let showCredit = false;
   let DEBUG = false;   // enabled by ?debug=… — unlocks number-key level switching
   let IMMORTAL = false;   // enabled by ?immortal=true — the hero never takes damage
+
+  // -------------------------------------------------------------- SAVE / TITLE
+  // The furthest level reached is stored in localStorage, but only from Level 2
+  // on (Level 1 never saves). On the next visit a title screen offers to
+  // Continue from that level or start a New Game (which wipes the save).
+  const SAVE_KEY = 'rots:progress';
+  function saveProgress(n) {
+    try { if (n >= 2 && n <= 5) localStorage.setItem(SAVE_KEY, String(n)); } catch (e) {}
+  }
+  function loadProgress() {
+    try {
+      const v = parseInt(localStorage.getItem(SAVE_KEY), 10);
+      return (Number.isFinite(v) && v >= 2 && v <= 5) ? v : 0;
+    } catch (e) { return 0; }
+  }
+  function clearProgress() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  // titleMenu.active freezes the world behind a black title screen with the
+  // witch's symbol and a Continue / New Game choice.
+  const titleMenu = { active: false, sel: 0, savedLevel: 0, t: 0 };
 
   function startCine(p) {
     cine.on = true; cine.stage = 1; cine.t = 0;
@@ -3524,6 +3550,16 @@
     }
   }
 
+  // During the wake-up cutscene the battle theme is held back: only the game's
+  // usual lonely ambient score plays. bossWasFighting is kept false so the battle
+  // theme rewinds and starts from the top the moment the hero is on his feet.
+  function driveL5WakeMusic(dt) {
+    windVol = lerp(windVol, 0, Math.min(1, dt * 2.5)); if (windSrc) windSrc.setVolume(windVol);
+    if (musicSrc) { musicVol = lerp(musicVol, 0.36, Math.min(1, dt * 0.6)); musicSrc.setVolume(musicVol); }
+    if (battleSrc) { battleVol = lerp(battleVol, 0, Math.min(1, dt * 2.2)); battleSrc.setVolume(battleVol); }
+    bossWasFighting = false;
+  }
+
   function initEnts5() {
     l5.skels = [
       newSkel(1740, 1600, 1860, true),   // before pit 3 — knock it into the lava
@@ -3597,7 +3633,7 @@
   function updateEnts5(dt) {
     const p = player;
     l5.msgT = Math.max(0, l5.msgT - dt);
-    updateFireCharge(p, dt);   // Fire-Sword: 2s BLOCK hold recharges it (on the ground too)
+    updateFireCharge(p, dt);   // Fire-Sword: 1s BLOCK hold recharges it (on the ground too)
     // while a scripted beat plays (wake / carpet flight) the hero is invulnerable
     const safe = l5.wake.active || (l5.carpet && l5.carpet.state === 'riding') || l5.end.stage > 0;
 
@@ -4469,9 +4505,9 @@
       if ((p.blockHold || 0) > 0) {
         lg.setColor(0.85, 0.7, 0.6, 0.7); lg.print('CHARGING…', 178, 78, 0, 0.8, 0.8);
         lg.setColor(0.3, 0.15, 0.08, 0.8); lg.rectangle('fill', 178, 90, 90, 5);
-        lg.setColor(1.0, 0.6, 0.15, 1); lg.rectangle('fill', 178, 90, 90 * clamp(p.blockHold / 2.0, 0, 1), 5);
+        lg.setColor(1.0, 0.6, 0.15, 1); lg.rectangle('fill', 178, 90, 90 * clamp(p.blockHold / CHARGE_TIME, 0, 1), 5);
       } else {
-        lg.setColor(0.85, 0.7, 0.6, 0.7); lg.print(charged > 0 ? 'ATTACK to fire  ·  hold BLOCK 2s to recharge' : 'hold BLOCK 2s to charge', 178, 78, 0, 0.8, 0.8);
+        lg.setColor(0.85, 0.7, 0.6, 0.7); lg.print(charged > 0 ? 'ATTACK to fire  ·  hold BLOCK 1s to recharge' : 'hold BLOCK 1s to charge', 178, 78, 0, 0.8, 0.8);
       }
     }
     // flight progress bar (distance to the door of light)
@@ -4932,6 +4968,7 @@
   // -------------------------------------------------------------- LEVEL MGMT
   function initLevel(n) {
     level = n;
+    saveProgress(n);   // remember the furthest level reached (Level 2 and on)
     if (n === 4) { initL4(); return; }
     if (n === 1) { plats = plats1; checkpoints = checkpoints1; }
     else if (n === 2) { plats = plats2; checkpoints = checkpoints2; }
@@ -5291,7 +5328,77 @@
     }
   }
 
+  const LEVEL_NAMES = {
+    2: "THE  WITCH'S  KEEP", 3: 'THE  BLACK  HALLS',
+    4: 'THIRTY  DAYS  BEFORE', 5: 'THE  LAVA  CAVERNS',
+  };
+  // Rects for the two menu options, filled in during drawTitleMenu so a mouse
+  // click (love.mousepressed) can hit-test them.
+  const menuRects = [null, null];
+  function drawTitleMenu() {
+    lg.setColor(0, 0, 0, 1);
+    lg.rectangle('fill', 0, 0, VW, VH);
+
+    // the witch's symbol, coldly pulsing above the title
+    drawEmblem(VW / 2, VH * 0.30, 84, 0.9, null);
+
+    // game title
+    if (FONT_TITLE) {
+      lg.setFont(FONT_TITLE);
+      const y = VH * 0.44, sc = 0.7;
+      const offs = [[-2, 0], [2, 0], [0, -2], [0, 2], [0, 0]];
+      for (const off of offs) {
+        if (off[0] === 0 && off[1] === 0) setColA(COL.title, 1);
+        else lg.setColor(1, 0.85, 0.55, 0.10);
+        printSpaced('THE RETURN OF THE SHADOW', VW / 2 + off[0], y + off[1], FONT_TITLE, 10, sc);
+      }
+    }
+
+    // two options
+    const opts = ['CONTINUE  ·  LEVEL ' + titleMenu.savedLevel, 'NEW  GAME'];
+    const sub = LEVEL_NAMES[titleMenu.savedLevel] || '';
+    lg.setFont(FONT_SUB);
+    const oy = [VH * 0.62, VH * 0.72];
+    for (let i = 0; i < 2; i++) {
+      const on = (titleMenu.sel === i);
+      const pulse = on ? (0.75 + 0.25 * Math.sin(T * 3)) : 0.42;
+      lg.setColor(0.94, 0.89, 0.78, pulse);
+      printSpaced(opts[i], VW / 2, oy[i], FONT_SUB, 5, on ? 1.06 : 0.95);
+      // a rough clickable band around the line
+      menuRects[i] = { x: VW / 2 - 240, y: oy[i] - 6, w: 480, h: 40 };
+      if (on) {
+        lg.setColor(0.60, 0.82, 0.78, 0.85);
+        printSpaced('‹', VW / 2 - 230, oy[i], FONT_SUB, 0, 1.1);
+        printSpaced('›', VW / 2 + 222, oy[i], FONT_SUB, 0, 1.1);
+      }
+    }
+    if (sub && titleMenu.sel === 0) {
+      lg.setFont(FONT_HUD);
+      lg.setColor(0.72, 0.68, 0.62, 0.8);
+      printSpaced(sub, VW / 2, oy[0] + 26, FONT_HUD, 3, 0.9);
+    }
+
+    lg.setFont(FONT_HUD);
+    lg.setColor(0.7, 0.68, 0.76, 0.7);
+    const hint = '↑ ↓  choose      ENTER  confirm';
+    lg.print(hint, VW / 2 - FONT_HUD.getWidth(hint) / 2, VH - 46);
+  }
+
+  // Begin the game from the title-menu choice (or straight away when no menu).
+  function startFromMenu(continueGame) {
+    titleMenu.active = false;
+    if (continueGame && titleMenu.savedLevel >= 2) {
+      initLevel(titleMenu.savedLevel);
+    } else {
+      clearProgress();
+      initLevel(1);
+      if (!DEBUG) { studio.active = true; studio.t = 0; }   // fresh run: play the studio card
+    }
+  }
+
   function drawOverlays() {
+    // title menu: witch's symbol + Continue / New Game (drawn over a black world)
+    if (titleMenu.active) { drawTitleMenu(); return; }
     // "NYCOSOFT presents" studio card — a clean black screen with fading text
     if (studio.active) {
       lg.setColor(0, 0, 0, 1);
@@ -5534,7 +5641,8 @@
       if (/[?&](reset|fresh)\b/i.test(window.location.search || '')) {
         localStorage.removeItem('rots:level.lua');
         localStorage.removeItem('rots:level2.lua');
-        console.info('[ROTS] Saved level overrides cleared (?reset).');
+        clearProgress();
+        console.info('[ROTS] Saved level overrides + progress cleared (?reset).');
       }
     } catch (e) {}
 
@@ -5592,9 +5700,16 @@
     } catch (e) {}
 
     initLevel(startLevel);
-    // boot with the "NYCOSOFT presents" studio card (only on a normal first
-    // load — never on R, and never in debug mode)
-    if (!DEBUG) { studio.active = true; studio.t = 0; }
+    // If the player has reached Level 2+ before, greet them with the title
+    // screen (witch's symbol + Continue / New Game) over the frozen world.
+    // Otherwise boot with the "NYCOSOFT presents" studio card (normal first
+    // load — never on R, and never in debug mode).
+    const saved = DEBUG ? 0 : loadProgress();
+    if (saved >= 2) {
+      titleMenu.active = true; titleMenu.sel = 0; titleMenu.savedLevel = saved; titleMenu.t = 0;
+    } else if (!DEBUG) {
+      studio.active = true; studio.t = 0;
+    }
   };
 
   // ---------------------------------------------------- master volume control
@@ -5748,6 +5863,9 @@
     if (typeof window !== 'undefined' && window.__ROTS_PAUSED__) return;
     dt = Math.min(dt, 1 / 30);
 
+    // title menu: freeze the world behind the black title screen
+    if (titleMenu.active) { titleMenu.t += dt; T = T + dt; return; }
+
     // studio card: hold the world frozen (introT pinned at 0 → mountains stay
     // fully black) until the card finishes, then reveal the scene + credit
     if (studio.active) {
@@ -5775,7 +5893,7 @@
     // the platformer physics (the hero is frozen / carried)
     if (level === 5 && l5.wake.active) {
       updateWake5(dt); updateEnts5(dt); updateScarf(dt); updateParticles(dt); updateCamera(dt, player);
-      driveL5BattleTheme(dt, 0.42);   // the battle theme underscores the whole level
+      driveL5WakeMusic(dt);   // only the lonely ambient score until the hero wakes
       return;
     }
     if (level === 5 && l5.flight && l5.flight.active) {
@@ -5837,6 +5955,8 @@
     const W = dims[0], H = dims[1];
     const S = Math.min(W / VW, H / VH);
     const ox = (W - VW * S) / 2, oy = (H - VH * S) / 2;
+    // remember the letterbox transform so a menu click can map back to VW/VH
+    titleMenu._S = S; titleMenu._ox = ox; titleMenu._oy = oy;
 
     lg.setCanvas(pixCanvas);
     lg.clear(0, 0, 0, 1);
@@ -5870,8 +5990,11 @@
     }
     drawDusts();
     // during the stair-climb finale the real hero is replaced by the backlit
-    // climber (drawn inside drawEnts2), so hide the normal hero + scarf
-    if (level !== 4 && !(level === 2 && l2.endStage > 0)) {
+    // climber (drawn inside drawEnts2), so hide the normal hero + scarf.
+    // Falling into lava: the body vanishes on the spot (only the fiery splash
+    // "schizzo" remains) instead of visibly sinking down through the molten pool.
+    const heroInLava = (player.dying && player.lavaSink != null);
+    if (level !== 4 && !(level === 2 && l2.endStage > 0) && !heroInLava) {
       // Level 5: the carpet flight seats the hero atop the flying carpet. (The
       // wake-up "getting up" is handled inside drawHero via wakePose/o.rot.)
       if (level === 5 && l5.carpet && l5.carpet.state === 'riding') {
@@ -5931,6 +6054,15 @@
 
   love.keypressed = function (key) {
     if (key === 'escape') { love.event.quit(); }
+    // title menu: ↑/↓ choose, Enter/Space confirm
+    if (titleMenu.active) {
+      if (key === 'up' || key === 'down' || key === 'w' || key === 's' || key === 'left' || key === 'right') {
+        titleMenu.sel = 1 - titleMenu.sel;
+      } else if (key === 'return' || key === 'space' || key === 'z' || key === 'k' || key === 'x') {
+        startFromMenu(titleMenu.sel === 0);
+      }
+      return;
+    }
     // debug (?debug=…): number keys jump straight to a level
     if (DEBUG && (key === '1' || key === '2' || key === '3' || key === '4' || key === '5')) { initLevel(Number(key)); return; }
     if (key === 'r') { initLevel(level); return; }
@@ -5943,13 +6075,13 @@
     if ((key === 'return' || key === 'space') && level === 3 && l3.end && l3.end.waiting) { initLevel(4); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
     // CARPET FLIGHT: ATTACK looses a charged lava bullet forward (with the sword
-    // swing animation). Recharge is a 2s BLOCK hold (updateFireCharge) — and you
+    // swing animation). Recharge is a 1s BLOCK hold (updateFireCharge) — and you
     // cannot shoot while charging.
     if (level === 5 && l5.flight && l5.flight.active && l5.flight.phase === 'run' && !l5.gameOver) {
       if ((key === 'x' || key === 'f') && player.lavaSword && (player.lavaCharge || 0) > 0 && !fireCharging(player)) {
         fireLavaBullet(player); player.lavaCharge -= 1;
         player.atkT = ATK_DUR;   // swing the sword as it shoots
-        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 2s to recharge');
+        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 1s to recharge');
       }
       return;
     }
@@ -5978,16 +6110,38 @@
       if (hasFire && (player.lavaCharge || 0) > 0) {
         fireLavaBullet(player);
         player.lavaCharge -= 1;
-        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 2s to recharge');
+        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 1s to recharge');
       }
     }
     // block / parry (Level 2 / 3, with a sword). On Level 5 the Fire-Sword's
-    // recharge is a 2-second BLOCK HOLD (handled continuously in updateFireCharge),
+    // recharge is a 1-second BLOCK HOLD (handled continuously in updateFireCharge),
     // so a tap here does nothing for it.
     if (key === 'c' && swordLevel && player.hasSword && !l5busy && !hasFire
       && (player.atkT || 0) <= 0 && (player.state === 'ground' || player.state === 'air')) {
       player.blockT = BLOCK_DUR;
       player.swordIdle = 0;
+    }
+  };
+
+  // title menu: click either option (hover highlights via the pointer)
+  love.mousepressed = function (mx, my, button) {
+    if (!titleMenu.active || button !== 1) return;
+    const S = titleMenu._S || 1, ox = titleMenu._ox || 0, oy = titleMenu._oy || 0;
+    const vx = (mx - ox) / S, vy = (my - oy) / S;
+    for (let i = 0; i < menuRects.length; i++) {
+      const r = menuRects[i];
+      if (r && vx >= r.x && vx <= r.x + r.w && vy >= r.y && vy <= r.y + r.h) {
+        titleMenu.sel = i; startFromMenu(i === 0); return;
+      }
+    }
+  };
+  love.mousemoved = function (mx, my) {
+    if (!titleMenu.active) return;
+    const S = titleMenu._S || 1, ox = titleMenu._ox || 0, oy = titleMenu._oy || 0;
+    const vx = (mx - ox) / S, vy = (my - oy) / S;
+    for (let i = 0; i < menuRects.length; i++) {
+      const r = menuRects[i];
+      if (r && vx >= r.x && vx <= r.x + r.w && vy >= r.y && vy <= r.y + r.h) { titleMenu.sel = i; return; }
     }
   };
 
@@ -5998,7 +6152,8 @@
     // true while a non-interactive cutscene is playing — the touch overlay hides
     // its gameplay buttons (movement/jump/attack/block), keeping only R / ENTER
     inCutscene: function () {
-      return level === 4
+      return titleMenu.active
+        || level === 4
         || (level === 1 && cine.on)
         || (level === 2 && (l2.endStage || 0) > 0)
         || (level === 3 && (l3.end.stage || 0) > 0)
