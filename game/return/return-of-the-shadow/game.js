@@ -180,7 +180,7 @@
     // DROP-IN gap 2480..2560 (fall into the labyrinth below)
     // B: the solid door pillar; its LEFT face (x2560) is climbable, so the hero
     //    climbs smoothly out of the labyrinth and mantles onto the top by the door.
-    { x: 2560, y: FLOOR5, w: 340, h: 1400, climbL: true, climbBot: 1200 }, // 2560..2900 (door at 2850); ladder stops at the basement floor (y1200)
+    { x: 2560, y: FLOOR5, w: 340, h: 1400 }, // 2560..2900 (door at 2850); solid wall, not climbable
     // the winding, oblique DESCENT far DOWN — well clear of the lava (280px of rock away)
     { x: 2380, y: 560,  w: 180, h: 18 },          // L1  2380..2560 (catches the drop)
     { x: 2320, y: 730,  w: 200, h: 18 },          // L2  2320..2520
@@ -656,13 +656,19 @@
         // climbable LEFT face — a ladder of small jutting handhold rocks so the
         // player can see the wall can be climbed
         if (p.climbL) {
-          const yEnd = Math.min((p.climbBot != null ? p.climbBot : p.y + p.h), p.y + p.h - 20);
+          const ranges = (p.climbRanges && p.climbRanges.length)
+            ? p.climbRanges
+            : [{ top: p.y, bot: Math.min((p.climbBot != null ? p.climbBot : p.y + p.h), p.y + p.h - 20) }];
           const crng = love.math.newRandomGenerator((pi + 1) * 131 + 7);
-          for (let y = p.y + HOLDSTEP; y < yEnd; y += HOLDSTEP) {
-            const ww = 8 + crng.random() * 7;
-            lg.setColor(0.23, 0.16, 0.15, 1); lg.rectangle('fill', p.x - ww, y, ww + 3, 6);
-            lg.setColor(1.0, 0.5, 0.2, 0.45); lg.rectangle('fill', p.x - ww, y, ww + 3, 2);
-            lg.setColor(0, 0, 0, 0.4); lg.rectangle('fill', p.x - ww, y + 5, ww + 3, 2);
+          for (const r of ranges) {
+            const yStart = r.top + HOLDSTEP;
+            const yEnd = Math.min(r.bot, p.y + p.h - 20);
+            for (let y = yStart; y < yEnd; y += HOLDSTEP) {
+              const ww = 8 + crng.random() * 7;
+              lg.setColor(0.23, 0.16, 0.15, 1); lg.rectangle('fill', p.x - ww, y, ww + 3, 6);
+              lg.setColor(1.0, 0.5, 0.2, 0.45); lg.rectangle('fill', p.x - ww, y, ww + 3, 2);
+              lg.setColor(0, 0, 0, 0.4); lg.rectangle('fill', p.x - ww, y + 5, ww + 3, 2);
+            }
           }
         }
       } else {
@@ -1013,8 +1019,16 @@
       if (!p.beam) {
         ledges.push({ x: p.x, y: p.y, side: -1 });
         ledges.push({ x: p.x + p.w, y: p.y, side: 1 });
-        if (p.climbL) faces.push({ x: p.x, ytop: p.y, ybot: p.y + p.h, side: -1, bot: p.climbBot != null ? p.climbBot : (p.y + p.h) });
-        if (p.climbR) faces.push({ x: p.x + p.w, ytop: p.y, ybot: p.y + p.h, side: 1, bot: p.climbBot != null ? p.climbBot : (p.y + p.h) });
+        if (p.climbL) {
+          if (p.climbRanges && p.climbRanges.length) {
+            for (const r of p.climbRanges) faces.push({ x: p.x, ytop: r.top, ybot: r.bot, side: -1, bot: r.bot });
+          } else faces.push({ x: p.x, ytop: p.y, ybot: p.y + p.h, side: -1, bot: p.climbBot != null ? p.climbBot : (p.y + p.h) });
+        }
+        if (p.climbR) {
+          if (p.climbRanges && p.climbRanges.length) {
+            for (const r of p.climbRanges) faces.push({ x: p.x + p.w, ytop: r.top, ybot: r.bot, side: 1, bot: r.bot });
+          } else faces.push({ x: p.x + p.w, ytop: p.y, ybot: p.y + p.h, side: 1, bot: p.climbBot != null ? p.climbBot : (p.y + p.h) });
+        }
       }
     }
   }
@@ -1155,42 +1169,31 @@
     return o;
   }
 
-  // The hero waking on the cave floor and getting up: a four-phase animation
-  // that uses the arms and legs — lie curled → plant a hand and stir → push up
-  // onto bent legs → rise to a crouch → stand. `k` (0→1) is the wake progress;
-  // `o.rot` tilts the whole body from lying flat to upright (applied in drawHero).
+  // Level 5 wake-up: fast two-frame sequence using the standard hero model only.
+  // Frame 1: standard protagonist laid down and vertically inverted.
+  // Frame 2: exactly the same crouch pose used by normal gameplay.
+  // No custom renderer, no IK, no custom torso, no interpolation.
   function wakePose(k) {
     const o = basePose();
-    if (k < 0.30) {                       // lie sprawled on the ground, arms resting flat
-      const b = Math.sin(T * 1.8) * 0.05;
-      o.rot = 1.46; o.bob = 3;
-      o.legF = [0.55, -0.60]; o.legB = [0.30, -0.42];     // legs extended along the ground, slight bend
-      o.armF = [0.50 + b, 0.26]; o.armB = [0.26, 0.06];   // arms lying flat on the ground (not overhead)
-      o.lean = -0.04;
-    } else if (k < 0.56) {                // plant a hand and push the torso up
-      const u = smooth((k - 0.30) / 0.26);
-      o.rot = lerp(1.46, 0.86, u);
-      o.bob = lerp(3, 9, u);
-      o.legF = [lerp(0.55, 0.98, u), lerp(-0.60, -1.10, u)];   // front knee draws in under the body
-      o.legB = [lerp(0.30, -0.28, u), lerp(-0.42, -0.60, u)];
-      o.armB = [lerp(0.26, 1.55, u), lerp(0.06, 1.10, u)];     // back hand stays planted, torso rises off it
-      o.armF = [lerp(0.50, 0.95, u), lerp(0.26, 1.25, u)];     // front arm swings forward for balance
-      o.lean = lerp(-0.04, 0.22, u);
-    } else if (k < 0.84) {                // push off the hand up into a deep crouch
-      const u = smooth((k - 0.56) / 0.28);
-      o.rot = lerp(0.86, 0.10, u);
-      o.bob = lerp(9, 15, u);
-      o.legF = [lerp(0.98, 1.00, u), lerp(-1.10, -1.30, u)];
-      o.legB = [lerp(-0.28, -0.98, u), lerp(-0.60, -1.34, u)];
-      o.armB = [lerp(1.55, -0.35, u), lerp(1.10, -0.10, u)];   // hand pushes off, arm returns to the side
-      o.armF = [lerp(0.95, 0.55, u), lerp(1.25, 1.05, u)];
-      o.lean = lerp(0.22, 0.10, u);
-    } else {                              // straighten up out of the crouch
-      const u = smooth((k - 0.84) / 0.16);
-      const crouch = { bob: 15, lean: 0.10, legF: [1.00, -1.30], legB: [-0.98, -1.34], armF: [0.55, 1.05], armB: [-0.35, -0.10] };
-      const m = mixPose(crouch, basePose(), u);
-      o.bob = m.bob; o.lean = m.lean; o.legF = m.legF; o.legB = m.legB; o.armF = m.armF; o.armB = m.armB;
-      o.rot = lerp(0.10, 0, u);
+    k = clamp(k, 0, 1);
+
+    if (k < 0.76) {                       // FRAME 1: prone / face-down, vertical inversion
+      o.rot = 1.55;                       // lay the standard model almost horizontal
+      o.flipXY = true;                    // first frame: belly down, head right / body left
+      o.bob = 0;
+      o.lean = 0.02;
+      o.armF = [0.34, 0.26];
+      o.armB = [-0.20, -0.10];
+      o.legF = [0.12, 0.06];
+      o.legB = [-0.12, -0.16];
+
+    } else {                              // FRAME 2: exact gameplay crouch pose
+      o.bob = 15;
+      o.lean = 0.10;
+      o.legF = [1.00, -1.30];
+      o.legB = [-0.98, -1.34];
+      o.armF = [0.55, 1.05];
+      o.armB = [-0.35, -0.10];
     }
     return o;
   }
@@ -1586,6 +1589,7 @@
     lg.setLineWidth(1);
   }
 
+
   function drawHero(p) {
     let o = poseFor(p);
     if ((p.inv || 0) > 0 && !p.dying && Math.floor(T * 14) % 2 === 0) return;
@@ -1656,8 +1660,15 @@
     lg.push();
     lg.translate(p.x, p.y);
     // wake-up: tilt the whole body up from lying flat to standing (pivot = feet)
-    if (o.rot) lg.rotate(-o.rot * p.facing);
-    lg.scale(p.facing, 1);
+    if (o.flipXY) {
+      // Level 5 wake-up frame 1: mirror both axes so the hero is belly-down
+      // while keeping the head to the right and the rest of the body to the left.
+      lg.scale(-p.facing, -1);
+      if (o.rot) lg.rotate(-o.rot);
+    } else {
+      if (o.rot) lg.rotate(-o.rot * p.facing);
+      lg.scale(p.facing, 1);
+    }
 
     let hipX = o.lean * 3, hipY = -33 + o.bob;
     let chX = o.lean * 8, chY = -49 + o.bob;
@@ -1670,6 +1681,7 @@
       o.armB = ik2(chX, chY, o.ik.hb[0], o.ik.hb[1], 14, 13, 'arm');
       o.armF = ik2(chX, chY, o.ik.hf[0], o.ik.hf[1], 14, 13, 'arm');
     }
+
 
     // sword sheathed on the back — the scabbard runs along the back edge with
     // BOTH ends poking clear of the body: the chape below the hip and the hilt
@@ -3525,7 +3537,7 @@
     rock: null, carpet: null, knight: null, swordPickup: null,
     lives: 3, gameOver: false, msg: '', msgT: 0,
     wake: { active: false, stage: 0, t: 0, rise: 0 },
-    dialog: { text: '', t: 0, dur: 0 },
+    dialog: { text: '', t: 0, dur: 0 }, dialogDelay: null,
     end: { stage: 0, t: 0 }, flight: null, carpetNear: false,
     riverHinted: false, doorHinted: false, carpetHinted: false, _hitThisSwing: false,
   };
@@ -3590,7 +3602,7 @@
     l5.swordPickup = null;
     l5.lives = 3; l5.gameOver = false; l5.msg = ''; l5.msgT = 0;
     l5.wake = { active: true, stage: 0, t: 0, rise: 0 };
-    l5.dialog = { text: '', t: 0, dur: 0 };
+    l5.dialog = { text: '', t: 0, dur: 0 }; l5.dialogDelay = null;
     l5.end = { stage: 0, t: 0 }; l5.flight = null; l5.carpetNear = false;
     l5.riverHinted = false; l5.doorHinted = false; l5.carpetHinted = false;
     l5._hitThisSwing = false;
@@ -3609,11 +3621,21 @@
       w.rise = 0;
       if (w.t > 2.4) { w.stage = 2; w.t = 0; }
     } else if (w.stage === 2) {                // the hero gets up (arms + legs)
-      w.rise = smooth(clamp(w.t / 3.0, 0, 1));
-      if (w.t > 3.0) { w.stage = 3; w.t = 0; w.rise = 1; }
-    } else {                                   // bands retract, play begins
+      w.rise = clamp(w.t / 0.75, 0, 1);
+      if (w.t > 0.75) { w.stage = 3; w.t = 0; w.rise = 1; }
+    } else if (w.stage === 3) {                 // location label fades out while bands stay in place
       w.rise = 1;
-      if (w.t > 0.9) { w.active = false; l5say('Where am I…?  Lava on every side — how far did I fall?', 5); }
+      if (w.t > 1.55) { w.stage = 4; w.t = 0; }
+    } else {                                      // now retract bands, then play begins
+      w.rise = 1;
+      if (w.t > 0.9) {
+        w.active = false;
+        l5.dialogDelay = {
+          t: 0, wait: 3.0,
+          text: 'Where am I…?  Lava on every side — how far did I fall?',
+          dur: 5
+        };
+      }
     }
   }
 
@@ -3634,6 +3656,13 @@
   function updateEnts5(dt) {
     const p = player;
     l5.msgT = Math.max(0, l5.msgT - dt);
+    if (l5.dialogDelay) {
+      l5.dialogDelay.t += dt;
+      if (l5.dialogDelay.t >= l5.dialogDelay.wait) {
+        l5say(l5.dialogDelay.text, l5.dialogDelay.dur);
+        l5.dialogDelay = null;
+      }
+    }
     updateFireCharge(p, dt);   // Fire-Sword: 1s BLOCK hold recharges it (on the ground too)
     // while a scripted beat plays (wake / carpet flight) the hero is invulnerable
     const safe = l5.wake.active || (l5.carpet && l5.carpet.state === 'riding') || l5.end.stage > 0;
@@ -4178,16 +4207,20 @@
       lg.setColor(0.85, 0.7, 0.6, 0.7);
       lg.print(charged > 0 ? 'ATTACK to fire' : 'BLOCK to charge', 178, 78, 0, 0.8, 0.8);
     }
-    // Lava Knight health bar
+    // Lava Knight health bar: show it only when the player is close to the knight,
+    // not from the beginning of Level 5 while the boss object already exists off-screen.
     if (l5.knight && !l5.knight.dead) {
       const k = l5.knight;
-      lg.setColor(0.95, 0.4, 0.2, 0.95);
-      const gm = 'LAVA  KNIGHT';
-      lg.print(gm, VW / 2 - FONT_HUD.getWidth(gm) / 2, 22);
-      const bw = 300, bx = VW / 2 - bw / 2, by = 42;
-      lg.setColor(0.2, 0.06, 0.04, 0.8); lg.rectangle('fill', bx, by, bw, 10);
-      lg.setColor(0.95, 0.35, 0.12, 1); lg.rectangle('fill', bx, by, bw * clamp(k.hp / 5, 0, 1), 10);
-      lg.setColor(1, 0.8, 0.4, 0.5); lg.rectangle('fill', bx, by, bw, 2);
+      const nearKnight = Math.abs((p.x || 0) - k.x) < 760 && Math.abs((p.y || 0) - k.y) < 260;
+      if (nearKnight) {
+        lg.setColor(0.95, 0.4, 0.2, 0.95);
+        const gm = 'LAVA  KNIGHT';
+        lg.print(gm, VW / 2 - FONT_HUD.getWidth(gm) / 2, 22);
+        const bw = 300, bx = VW / 2 - bw / 2, by = 42;
+        lg.setColor(0.2, 0.06, 0.04, 0.8); lg.rectangle('fill', bx, by, bw, 10);
+        lg.setColor(0.95, 0.35, 0.12, 1); lg.rectangle('fill', bx, by, bw * clamp(k.hp / 5, 0, 1), 10);
+        lg.setColor(1, 0.8, 0.4, 0.5); lg.rectangle('fill', bx, by, bw, 2);
+      }
     }
     }   // end HUD (hidden during the wake cutscene)
     // toast
@@ -4216,20 +4249,24 @@
     // wake-up cutscene: black bands + fade + location card
     const w = l5.wake;
     if (w.active) {
-      const bandH = (w.stage >= 3) ? 58 * clamp((0.9 - w.t) / 0.9, 0, 1) : 58;
+      // Keep the cinematic bands fixed during the location label fade-out;
+      // retract them only after the label is fully gone.
+      const bandH = (w.stage >= 4) ? 58 * clamp((0.9 - w.t) / 0.9, 0, 1) : 58;
       let blackA = 0;
       if (w.stage === 0) blackA = 1;
       else if (w.stage === 1) blackA = clamp(1 - w.t / 1.4, 0.34, 1);
-      else blackA = 0.34 * clamp(1 - w.t / 1.2, 0, 1);
+      else if (w.stage === 2) blackA = 0.34;
+      else if (w.stage === 3) blackA = 0.34 * clamp(1 - w.t / 1.4, 0, 1);
+      else blackA = 0;
       if (blackA > 0) { lg.setColor(0.03, 0.0, 0.0, blackA); lg.rectangle('fill', 0, 0, VW, VH); }
       if (bandH > 0) {
         lg.setColor(0.02, 0.0, 0.0, 0.96);
         lg.rectangle('fill', 0, 0, VW, bandH);
         lg.rectangle('fill', 0, VH - bandH, VW, bandH);
       }
-      if (w.stage >= 1 && FONT_LOC) {
+      if (w.stage >= 1 && w.stage <= 3 && FONT_LOC) {
         const a = (w.stage === 1) ? clamp((w.t - 0.4) / 1.0, 0, 1)
-          : clamp(1 - w.t / 1.4, 0, 1);
+          : (w.stage === 2 ? 1 : clamp(1 - w.t / 1.4, 0, 1));
         lg.setFont(FONT_LOC);
         lg.setColor(0.95, 0.8, 0.62, a);
         printSpaced('THE  LAVA  CAVERNS  ·  THE  DEEP', VW / 2, VH * 0.18, FONT_LOC, 5, 1);
@@ -4859,16 +4896,14 @@
         if (k >= 1) { player.y = l.carpet.y; player.state = 'ground'; player.vx = 0; l.phase = 8; }
       }
     } else if (l.phase === 8) {                // fly up into the sky (behind the walls) while fading out
-      // rise only within the arch (never up to the wall top) and fade to black
-      // concurrently, so the hero is fully hidden before it could clear the wall.
-      // Once the screen is fully black, go straight to Level 5 instead of showing
-      // the old end-card / replay prompt.
+      // Fade fully to black, then continue directly into Level 5.
+      // Never show the old TO BE CONTINUED / R replay card here.
       l.carpet.y = Math.max(178, l.carpet.y - 120 * dt);
       l.carpet.x += 22 * dt;
       player.x = l.carpet.x - 6; player.y = l.carpet.y; player.facing = 1; player.vx = 0;
       l.fade2 = Math.min(1, l.fade2 + dt * 0.9);
       if (l.fade2 >= 1) { initLevel(5); return; }
-    } else if (l.phase === 9) {                // legacy safeguard: never show the old end card
+    } else if (l.phase === 9) {                // legacy safeguard: skip old end card
       initLevel(5); return;
     }
     l.skip = false;
