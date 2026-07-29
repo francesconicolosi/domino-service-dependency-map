@@ -2116,6 +2116,44 @@
 
   const END_DOOR_X = 6585;   // centre of the exit door at the far end of the keep
 
+  function skelBlockedAt(x, y) {
+    // Prevents skeleton knockback from pushing skeletons through solid walls
+    // or closed gates.
+    for (const q of plats) {
+      if (!q.beam && overlap(
+          x - 10, y - 48,
+          x + 10, y - 2,
+          q.x, q.y,
+          q.x + q.w, q.y + q.h
+      )) {
+        return true;
+      }
+    }
+
+    const gateSet =
+        level === 2 ? l2.gates :
+            level === 3 ? l3.gates :
+                level === 5 ? l5.gates :
+                    null;
+
+    if (gateSet) {
+      for (const g of gateSet) {
+        if ((g.openT || 0) > 0.82) continue;
+
+        if (overlap(
+            x - 10, y - 48,
+            x + 10, y - 2,
+            g.x, g.yTop,
+            g.x + g.w, g.yBot
+        )) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   function updateSkel(sk, dt, p) {
     sk.t = sk.t + dt;
     if (sk.state === 'gone' || sk.state === 'pile') return;
@@ -2133,10 +2171,25 @@
     const dy = p.y - sk.y;
     const near = Math.abs(dx) < 170 && Math.abs(dy) < 70 && !p.dying;
     if (sk.state === 'stun') {
-      sk.x = sk.x + sk.vx * dt;
+      const nx = sk.x + sk.vx * dt;
+      const noFloor = floorAt(nx, sk.y) === undefined;
+      const lowerL5Labyrinth = level === 5 && sk.y > FLOOR5 + 80;
+      // Avoid knockback tunneling through walls/gates. In the lower Level 5
+      // labyrinth, also avoid pushing skeletons onto non-existing floors.
+      if (skelBlockedAt(nx, sk.y) || (lowerL5Labyrinth && noFloor)) {
+        sk.vx = 0;
+      } else {
+        sk.x = nx;
+        if (noFloor) {
+          sk.state = 'fall';
+          return;
+        }
+      }
       sk.vx = sk.vx * (1 - Math.min(1, dt * 6));
-      if (floorAt(sk.x, sk.y) === undefined) { sk.state = 'fall'; return; }
-      if (sk.t > 0.55) { sk.state = 'patrol'; sk.t = 0; }
+      if (sk.t > 0.55) {
+        sk.state = 'patrol';
+        sk.t = 0;
+      }
     } else if (sk.state === 'windup') {
       sk.dir = dx >= 0 ? 1 : -1;
       if (sk.t > 0.38) {
@@ -3746,12 +3799,26 @@
     // --- hidden button opens the door permanently
     const bt = l5.button;
     if (bt && !bt.pressed) {
-      if (p.onGround && Math.abs(p.x - bt.x) < bt.w * 0.5 + 10 && Math.abs(p.y - bt.y) < 14) {
-        bt.pressed = true; l5.door.open = true; l5.door.locked = false;
+      const playerOnButton = p.onGround && Math.abs(p.x - bt.x) < bt.w * 0.5 + 10 && Math.abs(p.y - bt.y) < 14;
+      let skelOnButton = false;
+      for (const sk of l5.skels) {
+        if (sk.state !== 'gone' && sk.state !== 'fall'
+            && Math.abs(sk.x - bt.x) < bt.w * 0.5 + 14 && Math.abs(sk.y - bt.y) < 18) {
+          skelOnButton = true;
+          break;
+        }
+      }
+      if (playerOnButton || skelOnButton) {
+        bt.pressed = true;
+        l5.door.open = true;
+        l5.door.locked = false;
         if (sfxHit) sfxHit.play(0.5, 0.7);
-        l5toast('A hidden mechanism grinds — the barred door swings open');
+        l5toast(skelOnButton && !playerOnButton
+            ? 'The skeleton presses the hidden switch — the barred door opens'
+            : 'A hidden mechanism grinds — the barred door swings open');
       }
     }
+
     if (l5.door) l5.door.openT = clamp(l5.door.openT + (l5.door.open ? 1 : -1) * dt * 1.6, 0, 1);
     // door hint when the hero reaches it still barred
     if (l5.door && !l5.door.open && Math.abs(p.x - l5.door.x) < 60 && p.onGround && !l5.doorHinted) {
