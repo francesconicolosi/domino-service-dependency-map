@@ -4373,6 +4373,9 @@
 
   function updateFlightEnts(dt) {
     const f = l5.flight, p = player;
+    const au = 1 - (p.atkT || 0) / ATK_DUR;
+    const swordActive = (p.atkT || 0) > 0 && au > 0.30 && au < 0.62;
+    let swordHit = false;
     for (let i = f.heads.length - 1; i >= 0; i--) {
       const h = f.heads[i];
       h.t += dt;
@@ -4380,10 +4383,24 @@
       h.x += h.vx * dt;
       h.y = clamp(h.y + h.vy * dt + Math.sin((T + h.ph) * 3) * 26 * dt, FL.TOP, FL.BOT);
       if (h.x < cam.x - VW * 0.72) { f.heads.splice(i, 1); continue; }
+      // Normal sword hit while riding the carpet: short forward melee arc.
+      if (swordActive) {
+        const dx = h.x - p.x;
+        if (dx * p.facing > 0 && Math.abs(dx) < 70 && Math.abs(h.y - (p.y - 28)) < 56) {
+          h.state = 'dead'; h.dead = 0; swordHit = true;
+          spawnDust(h.x, h.y, 7, 1.0);
+          continue;
+        }
+      }
       if ((p.inv || 0) <= 0 && Math.abs(h.x - p.x) < 24 && Math.abs(h.y - (p.y - 18)) < 24) {
         flightHurt(p); h.state = 'dead'; h.dead = 0;
       }
     }
+    if (swordHit && !l5._hitThisSwing) {
+      if (sfxHit) sfxHit.play(0.5, 1.05 + love.math.random() * 0.18);
+      l5._hitThisSwing = true;
+    }
+    if ((p.atkT || 0) <= 0) l5._hitThisSwing = false;
     for (let i = f.upBolts.length - 1; i >= 0; i--) {
       const b = f.upBolts[i];
       b.t += dt; b.vy += 55 * dt; b.x += b.vx * dt; b.y += b.vy * dt;
@@ -6105,14 +6122,21 @@
     // 'return'); space works too for parity with the game's other confirms.
     if ((key === 'return' || key === 'space') && level === 3 && l3.end && l3.end.waiting) { initLevel(4); return; }
     if (key === 'space' || key === 'z' || key === 'k') { player.jbuf = JBUF; }
-    // CARPET FLIGHT: ATTACK looses a charged lava bullet forward (with the sword
-    // swing animation). Recharge is a 1s BLOCK hold (updateFireCharge) — and you
-    // cannot shoot while charging.
+    // CARPET FLIGHT: ATTACK always swings the sword while flying.
+    // If the Fire-Sword has charge, the same swing also looses a lava bullet;
+    // if it has no charge, the swing still works as a normal melee hit.
     if (level === 5 && l5.flight && l5.flight.active && l5.flight.phase === 'run' && !l5.gameOver) {
-      if ((key === 'x' || key === 'f') && player.lavaSword && (player.lavaCharge || 0) > 0 && !fireCharging(player)) {
-        fireLavaBullet(player); player.lavaCharge -= 1;
-        player.atkT = ATK_DUR;   // swing the sword as it shoots
-        if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 1s to recharge');
+      if ((key === 'x' || key === 'f') && player.hasSword && !fireCharging(player)
+        && (player.drawT || 0) <= 0 && ((player.atkT || 0) <= -0.10)) {
+        player.swordIdle = 0;
+        player.atkT = ATK_DUR;
+        player.blockT = 0;
+        if (sfxSwing) sfxSwing.play(0.38, 0.95 + love.math.random() * 0.18);
+        if (player.lavaSword && (player.lavaCharge || 0) > 0) {
+          fireLavaBullet(player);
+          player.lavaCharge -= 1;
+          if (player.lavaCharge <= 0) l5toast('Out of fire — hold BLOCK 1s to recharge');
+        }
       }
       return;
     }
