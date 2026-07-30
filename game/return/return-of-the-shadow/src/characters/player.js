@@ -831,3 +831,32 @@ function respawnPlayer(p) {
   p.lavaSink = null;
   resetScarf(...neckPos(p));
 }
+
+// ---------------------------------------------------------------- player combat
+// tryParry / hurtPlayer were physically located in the Level 2 section of the
+// old monolith but are player-character logic, so they live here with the hero.
+// Attempt to parry an incoming blow coming from direction `dir` (the way it
+// would knock the player). Succeeds if blocking and facing the attacker.
+function tryParry(p, dir) {
+  if ((p.blockT || 0) > 0 && p.facing === -dir && !p.dying) {
+    p.riposte = RIPOSTE_WIN; p.riposteHits = 2; p.blockFlash = 0.25;
+    p.vx = -dir * 50;
+    if (sfxParry) sfxParry.play(0.55, 1.0 + love.math.random() * 0.12);
+    spawnDust(p.x + dir * 10, p.y - 30, 6, 0.8);
+    l2toast('Parried!  Riposte — double strike');
+    return true;
+  }
+  return false;
+}
+
+function hurtPlayer(p, dir) {
+  if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
+  if ((p.inv || 0) > 0 || p.dying) return;
+  p.hp = (p.hp || 3) - 1;
+  p.inv = 1.1;
+  p.vx = dir * 240;
+  p.vy = -180;
+  p.state = 'air'; p.t = 0;
+  if (p.hp <= 0) killPlayer(p);
+}
+
