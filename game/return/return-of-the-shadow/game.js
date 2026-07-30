@@ -4400,22 +4400,45 @@
   }
 
   function flightHurt(p) {
+    // already tumbling off the carpet to our death — ignore any further hits this
+    // frame (several enemies can overlap the King on the fatal frame)
+    if (l5.flight && l5.flight.phase === 'fall') return;
     if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
     if ((p.inv || 0) > 0 || p.dying) return;
     p.hp = (p.hp || 3) - 1; p.inv = 1.1; p.blockFlash = 0.2;
     spawnDust(p.x, p.y, 5, 0.9);
     if (sfxHit) sfxHit.play(0.5, 1.0);
     if (p.hp <= 0) {
-      l5.lives = (l5.lives || 0) - 1;
-      if (l5.lives <= 0) { l5.gameOver = true; return; }
-      // restart the flight from the lift-off (back at the carpet)
-      p.hp = 3; p.inv = 1.6;
-      const f = l5.flight;
-      f.phase = 'lift'; f.t = 0; f.heads.length = 0; f.upBolts.length = 0;
-      f.startX = l5.carpet.x; f.y0 = FLOOR5; player.x = l5.carpet.x; player.y = FLOOR5;
-      l5.bullets.length = 0; player.lavaCharge = 3; player.blockHold = 0;
-      l5toast('Struck down over the fire — take flight again');
+      // Out of life points. Losing a life must NOT respawn / reposition the King.
+      // The old code jumped him back to the lift-off point AND cleared f.heads /
+      // f.upBolts while updateFlightEnts was still iterating them — dereferencing
+      // the emptied arrays threw and crashed the game on the 3rd hit. Instead he
+      // simply stays aloft on the carpet: spend a life, refill the hearts and fly
+      // on. Only when the last life AND its hearts are gone does he fall and die.
+      if ((l5.lives || 0) > 0) {
+        l5.lives -= 1;
+        p.hp = 3; p.inv = 1.6; player.lavaCharge = 3; player.blockHold = 0;
+        l5toast('A life spent — stay aloft!');
+      } else {
+        startFlightFall(p);
+      }
     }
+  }
+
+  // The King has run out of both hearts and lives while over the lava river: he
+  // is struck from the carpet and plummets into the fire below. This is a death,
+  // not a respawn — the riderless carpet drifts on (see updateFlightFall and the
+  // fall-phase branch in the level-5 draw). Placing the flight into the 'fall'
+  // phase also stops updateFlightEnts from running, so no more hits land.
+  function startFlightFall(p) {
+    const f = l5.flight;
+    f.phase = 'fall'; f.t = 0; f.splashed = false;
+    p.hp = 0; p.inv = 0; p.atkT = 0;
+    p.state = 'air'; p.onGround = false;
+    p.vy = -150; p.vx = -70; p.facing = -1;   // knocked backward off the carpet
+    spawnDust(p.x, p.y, 8, 1.0);
+    if (sfxHit) sfxHit.play(0.6, 0.75);
+    l5toast('Struck from the carpet!');
   }
 
   // 1-second HOLD-to-charge; you cannot shoot while charging (applies on the
@@ -4501,6 +4524,10 @@
     p.atkT = Math.max(-1, (p.atkT || 0) - dt);
     p.drawT = Math.max(0, (p.drawT || 0) - dt);
     p.lavaCharge = p.lavaCharge || 0;
+
+    // death fall: the King has been thrown off the carpet into the lava
+    if (f.phase === 'fall') { updateFlightFall(dt); return; }
+
     p.state = 'ground'; p.onGround = true; p.vx = 0; p.facing = 1;   // standing pose on the carpet
     cp.x = p.x; cp.y = p.y;
 
@@ -4556,6 +4583,29 @@
     // done
     f.whiteA = 1;
     if (l5.end.stage >= 5) l5.end.t += dt;
+  }
+
+  // Per-frame update while the King is falling off the carpet to his death.
+  // Real gravity pulls him down into the lava river while the now-empty carpet
+  // floats up and drifts on. When he reaches the lava a fiery splash bursts and
+  // the level-5 GAME OVER takes over (which freezes the world; R restarts).
+  function updateFlightFall(dt) {
+    const f = l5.flight, p = player, cp = l5.carpet;
+    p.state = 'air'; p.onGround = false;
+    p.vy = (p.vy || 0) + GRAV * dt;
+    p.x += (p.vx || 0) * dt;
+    p.y += p.vy * dt;
+    p.facing = (p.vx || 0) < 0 ? -1 : 1;
+    // the riderless carpet floats up a little and drifts onward
+    cp.x += 46 * dt; cp.y -= 24 * dt;
+    cam.x = lerp(cam.x, p.x + 120, Math.min(1, dt * 3));
+    cam.y = lerp(cam.y, clamp(p.y - 40, FL.CAMY, FL.CAMY + 90), Math.min(1, dt * 2));
+    if (!f.splashed && p.y >= FL.RIVER) {
+      f.splashed = true;
+      spawnDust(p.x, FL.RIVER, 16, 1.3);   // molten splash where he hits the fire
+      if (sfxThunder) sfxThunder.play(0.5, 0.7);
+      l5.gameOver = true;                   // freezes the world → GAME OVER overlay
+    }
   }
 
   // the giant DOOR OF LIGHT at the end of the river (drawn in world space)
@@ -6113,10 +6163,18 @@
       // Level 5: the carpet flight seats the hero atop the flying carpet. (The
       // wake-up "getting up" is handled inside drawHero via wakePose/o.rot.)
       if (level === 5 && l5.carpet && l5.carpet.state === 'riding') {
-        // carpet drawn at the hero's feet (its internal hover lifts it), so the
-        // King rides ON TOP of it, not below
-        drawFlyingCarpet(player.x, player.y + 74, 1.5);
-        drawScarf(); drawHero(player);
+        const fl = l5.flight;
+        if (fl && fl.phase === 'fall') {
+          // thrown from the carpet: draw the empty carpet where it drifts and the
+          // King tumbling below it into the lava (decoupled from the carpet)
+          drawFlyingCarpet(l5.carpet.x, l5.carpet.y + 74, 1.5);
+          drawHero(player);
+        } else {
+          // carpet drawn at the hero's feet (its internal hover lifts it), so the
+          // King rides ON TOP of it, not below
+          drawFlyingCarpet(player.x, player.y + 74, 1.5);
+          drawScarf(); drawHero(player);
+        }
       } else if (level === 5 && l5.wake.active) {
         drawHero(player);   // no scarf while the body is tilted, getting up
       } else {
