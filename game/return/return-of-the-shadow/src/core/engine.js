@@ -735,18 +735,22 @@
       const msg = 'Press R to relive the ascent';
       lg.print(msg, VW / 2 - FONT_HUD.getWidth(msg) / 2, VH - 102);
 
-      const diffY = VH - 76;
+      const mobileDiff = (typeof window !== 'undefined') && (
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+        || 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0
+      );
+      const diffY = mobileDiff ? VH - 150 : VH - 76;
+      const diffScale = mobileDiff ? 1.55 : 1;
       const normalOn = cine.difficultySel === 0, easyOn = cine.difficultySel === 1;
-      const normal = 'NORMAL';
-      const easy = 'EASY';
+      const normalText = (normalOn ? '› ' : '  ') + 'NORMAL';
+      const easyText = (easyOn ? '› ' : '  ') + 'EASY  ·  5 HP / 5 LIVES';
       lg.setColor(0.9, 0.85, 0.8, a * (normalOn ? 1.0 : 0.45));
-      lg.print((normalOn ? '› ' : '  ') + normal, VW / 2 - 115, diffY);
+      lg.print(normalText, mobileDiff ? VW / 2 - 170 : VW / 2 - 115, diffY, 0, diffScale, diffScale);
       lg.setColor(0.9, 0.85, 0.8, a * (easyOn ? 1.0 : 0.45));
-      lg.print((easyOn ? '› ' : '  ') + easy + '  ·  5 HP / 5 LIVES', VW / 2 + 16, diffY);
-
-      const msg2 = '← → choose difficulty      ENTER enter the castle';
+      lg.print(easyText, mobileDiff ? VW / 2 - 170 : VW / 2 + 16, diffY + (mobileDiff ? 48 : 0), 0, diffScale, diffScale);
+      const msg2 = mobileDiff ? 'Tap NORMAL / EASY, then ENTER' : '← → choose difficulty      ENTER enter the castle';
       lg.setColor(0.9, 0.85, 0.8, a);
-      lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, VH - 50);
+      lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, mobileDiff ? VH - 54 : VH - 50);
     }
   }
 
@@ -1501,9 +1505,7 @@
     // Level 4 cutscene: advance the dialogue / skip beats
     if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
     if (level === 1 && cine.on && cine.stage === 4 && cine.hintA >= 0.95) {
-      // Normal is the default and is already selected, so mobile players can tap
-      // the on-screen ENTER button to continue. Keyboard/gamepad players can
-      // still switch to Easy before confirming.
+      // Normal is selected by default. Mobile can tap NORMAL / EASY, then ENTER.
       if (key === 'left' || key === 'a' || key === 'up' || key === 'w') {
         cine.difficultySel = 0;
         return;
@@ -1610,8 +1612,10 @@
     getLevel: function () { return level; },
     getDifficulty: function () { return gameDifficulty; },
     maxHp: difficultyMaxHp,
-    maxLives: difficultyMaxLives,
-    hasSword: function () { return player && player.hasSword; },
+    maxLives: difficultyMaxLives,  
+    inDifficultyChoice: function () { return level === 1 && cine.on && cine.stage === 4 && cine.hintA >= 0.95; },
+    getDifficultyChoice: function () { return cine.difficultySel || 0; },
+    hasSword: function () { return player && player.hasSword; },  
     // true while a non-interactive cutscene is playing — the touch overlay hides
     // its gameplay buttons (movement/jump/attack/block), keeping only R / ENTER
     inCutscene: function () {

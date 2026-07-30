@@ -82,6 +82,29 @@
   makeButton('R',     'r',      { tap: true, always: true, style: { right: P + 'px', top: P + 'px', width: '46px', height: '38px' }, font: '15px' });
   makeButton('ENTER', 'return', { tap: true, always: true, style: { right: (P + 56) + 'px', top: P + 'px', width: '80px', height: '38px' }, font: '13px' });
 
+
+// difficulty-choice touch buttons — visible only on the post-Level-1 title screen.
+const diffBtns = [];
+const diffNormal = makeButton('NORMAL', 'left', {
+  tap: true, always: true,
+  style: {
+    left: '50%', top: '118px', transform: 'translateX(-108%)',
+    width: '148px', height: '60px', display: 'none', zIndex: '90',
+    borderColor: 'rgba(240,220,170,0.70)', background: 'rgba(36,24,38,0.88)'
+  },
+  font: '19px'
+});
+const diffEasy = makeButton('EASY', 'right', {
+  tap: true, always: true,
+  style: {
+    left: '50%', top: '118px', transform: 'translateX(8%)',
+    width: '148px', height: '60px', display: 'none', zIndex: '90',
+    borderColor: 'rgba(240,220,170,0.70)', background: 'rgba(36,24,38,0.88)'
+  },
+  font: '19px'
+});
+diffBtns.push(diffNormal, diffEasy);
+
   // hide the gameplay buttons while a cutscene is playing (keep only R / ENTER)
   let hidden = false;
   function syncCutscene() {
@@ -89,6 +112,13 @@
     if (cut !== hidden) {
       hidden = cut;
       for (const el of gameplayBtns) el.style.display = cut ? 'none' : 'flex';
+    }
+    const diffChoice = !!(love._game && love._game.inDifficultyChoice && love._game.inDifficultyChoice());
+    const diffSel = love._game && love._game.getDifficultyChoice ? love._game.getDifficultyChoice() : 0;
+    for (let i = 0; i < diffBtns.length; i++) {
+      const el = diffBtns[i];
+      el.style.display = diffChoice ? 'flex' : 'none';
+      el.classList.toggle('held', diffChoice && diffSel === i);
     }
     requestAnimationFrame(syncCutscene);
   }
