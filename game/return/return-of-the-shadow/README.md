@@ -88,13 +88,21 @@ localStorage.removeItem('rots:level2.lua');
 
 ```
 return-of-the-shadow/
-├── index.html     # the game
-├── editor.html    # the level editor
-├── love-shim.js   # LÖVE → Canvas2D / Web Audio / input compatibility layer
-├── game.js        # game logic (two levels, physics, animation, audio)
-├── editor.js      # the level editor
-└── touch.js       # on-screen touch controls (game only)
+├── index.html          # the game (loads the src/ scripts in order)
+├── editor.html         # the level editor
+├── love-shim.js        # LÖVE → Canvas2D / Web Audio / input compatibility layer
+├── editor.js           # the level editor
+├── touch.js            # on-screen touch controls (game only)
+└── src/                # game.js was split into ordered classic scripts:
+    ├── core/           #   namespace, constants, utils, level-data, particles, engine
+    ├── art/            #   shared-art (rock/masonry, emblem, castle, flying carpet)
+    ├── characters/     #   player, enemies-l2, enemies-l3, enemies-l5, cast-l4
+    └── levels/         #   level1 … level5 (state, logic, scenario)
 ```
+
+> The scripts are plain classic `<script>`s loaded in order; they share one
+> top-level scope (no bundler / no ES modules). See
+> `plans/modularization-refactor.md`.
 
 ## License
 

@@ -1,8 +1,26 @@
 # Refactoring plan — split `game.js` into per-domain files
 
-> Status: **proposal, awaiting execution**. Nothing in `game.js` moves until this is approved.
-> Companion change already shipped: the Level-5 carpet-flight crash fix (see the
-> `flightHurt` / `updateFlightFall` changes in `game.js`). This plan does not depend on it.
+> Status: **EXECUTED** (commits `fa78835` → `9e6bcef`). `game.js` was split into 17
+> ordered classic scripts under `src/` (core/, art/, characters/, levels/); the
+> remainder is `src/core/engine.js`, loaded last. Each step was verified in-browser
+> (all 5 levels init + update + draw, the level-4 cutscene, and the flight death)
+> before committing.
+>
+> Deviations from the original design below, all to reduce risk:
+> - The mechanism is shared **top-level lexical scope** across ordered classic
+>   scripts (IIFE removed), so internal references did not need rewriting. A thin
+>   `window.RTS` holds only the (future) level registry + debug hooks.
+> - Level geometry data went into one early `core/03-level-data.js` (not per-level
+>   files) because level files derive load-time consts from it (e.g. `LANE3` from
+>   `FLOOR3`) and it must load first.
+> - The `level === N` dispatch was **not** yet converted to a registry; audio,
+>   physics, camera/save and the render/title code remain consolidated in
+>   `core/engine.js` rather than split into separate core files. Those are the
+>   remaining optional polish items (see "Out of scope" — now "Future polish").
+>
+> Companion change shipped first: the Level-5 carpet-flight crash fix (the
+> `flightHurt` / `startFlightFall` / `updateFlightFall` changes, now in
+> `src/levels/level5.js`).
 
 ## Context — why
 
