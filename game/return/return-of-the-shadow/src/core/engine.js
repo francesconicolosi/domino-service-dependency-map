@@ -735,22 +735,17 @@
       const msg = 'Press R to relive the ascent';
       lg.print(msg, VW / 2 - FONT_HUD.getWidth(msg) / 2, VH - 102);
 
-      const mobileDiff = (typeof window !== 'undefined') && (
-        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
-        || 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0
-      );
-      const diffY = mobileDiff ? VH - 150 : VH - 76;
-      const diffScale = mobileDiff ? 1.55 : 1;
+      const diffY = VH - 76;
       const normalOn = cine.difficultySel === 0, easyOn = cine.difficultySel === 1;
-      const normalText = (normalOn ? '› ' : '  ') + 'NORMAL';
-      const easyText = (easyOn ? '› ' : '  ') + 'EASY  ·  5 HP / 5 LIVES';
+      const normal = 'NORMAL';
+      const easy = 'EASY';
       lg.setColor(0.9, 0.85, 0.8, a * (normalOn ? 1.0 : 0.45));
-      lg.print(normalText, mobileDiff ? VW / 2 - 170 : VW / 2 - 115, diffY, 0, diffScale, diffScale);
+      lg.print((normalOn ? '› ' : '  ') + normal, VW / 2 - 115, diffY);
       lg.setColor(0.9, 0.85, 0.8, a * (easyOn ? 1.0 : 0.45));
-      lg.print(easyText, mobileDiff ? VW / 2 - 170 : VW / 2 + 16, diffY + (mobileDiff ? 48 : 0), 0, diffScale, diffScale);
-      const msg2 = mobileDiff ? 'Tap NORMAL / EASY, then ENTER' : '← → choose difficulty      ENTER enter the castle';
+      lg.print((easyOn ? '› ' : '  ') + easy + '  ·  5 HP / 5 LIVES', VW / 2 + 16, diffY);
+      const msg2 = '← → choose difficulty      ENTER enter the castle';
       lg.setColor(0.9, 0.85, 0.8, a);
-      lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, mobileDiff ? VH - 54 : VH - 50);
+      lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, VH - 50);
     }
   }
 
@@ -1505,7 +1500,8 @@
     // Level 4 cutscene: advance the dialogue / skip beats
     if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
     if (level === 1 && cine.on && cine.stage === 4 && cine.hintA >= 0.95) {
-      // Normal is selected by default. Mobile can tap NORMAL / EASY, then ENTER.
+      // Normal is selected by default. Mobile keeps LEFT/RIGHT visible here;
+      // ENTER confirms the current choice.
       if (key === 'left' || key === 'a' || key === 'up' || key === 'w') {
         cine.difficultySel = 0;
         return;
