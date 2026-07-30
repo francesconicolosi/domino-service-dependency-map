@@ -64,7 +64,11 @@
        copy (mobile Safari caches JS very aggressively). Keep it in sync with
        BUILD in game.js. -->
   <script src="love-shim.js?v=2026-07-29-L6"></script>
-  <script src="game.js?v=2026-07-29-L6"></script>
+  <!-- game.js is being split into src/ modules (see plans/modularization-refactor.md).
+       These are plain classic scripts loaded IN ORDER — they share one top-level
+       scope, so later files resolve earlier declarations by name. -->
+  <script src="src/core/00-namespace.js?v=2026-07-29-L6"></script>
+  <script src="src/legacy.js?v=2026-07-29-L6"></script>
   <script src="touch.js?v=2026-07-29-L6"></script>
   <script>
     love._run(document.getElementById('game'));

@@ -9,11 +9,15 @@
 //  committed lunge/thrust → held reading of the hit → weighted recovery).
 //  No sprite art is imported: the poses stay fully procedural.
 // ============================================================================
-
-(function () {
-  'use strict';
-
-  const lg = love.graphics;
+//
+//  NOTE: this file is the yet-to-be-split remainder of the original game.js.
+//  It is being carved into src/core, src/characters, src/levels and src/art in
+//  incremental steps (see plans/modularization-refactor.md). It is no longer
+//  wrapped in an IIFE: `lg` and the `RTS` namespace come from
+//  core/00-namespace.js, which loads first, and resolve here by name because
+//  ordered classic scripts share one top-level scope.
+// ============================================================================
+'use strict';
 
   // -------------------------------------------------------------- CONSTANTS
   const VW = 1280, VH = 720;
@@ -6363,5 +6367,3 @@
     },
     climbStep: function () { player.vy = -CLIMBSPD; },
   };
-
-})();
