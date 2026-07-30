@@ -148,7 +148,7 @@ function updateEnts3(dt) {
       if (l3.end.t > 0.7) { l3.end.stage = 3; l3.end.t = 0; }
     } else if (l3.end.stage === 3) {
       // hero has fallen into the dark and the card has faded in — HOLD here and
-      // wait for the player to press Enter before cutting to the "thirty days
+      // wait for the player to press Enter before cutting to the "some time
       // before" flashback (Level 4). Advancing happens in keypressed.
       if (l3.end.t > 3.6) l3.end.waiting = true;
     }

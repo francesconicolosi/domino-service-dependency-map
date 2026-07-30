@@ -752,7 +752,7 @@
 
   const LEVEL_NAMES = {
     2: "THE  WITCH'S  KEEP", 3: 'THE  BLACK  HALLS',
-    4: 'THIRTY  DAYS  BEFORE', 5: 'THE  LAVA  CAVERNS',
+    4: 'SOME  TIME  BEFORE', 5: 'THE  LAVA  CAVERNS',
   };
   // Rects for the two menu options, filled in during drawTitleMenu so a mouse
   // click (love.mousepressed) can hit-test them.

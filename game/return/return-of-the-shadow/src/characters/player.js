@@ -882,7 +882,7 @@ function updatePlayer(dt, p) {
   if (p.hasSword && !p.dying) {
     const busy = (p.atkT || 0) > 0 || (p.drawT || 0) > 0 || (p.blockT || 0) > 0;
     if (busy) p.swordIdle = 0; else p.swordIdle = (p.swordIdle || 0) + dt;
-    if (!p.sheathed && p.swordIdle > 5) p.sheathed = true;
+    if (!p.sheathed && p.swordIdle > 10) p.sheathed = true;
   }
   // the spawn guard rails only count down ONCE the hero actually starts moving
   // — otherwise, on a dark level where you take a few seconds to get oriented,

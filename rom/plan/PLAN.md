@@ -56,7 +56,7 @@ toolchain folder is intentionally git-ignored (third-party).
 - [ ] **M3 — Level 2 "The Witch's Keep".** Patrolling skeletons, pressure-plate
       puzzle, sword strike + block/parry combat (use the sheet's ATTACK frames).
 - [ ] **M4 — Levels 3–4.** Dark halls + six-sword boss + witch (L3); palace-
-      balcony cutscene "Thirty Days Before" + flying-carpet rescue finale (L4).
+      balcony cutscene "Some Time Before" + flying-carpet rescue finale (L4).
 - [ ] **M5 — PSG soundtrack + SFX.** Title / level / Middle-Eastern boss themes
       as 3-voice chiptune, plus jump/sword/hit SFX.
       **Blocker:** PSGlib fails to rebuild under SDCC 4.6 (`error 329` at

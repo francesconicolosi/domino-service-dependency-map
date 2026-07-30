@@ -21,16 +21,16 @@ the JS is the design reference, the ROM is new code and new art.
 
 The JS game is a cinematic 4-act platformer. Mapping:
 
-| Original feature (JS / Canvas) | SMS realization |
-|---|---|
-| **L1 "The Ascent"** — climbing prologue, title screen, wind | Tilemap cliff + climb-marked wall tiles; hero sprite physics. **(milestone 1: movement core done)** |
-| **L2 "The Witch's Keep"** — patrolling skeletons, pressure-plate trap, sword combat | Skeleton metasprites with a simple state machine; a trigger tile for the plate; attack/block/parry as animation frames + hitbox windows. |
-| **L3 "Dark Halls"** — six-sword boss + witch, crouch | Boss = multi-sprite composite; the six swords are individually-tracked projectile sprites (mind the 8/scanline limit — stagger their rows). |
-| **L4 "Thirty Days Before"** — palace-balcony cutscene, moon, flying carpet, carpet-rescue finale | Cutscene = static tilemap scene + scripted sprite tweens + text box. No free-form vector art. |
-| **Procedural skeletal animation** (all characters drawn from bones in code) | Pre-baked sprite frames authored via `tools/gen_assets.py`. The *feel* (overhead slash, guard stance, telegraph) is reproduced as keyframes. |
-| **Truecolor + gradients** | Hand-picked 16-color palettes per act; dithering with tiles where a gradient is essential (sky). |
-| **MP3 boss theme + Web-Audio procedural music** | PSG chiptune arrangements per act, incl. the Middle-Eastern boss battle theme, driven by PSGlib. |
-| **Mobile touch pad, fullscreen, debug keys** | Dropped — SMS uses the 2-button control pad + PAUSE. |
+| Original feature (JS / Canvas)                                                                 | SMS realization |
+|------------------------------------------------------------------------------------------------|---|
+| **L1 "The Ascent"** — climbing prologue, title screen, wind                                    | Tilemap cliff + climb-marked wall tiles; hero sprite physics. **(milestone 1: movement core done)** |
+| **L2 "The Witch's Keep"** — patrolling skeletons, pressure-plate trap, sword combat            | Skeleton metasprites with a simple state machine; a trigger tile for the plate; attack/block/parry as animation frames + hitbox windows. |
+| **L3 "Dark Halls"** — six-sword boss + witch, crouch                                           | Boss = multi-sprite composite; the six swords are individually-tracked projectile sprites (mind the 8/scanline limit — stagger their rows). |
+| **L4 "Some Time Before"** — palace-balcony cutscene, moon, flying carpet, carpet-rescue finale | Cutscene = static tilemap scene + scripted sprite tweens + text box. No free-form vector art. |
+| **Procedural skeletal animation** (all characters drawn from bones in code)                    | Pre-baked sprite frames authored via `tools/gen_assets.py`. The *feel* (overhead slash, guard stance, telegraph) is reproduced as keyframes. |
+| **Truecolor + gradients**                                                                      | Hand-picked 16-color palettes per act; dithering with tiles where a gradient is essential (sky). |
+| **MP3 boss theme + Web-Audio procedural music**                                                | PSG chiptune arrangements per act, incl. the Middle-Eastern boss battle theme, driven by PSGlib. |
+| **Mobile touch pad, fullscreen, debug keys**                                                   | Dropped — SMS uses the 2-button control pad + PAUSE. |
 
 ## Controls (SMS pad)
 

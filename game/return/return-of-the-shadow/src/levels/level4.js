@@ -1,5 +1,5 @@
 // ============================================================================
-//  levels/level4.js — Level 4 "Thirty Days Before": the palace cutscene.
+//  levels/level4.js — Level 4 "Some Time Before": the palace cutscene.
 //
 //  The l4 state, the dialogue (L4_LINES), the balcony architecture (arch consts
 //  + drawBalconyBack/Front), the cutscene logic (updateL4, walkToward, line
@@ -8,7 +8,7 @@
 // ============================================================================
 'use strict';
 // ============================================================================
-//  LEVEL 4 — "THIRTY DAYS BEFORE"  (Persian-palace balcony cutscene)
+//  LEVEL 4 — "SOME TIME BEFORE"  (Persian-palace balcony cutscene)
 //  A scripted, non-playable flashback: the king takes his leave. All figures
 //  are procedural, drawn in the hero's style with SOLID (segment) limbs and a
 //  walk cycle. Subtitles carry the dialogue (Italian → English).
@@ -119,7 +119,7 @@ function updateL4(dt) {
   if (Math.abs(player.vx) > 8) player.runPhase += Math.abs(player.vx) * dt * 0.05;
   if (l.line >= 0) l.lineT += dt;
 
-  if (l.phase === 0) {                       // "thirty days before" card
+  if (l.phase === 0) {                       // "some time before" card
     if (l.t > 1.6 || l.skip) { l.phase = 1; l.t = 0; }
   } else if (l.phase === 1) {                // fade in + the king walks to centre
     l.fade = Math.min(1, l.fade + dt * 1.2);
@@ -234,7 +234,7 @@ function drawL4Overlay() {
   if (l.phase === 0) {
     lg.setColor(0, 0, 0, 1); lg.rectangle('fill', 0, 0, VW, VH);
     const a = smooth(clamp(l.t / 0.7, 0, 1)) * smooth(clamp((2.8 - l.t) / 0.7, 0, 1));
-    if (FONT_SUB) { lg.setFont(FONT_SUB); lg.setColor(0.9, 0.87, 0.8, a); printSpaced('THIRTY  DAYS  BEFORE', VW / 2, VH * 0.46, FONT_SUB, 6, 1); }
+    if (FONT_SUB) { lg.setFont(FONT_SUB); lg.setColor(0.9, 0.87, 0.8, a); printSpaced('SOME  TIME  BEFORE', VW / 2, VH * 0.46, FONT_SUB, 6, 1); }
     return;
   }
   if (l.fade < 1) { lg.setColor(0, 0, 0, 1 - l.fade); lg.rectangle('fill', 0, 0, VW, VH); }
