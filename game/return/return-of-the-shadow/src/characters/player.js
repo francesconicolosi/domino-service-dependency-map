@@ -60,7 +60,7 @@ function newPlayer(x, y) {
     ledge: null, face: null,
     mant: null, landT: 0, prevVy: 0,
     deadFade: 0, dying: false,
-    hp: 3, inv: 0, atkT: 0, drawT: 0, hasSword: false,
+    hp: difficultyMaxHp(), inv: 0, atkT: 0, drawT: 0, hasSword: false,
     blockT: 0, riposte: 0, riposteHits: 0, blockFlash: 0,
     sheathed: false, swordIdle: 0,   // sword rests in the back scabbard after 5s idle
     iks: { hf: {}, hb: {}, ff: {}, fb: {} },
@@ -825,7 +825,7 @@ function respawnPlayer(p) {
   p.vx = 0; p.vy = 0;
   p.state = 'ground'; p.onGround = true; p.coyote = COYOTE; p.t = 0;
   p.ledge = null; p.face = null; p.mant = null;
-  p.hp = 3; p.inv = 1.2; p.atkT = 0; p.drawT = 0;
+  p.hp = difficultyMaxHp(); p.inv = 1.2; p.atkT = 0; p.drawT = 0;
   p.blockT = 0; p.riposte = 0; p.riposteHits = 0;
   p.sheathed = false; p.swordIdle = 0;   // respawn with the blade drawn and ready
   p.lavaSink = null;
@@ -852,7 +852,7 @@ function tryParry(p, dir) {
 function hurtPlayer(p, dir) {
   if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
   if ((p.inv || 0) > 0 || p.dying) return;
-  p.hp = (p.hp || 3) - 1;
+  p.hp = (p.hp || difficultyMaxHp()) - 1;
   p.inv = 1.1;
   p.vx = dir * 240;
   p.vy = -180;

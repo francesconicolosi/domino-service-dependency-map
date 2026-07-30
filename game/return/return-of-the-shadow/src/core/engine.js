@@ -512,8 +512,33 @@
   // on (Level 1 never saves). On the next visit a title screen offers to
   // Continue from that level or start a New Game (which wipes the save).
   const SAVE_KEY = 'rots:progress';
+  const DIFFICULTY_KEY = 'rots:difficulty';
+  let gameDifficulty = 'normal';
+
+  function normalizeDifficulty(value) { return value === 'easy' ? 'easy' : 'normal'; }
+  function difficultyMaxHp() { return gameDifficulty === 'easy' ? 5 : 3; }
+  function difficultyMaxLives() { return gameDifficulty === 'easy' ? 5 : 3; }
+  function saveDifficulty(value) {
+    gameDifficulty = normalizeDifficulty(value);
+    try { localStorage.setItem(DIFFICULTY_KEY, gameDifficulty); } catch (e) {}
+    return gameDifficulty;
+  }
+  function loadDifficulty() {
+    try { gameDifficulty = normalizeDifficulty(localStorage.getItem(DIFFICULTY_KEY)); }
+    catch (e) { gameDifficulty = 'normal'; }
+    return gameDifficulty;
+  }
+  function clearDifficulty() {
+    gameDifficulty = 'normal';
+    try { localStorage.removeItem(DIFFICULTY_KEY); } catch (e) {}
+  }
   function saveProgress(n) {
-    try { if (n >= 2 && n <= 5) localStorage.setItem(SAVE_KEY, String(n)); } catch (e) {}
+    try {
+      if (n >= 2 && n <= 5) {
+        localStorage.setItem(SAVE_KEY, String(n));
+        localStorage.setItem(DIFFICULTY_KEY, gameDifficulty);
+      }
+    } catch (e) {}
   }
   function loadProgress() {
     try {
@@ -521,10 +546,13 @@
       return (Number.isFinite(v) && v >= 2 && v <= 5) ? v : 0;
     } catch (e) { return 0; }
   }
-  function clearProgress() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  function clearProgress() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    clearDifficulty();
+  }
   // titleMenu.active freezes the world behind a black title screen with the
   // witch's symbol and a Continue / New Game choice.
-  const titleMenu = { active: false, sel: 0, savedLevel: 0, t: 0 };
+  const titleMenu = { active: false, sel: 0, savedLevel: 0, savedDifficulty: 'normal', t: 0 };
 
   function startCine(p) {
     cine.on = true; cine.stage = 1; cine.t = 0;
@@ -617,7 +645,7 @@
     buildLevel();
     respawn = { x: checkpoints[0].x, y: checkpoints[0].y };
     cine.on = false; cine.stage = 0; cine.t = 0;
-    cine.titleA = 0; cine.subA = 0; cine.boxA = 0; cine.hintA = 0;
+    cine.titleA = 0; cine.subA = 0; cine.boxA = 0; cine.hintA = 0; cine.difficultySel = -1;
     musicVol = 0;
     if (musicSrc) {
       musicSrc.stop(); musicSrc.setVolume(0);
@@ -631,6 +659,7 @@
     const groundY = floorAt(checkpoints[0].x, checkpoints[0].y - 4);
     const spawnY = (groundY != null) ? groundY : checkpoints[0].y;
     player = newPlayer(checkpoints[0].x, spawnY);
+    player.hp = difficultyMaxHp();
     // actively resolve the spawn onto solid ground before the first frame is
     // ever drawn, so the hero always starts standing (never mid-air/falling)
     for (let i = 0; i < 8 && !player.onGround; i++) { player.vy = 260; moveAndCollide(player, 1 / 60); }
@@ -700,12 +729,23 @@
       printSpaced('PROLOGUE  ·  THE ASCENT', VW / 2, y + 92, FONT_SUB, 6, 1);
     }
     if (cine.hintA > 0) {
+      const a = smooth(cine.hintA);
       lg.setFont(FONT_HUD);
-      lg.setColor(0.9, 0.85, 0.8, smooth(cine.hintA) * (0.55 + 0.25 * Math.sin(T * 2)));
+      lg.setColor(0.9, 0.85, 0.8, a * (0.55 + 0.25 * Math.sin(T * 2)));
       const msg = 'Press R to relive the ascent';
-      lg.print(msg, VW / 2 - FONT_HUD.getWidth(msg) / 2, VH - 74);
-      const msg2 = 'Press ENTER to enter the castle';
-      lg.setColor(0.9, 0.85, 0.8, smooth(cine.hintA));
+      lg.print(msg, VW / 2 - FONT_HUD.getWidth(msg) / 2, VH - 102);
+
+      const diffY = VH - 76;
+      const normalOn = cine.difficultySel === 0, easyOn = cine.difficultySel === 1;
+      const normal = 'NORMAL';
+      const easy = 'EASY';
+      lg.setColor(0.9, 0.85, 0.8, a * (normalOn ? 1.0 : 0.45));
+      lg.print((normalOn ? '› ' : '  ') + normal, VW / 2 - 115, diffY);
+      lg.setColor(0.9, 0.85, 0.8, a * (easyOn ? 1.0 : 0.45));
+      lg.print((easyOn ? '› ' : '  ') + easy + '  ·  5 HP / 5 LIVES', VW / 2 + 16, diffY);
+
+      const msg2 = (cine.difficultySel < 0) ? '← → choose difficulty' : 'ENTER enter the castle';
+      lg.setColor(0.9, 0.85, 0.8, a);
       lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, VH - 50);
     }
   }
@@ -737,7 +777,7 @@
     }
 
     // two options
-    const opts = ['CONTINUE  ·  LEVEL ' + titleMenu.savedLevel, 'NEW  GAME'];
+    const opts = ['CONTINUE  ·  LEVEL ' + titleMenu.savedLevel + '  ·  ' + titleMenu.savedDifficulty.toUpperCase(), 'NEW  GAME'];
     const sub = LEVEL_NAMES[titleMenu.savedLevel] || '';
     lg.setFont(FONT_SUB);
     const oy = [VH * 0.62, VH * 0.72];
@@ -770,6 +810,7 @@
   function startFromMenu(continueGame) {
     titleMenu.active = false;
     if (continueGame && titleMenu.savedLevel >= 2) {
+      saveDifficulty(titleMenu.savedDifficulty || loadDifficulty());
       initLevel(titleMenu.savedLevel);
     } else {
       clearProgress();
@@ -837,7 +878,7 @@
 
     if (level === 2) {
       lg.setFont(FONT_HUD);
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= difficultyMaxHp(); i++) {
         const hx = 30 + (i - 1) * 36, hy = 32;
         const full = (player.hp || 0) >= i;
         if (full) lg.setColor(0.85, 0.16, 0.22, 1);
@@ -886,7 +927,7 @@
 
     if (level === 3) {
       lg.setFont(FONT_HUD);
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= difficultyMaxHp(); i++) {
         const hx = 30 + (i - 1) * 36, hy = 32;
         const full = (player.hp || 0) >= i;
         if (full) lg.setColor(0.85, 0.16, 0.22, 1);
@@ -1081,6 +1122,7 @@
       if (/[?&]immortal=(true|1|yes)\b/i.test(window.location.search || '')) IMMORTAL = true;
     } catch (e) {}
 
+    loadDifficulty();
     initLevel(startLevel);
     // If the player has reached Level 2+ before, greet them with the title
     // screen (witch's symbol + Continue / New Game) over the frozen world.
@@ -1088,7 +1130,7 @@
     // load — never on R, and never in debug mode).
     const saved = DEBUG ? 0 : loadProgress();
     if (saved >= 2) {
-      titleMenu.active = true; titleMenu.sel = 0; titleMenu.savedLevel = saved; titleMenu.t = 0;
+      titleMenu.active = true; titleMenu.sel = 0; titleMenu.savedLevel = saved; titleMenu.savedDifficulty = gameDifficulty; titleMenu.t = 0;
     } else if (!DEBUG) {
       studio.active = true; studio.t = 0;
     }
@@ -1458,7 +1500,25 @@
     if (key === 'r') { initLevel(level); return; }
     // Level 4 cutscene: advance the dialogue / skip beats
     if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
-    if (key === 'return' && level === 1 && cine.on && cine.stage >= 3) { initLevel(2); return; }
+    if (level === 1 && cine.on && cine.stage === 4 && cine.hintA >= 0.95) {
+      if (key === 'left' || key === 'a' || key === 'up' || key === 'w') {
+        cine.difficultySel = 0;
+        return;
+      }
+      if (key === 'right' || key === 'd' || key === 'down' || key === 's') {
+        cine.difficultySel = 1;
+        return;
+      }
+      if ((key === 'return' || key === 'space' || key === 'z' || key === 'k' || key === 'x') && cine.difficultySel >= 0) {
+        saveDifficulty(cine.difficultySel === 1 ? 'easy' : 'normal');
+        initLevel(2);
+        return;
+      }
+    } else if (level === 1 && cine.on && cine.stage >= 3) {
+      // The title card is still arriving: ignore confirm keys so the player
+      // cannot skip the difficulty choice before it is fully visible.
+      return;
+    }
     // "THE SHADOW FALLS" card holds until the player continues — then the cut to
     // the flashback (Level 4). Enter (or the touch ENTER button, which sends
     // 'return'); space works too for parity with the game's other confirms.
@@ -1545,6 +1605,9 @@
   // expose a couple of read-only bits for the touch overlay
   love._game = {
     getLevel: function () { return level; },
+    getDifficulty: function () { return gameDifficulty; },
+    maxHp: difficultyMaxHp,
+    maxLives: difficultyMaxLives,
     hasSword: function () { return player && player.hasSword; },
     // true while a non-interactive cutscene is playing — the touch overlay hides
     // its gameplay buttons (movement/jump/attack/block), keeping only R / ENTER
@@ -1566,6 +1629,8 @@
     l3: function () { return l3; },
     l4: function () { return l4; },
     l5: function () { return l5; },
+    difficulty: function () { return gameDifficulty; },
+    setDifficulty: function (value) { return saveDifficulty(value); },
     giveSword: function () { player.hasSword = true; player.drawT = 0; },
     drawHero: function () { drawHero(player); },
     drawSkel: function (sk) { drawSkel(sk); },

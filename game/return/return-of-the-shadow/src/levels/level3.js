@@ -49,7 +49,7 @@ function initEnts3() {
   l3.lit = false; l3.litT = 0; l3.litHint = false;
   l3.boss = null; l3.hole = null;
   l3.end = { stage: 0, t: 0, holeX: 0, waiting: false }; l3.cutscene = false;
-  l3.lives = 3; l3.gameOver = false; l3.msg = ''; l3.msgT = 0;
+  l3.lives = difficultyMaxLives(); l3.gameOver = false; l3.msg = ''; l3.msgT = 0;
   l3._hitThisSwing = false; l3.windPush = 0; l3.flash = 0; l3.doorHinted = false;
 }
 

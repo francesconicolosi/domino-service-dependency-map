@@ -25,17 +25,17 @@ function lavaKnightHitBoxes(k) {
   // so a hero sword touch on any visible part of the Lava Knight registers.
   return [
     // horse trunk and saddle mass
-    lavaKnightWorldBox(k, -56, -74, 54, -28),
+    lavaKnightWorldBox(k, -48, -68, 48, -32),
     // horse head, muzzle and neck
-    lavaKnightWorldBox(k, 36, -96, 92, -48),
+    lavaKnightWorldBox(k, 44, -92, 86, -54),
     // trailing tail and rear silhouette
-    lavaKnightWorldBox(k, -76, -64, -34, -24),
+    lavaKnightWorldBox(k, -70, -58, -42, -30),
     // legs and hooves
-    lavaKnightWorldBox(k, -48, -50, 52, 6),
+    lavaKnightWorldBox(k, -42, -48, 46, 2),
     // rider torso, helmet and seated leg
-    lavaKnightWorldBox(k, -22, -124, 26, -48),
+    lavaKnightWorldBox(k, -18, -118, 22, -54),
     // rider sword/arm area, broader while swinging
-    lavaKnightWorldBox(k, 2, -124, 62, -68),
+    lavaKnightWorldBox(k, 12, -112, 54, -74),
   ];
 }
 
@@ -43,12 +43,12 @@ function heroSwordHitBox(p) {
   // Broad melee volume for the protagonist's procedural sword swing.
   // The sword is drawn from the upper body and sweeps forward/down, so the box
   // covers the real blade path rather than only the character center.
-  const top = p.y - 108;
-  const bot = p.y - 10;
+  const top = p.y - 98;
+  const bot = p.y - 18;
   if ((p.facing || 1) >= 0) {
-    return { x1: p.x + 8, y1: top, x2: p.x + 104, y2: bot };
+    return { x1: p.x + 14, y1: top, x2: p.x + 82, y2: bot };
   }
-  return { x1: p.x - 104, y1: top, x2: p.x - 8, y2: bot };
+  return { x1: p.x - 82, y1: top, x2: p.x - 14, y2: bot };
 }
 
 function tryHitKnight(p) {
@@ -123,10 +123,22 @@ function updateKnight(dt, p) {
     const b = k.bolts[i];
     b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.t > 2.6 || b.y > FLOOR5 + 40 || b.x < KNIGHT_L - 400 || b.x > KNIGHT_R + 400) { k.bolts.splice(i, 1); continue; }
-    if (!p.dying && (p.inv || 0) <= 0 && Math.abs(b.x - p.x) < b.r + 11 && b.y > heroTop(p) && b.y < p.y) {
-      hurtPlayer(p, b.vx < 0 ? -1 : 1);
-      spawnLavaSplash(b.x, b.y, 4);
-      k.bolts.splice(i, 1);
+    if (!p.dying && Math.abs(b.x - p.x) < b.r + 11 && b.y > heroTop(p) && b.y < p.y) {
+      const dir = b.vx > 0 ? 1 : -1;
+      if ((p.blockT || 0) > 0 && p.facing === -dir) {
+        // Lava bolts can be parried, but they do not rebound: the shield/sword
+        // simply disperses the projectile in a small splash.
+        p.blockFlash = 0.25;
+        if (sfxParry) sfxParry.play(0.45, 0.85 + love.math.random() * 0.12);
+        spawnLavaSplash(b.x, b.y, 3);
+        k.bolts.splice(i, 1);
+        continue;
+      }
+      if ((p.inv || 0) <= 0) {
+        hurtPlayer(p, dir);
+        spawnLavaSplash(b.x, b.y, 4);
+        k.bolts.splice(i, 1);
+      }
     }
   }
 }

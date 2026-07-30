@@ -40,6 +40,27 @@ function pickBossArm(b, dir) {
   return -1;
 }
 
+
+function damageBossFromDeflectedSword(s) {
+  const b = l3.boss;
+  if (!b || b.dead || !b.active) return;
+  b.hp -= 1;
+  b.hitCool = 0.65;
+  b.armSwing = 0.18;
+  b.throwArm = s.armIndex;
+  l3.windPush = 0.25;
+  if (sfxHit) sfxHit.play(0.6, 0.7 + love.math.random() * 0.12);
+  spawnDust(b.x + (s.dir || 1) * 28, b.y - 82, 10, 1.2);
+  if (b.hp <= 0) {
+    b.dead = true; b.deadT = 0; b.swords.length = 0; b.active = false;
+    for (let i = 0; i < 6; i++) b.arms[i] = true;
+    l3.end.stage = 1; l3.end.t = 0; l3.cutscene = true;
+    l3toast('The returned blade shatters the guardian — but something worse stirs…');
+  } else {
+    l3toast('The returned blade strikes the guardian!  ' + b.hp + ' blow' + (b.hp === 1 ? '' : 's') + ' remain');
+  }
+}
+
 function updateBoss(dt, p) {
   const b = l3.boss;
   if (!b) return;
@@ -86,6 +107,7 @@ function updateBoss(dt, p) {
     } else {
       s.x += s.vx * dt;
       if ((s.dir || 1) > 0 ? s.x <= b.x + 20 : s.x >= b.x - 20) {
+        if (s.deflected) damageBossFromDeflectedSword(s);
         if (s.armIndex >= 0) b.arms[s.armIndex] = true;   // the blade is caught again
         b.swords.splice(i, 1); continue;
       }
@@ -103,7 +125,7 @@ function updateBoss(dt, p) {
           p.blockFlash = 0.25;
           if (sfxParry) sfxParry.play(0.55, 1.0 + love.math.random() * 0.12);
           spawnDust(p.x + dir * 10, p.y - 30, 6, 0.8);
-          l3toast('Blocked!  The blade is hurled back');
+          l3toast('Blocked!  The blade is hurled back at the guardian');
         } else if ((p.inv || 0) <= 0) {
           hurtPlayer(p, dir);
           spawnDust(p.x, p.y - 30, 5, 0.8);

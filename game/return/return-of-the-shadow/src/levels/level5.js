@@ -89,7 +89,7 @@ function initEnts5() {
     volley: 3, fireCool: 2.6, pauseT: 0, bolts: [],
   };
   l5.swordPickup = null;
-  l5.lives = 3; l5.gameOver = false; l5.msg = ''; l5.msgT = 0;
+  l5.lives = difficultyMaxLives(); l5.gameOver = false; l5.msg = ''; l5.msgT = 0;
   l5.wake = { active: true, stage: 0, t: 0, rise: 0 };
   l5.dialog = { text: '', t: 0, dur: 0 }; l5.dialogDelay = null;
   l5.end = { stage: 0, t: 0 }; l5.flight = null; l5.carpetNear = false;
@@ -516,7 +516,7 @@ function drawL5Overlay() {
   if (!hudOff) {
   // hearts + lives (mirrors L2/L3)
   lg.setFont(FONT_HUD);
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= difficultyMaxHp(); i++) {
     const hx = 30 + (i - 1) * 36, hy = 32;
     const full = (p.hp || 0) >= i;
     if (full) lg.setColor(0.85, 0.16, 0.22, 1); else lg.setColor(0.25, 0.10, 0.13, 0.8);
@@ -666,7 +666,7 @@ function startFlight5() {
   player.state = 'cine'; player.vx = 0; player.vy = 0; player.facing = 1;
   player.sheathed = false; player.swordIdle = 0;   // fire-sword out for the flight
   player.lavaSword = true; player.lavaCharge = 3;  // start charged so you can fire at once
-  player.hp = 3; player.inv = 0.6; player.blockHold = 0;
+  player.hp = difficultyMaxHp(); player.inv = 0.6; player.blockHold = 0;
   l5.bullets.length = 0;
 }
 
@@ -676,7 +676,7 @@ function flightHurt(p) {
   if (l5.flight && l5.flight.phase === 'fall') return;
   if (IMMORTAL) { p.inv = Math.max(p.inv || 0, 0.4); return; }
   if ((p.inv || 0) > 0 || p.dying) return;
-  p.hp = (p.hp || 3) - 1; p.inv = 1.1; p.blockFlash = 0.2;
+  p.hp = (p.hp || difficultyMaxHp()) - 1; p.inv = 1.1; p.blockFlash = 0.2;
   spawnDust(p.x, p.y, 5, 0.9);
   if (sfxHit) sfxHit.play(0.5, 1.0);
   if (p.hp <= 0) {
@@ -688,7 +688,7 @@ function flightHurt(p) {
     // on. Only when the last life AND its hearts are gone does he fall and die.
     if ((l5.lives || 0) > 0) {
       l5.lives -= 1;
-      p.hp = 3; p.inv = 1.6; player.lavaCharge = 3; player.blockHold = 0;
+      p.hp = difficultyMaxHp(); p.inv = 1.6; player.lavaCharge = 3; player.blockHold = 0;
       l5toast('A life spent — stay aloft!');
     } else {
       startFlightFall(p);
@@ -922,7 +922,7 @@ function drawFlightEnts() {
 function drawFlightOverlay() {
   const p = player;
   lg.setFont(FONT_HUD);
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= difficultyMaxHp(); i++) {
     const hx = 30 + (i - 1) * 36, hy = 32;
     const full = (p.hp || 0) >= i;
     if (full) lg.setColor(0.85, 0.16, 0.22, 1); else lg.setColor(0.25, 0.10, 0.13, 0.8);

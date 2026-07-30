@@ -63,7 +63,7 @@ function initEnts2() {
   // upper-right walkway (5520) so you step straight off at the top
   l2.lift = { x: 5370, w: 150, y: 896, yTop: 384, yBot: 896, dir: -1, spd: 130 };
 
-  l2.lives = 3; l2.gameOver = false;
+  l2.lives = difficultyMaxLives(); l2.gameOver = false;
   l2.doorOpen = false; l2.doorOpenT = 0; l2.endStage = 0; l2.doorHinted = false;
   l2.msg = ''; l2.msgT = 0; l2.endT = 0;
 }
