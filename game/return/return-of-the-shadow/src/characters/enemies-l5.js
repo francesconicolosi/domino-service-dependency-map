@@ -7,12 +7,61 @@
 //  top-level scope. See plans/modularization-refactor.md.
 // ============================================================================
 'use strict';
+function rectsOverlap(a, b) {
+  return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
+}
+
+function lavaKnightWorldBox(k, lx1, ly1, lx2, ly2) {
+  // drawKnight5() mirrors the knight with lg.scale(k.dir, 1), so local X ranges
+  // must be mirrored around k.x when the knight is travelling left.
+  const f = k.dir || 1;
+  if (f >= 0) return { x1: k.x + lx1, y1: k.y + ly1, x2: k.x + lx2, y2: k.y + ly2 };
+  return { x1: k.x - lx2, y1: k.y + ly1, x2: k.x - lx1, y2: k.y + ly2 };
+}
+
+function lavaKnightHitBoxes(k) {
+  // Hitboxes follow the actual drawKnight5() local-space silhouette.
+  // They cover the horse body, head/neck, legs/tail, rider and raised weapon area,
+  // so a hero sword touch on any visible part of the Lava Knight registers.
+  return [
+    // horse trunk and saddle mass
+    lavaKnightWorldBox(k, -56, -74, 54, -28),
+    // horse head, muzzle and neck
+    lavaKnightWorldBox(k, 36, -96, 92, -48),
+    // trailing tail and rear silhouette
+    lavaKnightWorldBox(k, -76, -64, -34, -24),
+    // legs and hooves
+    lavaKnightWorldBox(k, -48, -50, 52, 6),
+    // rider torso, helmet and seated leg
+    lavaKnightWorldBox(k, -22, -124, 26, -48),
+    // rider sword/arm area, broader while swinging
+    lavaKnightWorldBox(k, 2, -124, 62, -68),
+  ];
+}
+
+function heroSwordHitBox(p) {
+  // Broad melee volume for the protagonist's procedural sword swing.
+  // The sword is drawn from the upper body and sweeps forward/down, so the box
+  // covers the real blade path rather than only the character center.
+  const top = p.y - 108;
+  const bot = p.y - 10;
+  if ((p.facing || 1) >= 0) {
+    return { x1: p.x + 8, y1: top, x2: p.x + 104, y2: bot };
+  }
+  return { x1: p.x - 104, y1: top, x2: p.x - 8, y2: bot };
+}
+
 function tryHitKnight(p) {
   const k = l5.knight;
   if (!k || k.dead || !k.active || k.hitCool > 0) return false;
-  if (Math.abs(p.x - k.x) > 74) return false;
-  if (p.facing !== (k.x < p.x ? -1 : 1)) return false;
-  if (p.y < FLOOR5 - 96) return false;
+
+  const swordBox = heroSwordHitBox(p);
+  let touched = false;
+  for (const box of lavaKnightHitBoxes(k)) {
+    if (rectsOverlap(swordBox, box)) { touched = true; break; }
+  }
+  if (!touched) return false;
+
   k.hp -= 1; k.hitCool = 0.5; k.flash = 0.3;
   if (sfxHit) sfxHit.play(0.6, 0.85 + love.math.random() * 0.1);
   const away = (p.x >= k.x) ? 1 : -1;
