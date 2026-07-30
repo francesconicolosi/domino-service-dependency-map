@@ -860,3 +860,267 @@ function hurtPlayer(p, dir) {
   if (p.hp <= 0) killPlayer(p);
 }
 
+
+// ---------------------------------------------------------------- player update
+// updatePlayer — the hero's per-frame logic / state machine (movement, jump,
+// wall-grab, climb, attack/block, level-specific death handling). Reads level
+// state (l2/l3/l5) and the cine via the shared top-level scope.
+function updatePlayer(dt, p) {
+  p.t = p.t + dt;
+  p.regrab = Math.max(0, p.regrab - dt);
+  p.jbuf = Math.max(0, p.jbuf - dt);
+  p.coyote = Math.max(0, p.coyote - dt);
+  p.landT = Math.max(0, p.landT - dt);
+  p.atkT = Math.max(-1, (p.atkT || 0) - dt);
+  p.drawT = Math.max(0, (p.drawT || 0) - dt);
+  p.inv = Math.max(0, (p.inv || 0) - dt);
+  p.blockT = Math.max(0, (p.blockT || 0) - dt);
+  p.lavaCool = Math.max(0, (p.lavaCool || 0) - dt);
+  p.riposte = Math.max(0, (p.riposte || 0) - dt);
+  p.blockFlash = Math.max(0, (p.blockFlash || 0) - dt);
+  // sword idle → after 5s unused, sheathe it on the back (drawn/attacked out again)
+  if (p.hasSword && !p.dying) {
+    const busy = (p.atkT || 0) > 0 || (p.drawT || 0) > 0 || (p.blockT || 0) > 0;
+    if (busy) p.swordIdle = 0; else p.swordIdle = (p.swordIdle || 0) + dt;
+    if (!p.sheathed && p.swordIdle > 5) p.sheathed = true;
+  }
+  // the spawn guard rails only count down ONCE the hero actually starts moving
+  // — otherwise, on a dark level where you take a few seconds to get oriented,
+  // the guard would expire while the hero is still frozen at the spawn, leaving
+  // the very start of play unprotected (the reported debug=3 fall).
+  if (p.started) {
+    p.initGrace = Math.max(0, (p.initGrace || 0) - dt);
+    p.startGuard = Math.max(0, (p.startGuard || 0) - dt);
+  }
+  // the hard spawn-floor lock (Level 3) counts down in REAL time, no matter what
+  p.l3SpawnLock = Math.max(0, (p.l3SpawnLock || 0) - dt);
+  if ((p.riposte || 0) <= 0) p.riposteHits = 0;
+
+  // BULLET-PROOF LEVEL-3 SPAWN: for the first seconds of the black halls the hero
+  // can NEVER fall or die. This runs before the dying block, so even a death
+  // already in progress is cancelled and the hero is snapped back onto the start
+  // floor. (No enemies are within reach this early, and the intentional finale
+  // fall is far later — the lock has long expired by then.)
+  if (level === 3 && (p.l3SpawnLock || 0) > 0 && l3.end.stage === 0) {
+    if (p.dying) { p.dying = false; p.deadFade = 0; }
+    if (p.y > FLOOR3 + 40) {
+      p.y = FLOOR3; p.vy = 0; p.state = 'ground'; p.onGround = true; p.coyote = COYOTE;
+      p.started = false; p.facing = 1;   // re-freeze facing right, like level 1's start
+    }
+  }
+
+  if (p.dying) {
+    // dying in lava: the King sinks down into the molten pool (like the skeletons)
+    if (p.lavaSink != null) {
+      p.vx = 0; p.y = p.y + 200 * dt;
+      if (Math.floor(T * 12) % 2 === 0) spawnLavaSplash(p.x, p.lavaSink, 2);
+    }
+    p.deadFade = p.deadFade + dt * (p.lavaSink != null ? 1.9 : 1.6);
+    if (p.deadFade >= 1) {
+      // in the keep, dying costs a life; run out of lives → game over
+      if (level === 2 && !l2.gameOver) {
+        l2.lives = (l2.lives || 0) - 1;
+        if (l2.lives <= 0) { l2.gameOver = true; p.deadFade = 1; return; }
+      }
+      if (level === 3 && !l3.gameOver) {
+        l3.lives = (l3.lives || 0) - 1;
+        if (l3.lives <= 0) { l3.gameOver = true; p.deadFade = 1; return; }
+      }
+      if (level === 5 && !l5.gameOver) {
+        l5.lives = (l5.lives || 0) - 1;
+        if (l5.lives <= 0) { l5.gameOver = true; p.deadFade = 1; return; }
+      }
+      respawnPlayer(p); p.dying = false; p.deadFade = 0.999;
+    }
+    if (!p.dying) return;
+  }
+  if (p.deadFade > 0 && !p.dying) p.deadFade = Math.max(0, p.deadFade - dt * 1.4);
+
+  if (p.state === 'cine') { updateCine(dt, p); return; }
+
+  // LEVEL 3 finale cutscene: the hero is frozen in place (still subject to
+  // gravity) while the witch appears; once the floor shatters it falls freely
+  if (level === 3 && l3.cutscene) {
+    p.vx = 0;
+    p.vy = Math.min(p.vy + GRAV * dt, 1400);
+    p.prevVy = p.vy;
+    moveAndCollide(p, dt);
+    p.state = p.onGround ? 'ground' : 'air';
+    return;
+  }
+
+  const left = keyLeft(), right = keyRight(), up = keyUp(), down = keyDown();
+  let dir = (right ? 1 : 0) - (left ? 1 : 0);
+
+  // at the very start of a level the hero waits, planted on the spawn floor —
+  // no gravity, no fall — until the player gives a first input
+  if (!p.started) {
+    if (left || right || up || down || p.jbuf > 0) { p.started = true; }
+    else {
+      p.vx = 0; p.vy = 0; p.onGround = true; p.state = 'ground';
+      if (p.spawnFloor != null) p.y = p.spawnFloor;
+      p.facing = 1;   // a regular-level spawn always faces right (toward the level)
+      p.coyote = COYOTE;
+      return;
+    }
+  }
+
+  if (p.state === 'ground' || p.state === 'air') {
+    if (up || down) {
+      tryGrabWall(p);
+      if (p.state === 'climb') { p.jbuf = 0; return; }
+    }
+    // CROUCH: hold DOWN on the ground to duck. The hero can shuffle slowly
+    // while crouched; its head drops low enough to slip under high attacks
+    // (see heroTop / the boss's upper sword lane in level 3).
+    p.crouch = (p.state === 'ground' && down && !up && p.landT <= 0
+      && (p.blockT || 0) <= 0 && (p.atkT || 0) <= 0);
+    let max = p.onBeam ? BEAMSPD : RUNSPD;
+    if (p.crouch) max = 96;
+    if (p.landT > 0) dir = 0;
+    // while blocking you hold your ground — you can re-orient to face the
+    // attacker but you don't advance or retreat
+    if ((p.blockT || 0) > 0) {
+      if (dir !== 0 && p.state === 'ground') p.facing = dir;
+      dir = 0;
+    }
+
+    p.turnT = Math.max(0, (p.turnT || 0) - dt);
+    if (p.state === 'ground' && p.landT <= 0 && p.turnT <= 0
+      && dir !== 0 && dir !== p.facing && (p.atkT || 0) <= 0) {
+      p.turnDur = (Math.abs(p.vx) > 90) ? 0.22 : 0.15;
+      p.turnT = p.turnDur;
+      p.turnFlip = false;
+      if (Math.abs(p.vx) > 120) spawnDust(p.x, p.y, 3, 0.7);
+    }
+    if (p.turnT > 0 && p.state === 'ground') {
+      dir = 0;
+      if (p.vx > 0) p.vx = Math.max(0, p.vx - 300 * dt);
+      else p.vx = Math.min(0, p.vx + 300 * dt);
+      if (!p.turnFlip && p.turnT <= p.turnDur * 0.5) { p.facing = -p.facing; p.turnFlip = true; }
+    }
+
+    if (dir !== 0) {
+      const acc = p.onGround ? ACC_G : ACC_A;
+      p.vx = clamp(p.vx + dir * acc * dt, -max, max);
+      p.facing = dir;
+    } else {
+      const fr = (p.onGround ? FRICT : 300) * dt;
+      if (p.vx > 0) p.vx = Math.max(0, p.vx - fr);
+      else p.vx = Math.min(0, p.vx + fr);
+    }
+    if (Math.abs(p.vx) > 20) p.runPhase = p.runPhase + Math.abs(p.vx) * dt * 0.048;
+
+    p.vy = Math.min(p.vy + GRAV * dt, 1400);
+    p.prevVy = p.vy;
+    moveAndCollide(p, dt);
+
+    if (p.onGround) {
+      if (p.state === 'air') {
+        if (p.prevVy > 560) { p.landT = 0.26; spawnDust(p.x, p.y, 6, 1); }
+        p.t = 0;
+      }
+      p.state = 'ground';
+      p.coyote = COYOTE;
+    } else {
+      p.state = 'air';
+    }
+
+    // spawn safety net: during the first moments of a level, never let the
+    // hero drift into a fall — snap onto any floor beneath if not jumping
+    if ((p.initGrace || 0) > 0 && p.state === 'air' && p.vy >= 0 && p.jbuf <= 0) {
+      const fy = floorAt(p.x, p.y - 30);
+      if (fy != null) { p.y = fy; p.vy = 0; p.onGround = true; p.state = 'ground'; p.coyote = COYOTE; }
+    }
+
+    if (p.jbuf > 0 && p.coyote > 0 && p.landT <= 0) {
+      p.vy = -JUMPV;
+      p.jbuf = 0; p.coyote = 0;
+      p.state = 'air'; p.t = 0;
+      spawnDust(p.x, p.y, 3, 0.6);
+    }
+
+    if (p.state === 'air') {
+      tryGrabLedge(p);
+      if (p.state === 'air') tryGrabWall(p);
+    }
+
+  } else if (p.state === 'hang') {
+    const L = p.ledge;
+    if (up || p.jbuf > 0) { p.jbuf = 0; startMantle(p); }
+    else if (down) { p.state = 'air'; p.regrab = 0.35; p.vy = 40; p.t = 0; }
+    else if ((L.side === -1 && left) || (L.side === 1 && right)) {
+      p.state = 'air'; p.regrab = 0.35;
+      p.vx = -L.side * 60; p.vy = 0; p.t = 0;
+    }
+
+  } else if (p.state === 'climb') {
+    const F = p.face;
+    if (up) p.vy = -CLIMBSPD;
+    else if (down) p.vy = CLIMBSPD;
+    else p.vy = 0;
+    p.y = p.y + p.vy * dt;
+    p.runPhase = p.runPhase + Math.abs(p.vy) * dt * 0.035;
+    if (p.y - 50 <= F.ytop + 6) {
+      p.ledge = { x: F.x, y: F.ytop, side: F.side };
+      p.x = F.x + (F.side === -1 ? -13 : 13);
+      p.y = F.ytop + 48;
+      if (up) startMantle(p); else { p.state = 'hang'; p.t = 0; }
+    } else if (p.y - 20 >= (F.bot != null ? F.bot : F.ybot)) {
+      p.y = (F.bot != null ? F.bot : F.ybot) + 20;
+      p.vy = 0;
+    } else if (p.jbuf > 0) {
+      p.jbuf = 0;
+      p.state = 'air'; p.regrab = 0.35; p.t = 0;
+      p.vx = F.side * 250;
+      p.vy = -500;
+      p.facing = F.side;
+    } else if ((F.side === -1 && left) || (F.side === 1 && right)) {
+      p.state = 'air'; p.regrab = 0.3; p.t = 0;
+    }
+
+  } else if (p.state === 'mantle') {
+    const m = p.mant;
+    m.t = Math.min(m.dur, m.t + dt);
+    const k = m.t / m.dur;
+    const ky = smooth(clamp(k / 0.58, 0, 1));
+    const kx = smooth(clamp((k - 0.28) / 0.36, 0, 1));
+    p.y = lerp(m.sy, m.ty, ky);
+    p.x = lerp(m.sx, m.tx, kx);
+    if (k >= 1) {
+      p.state = 'ground'; p.onGround = true; p.t = 0;
+      p.vx = 0; p.vy = 0;
+      spawnDust(p.x, p.y, 3, 0.5);
+    }
+  }
+
+  if (p.onGround) {
+    for (const c of checkpoints) {
+      if (p.x > c.x && c.y <= respawn.y && c.x >= respawn.x) {
+        if (c.x !== respawn.x) respawn = { x: c.x, y: c.y };
+      }
+    }
+  }
+
+  // START-GUARD: for the first seconds of a level the hero can never fall off
+  // the world. If it has dropped well below the guaranteed-solid safe spawn
+  // (whatever the cause — bad saved level, stray input, edge walk-off), return
+  // it there and re-freeze until the player deliberately moves again.
+  if ((p.startGuard || 0) > 0 && p.safeY != null && p.vy > 0 && p.y > p.safeY + 48) {
+    p.x = p.safeX; p.y = p.safeY; p.vx = 0; p.vy = 0;
+    p.state = 'ground'; p.onGround = true; p.coyote = COYOTE; p.jbuf = 0;
+    p.facing = 1;   // face right (toward the level), exactly like a fresh spawn / R
+    p.started = false;
+    resetScarf(...neckPos(p));
+  }
+
+  // the finale fall through the shattered floor is intentional — don't "die"
+  // Level 5's labyrinth descends deep, so allow a longer fall before it counts
+  // as falling out of the world
+  const fallLimit = (level === 5) ? 1040 : 720;
+  if (p.y > respawn.y + fallLimit && !(level === 3 && l3.end.stage >= 2)) killPlayer(p);
+
+  if (p.x < 14) { p.x = 14; p.vx = Math.max(0, p.vx); }
+
+  if (level === 1 && !cine.on && p.onGround && p.x > CINE_TRIGGER_X) startCine(p);
+}

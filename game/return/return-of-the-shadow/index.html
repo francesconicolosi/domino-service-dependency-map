@@ -78,11 +78,14 @@
   <script src="src/characters/enemies-l3.js?v=2026-07-29-L6"></script>
   <script src="src/characters/enemies-l5.js?v=2026-07-29-L6"></script>
   <script src="src/characters/cast-l4.js?v=2026-07-29-L6"></script>
+  <script src="src/levels/level1.js?v=2026-07-29-L6"></script>
   <script src="src/levels/level2.js?v=2026-07-29-L6"></script>
   <script src="src/levels/level3.js?v=2026-07-29-L6"></script>
   <script src="src/levels/level4.js?v=2026-07-29-L6"></script>
   <script src="src/levels/level5.js?v=2026-07-29-L6"></script>
-  <script src="src/legacy.js?v=2026-07-29-L6"></script>
+  <!-- engine core loads LAST: it assigns the love.* callbacks and references
+       every symbol above (resolved by name via the shared top-level scope). -->
+  <script src="src/core/engine.js?v=2026-07-29-L6"></script>
   <script src="touch.js?v=2026-07-29-L6"></script>
   <script>
     love._run(document.getElementById('game'));
