@@ -645,7 +645,7 @@
     buildLevel();
     respawn = { x: checkpoints[0].x, y: checkpoints[0].y };
     cine.on = false; cine.stage = 0; cine.t = 0;
-    cine.titleA = 0; cine.subA = 0; cine.boxA = 0; cine.hintA = 0; cine.difficultySel = -1;
+    cine.titleA = 0; cine.subA = 0; cine.boxA = 0; cine.hintA = 0; cine.difficultySel = 0;
     musicVol = 0;
     if (musicSrc) {
       musicSrc.stop(); musicSrc.setVolume(0);
@@ -744,7 +744,7 @@
       lg.setColor(0.9, 0.85, 0.8, a * (easyOn ? 1.0 : 0.45));
       lg.print((easyOn ? '› ' : '  ') + easy + '  ·  5 HP / 5 LIVES', VW / 2 + 16, diffY);
 
-      const msg2 = (cine.difficultySel < 0) ? '← → choose difficulty' : 'ENTER enter the castle';
+      const msg2 = '← → choose difficulty      ENTER enter the castle';
       lg.setColor(0.9, 0.85, 0.8, a);
       lg.print(msg2, VW / 2 - FONT_HUD.getWidth(msg2) / 2, VH - 50);
     }
@@ -1501,6 +1501,9 @@
     // Level 4 cutscene: advance the dialogue / skip beats
     if (level === 4) { if (key === 'space' || key === 'return' || key === 'x' || key === 'z' || key === 'k') l4.skip = true; return; }
     if (level === 1 && cine.on && cine.stage === 4 && cine.hintA >= 0.95) {
+      // Normal is the default and is already selected, so mobile players can tap
+      // the on-screen ENTER button to continue. Keyboard/gamepad players can
+      // still switch to Easy before confirming.
       if (key === 'left' || key === 'a' || key === 'up' || key === 'w') {
         cine.difficultySel = 0;
         return;
@@ -1509,7 +1512,7 @@
         cine.difficultySel = 1;
         return;
       }
-      if ((key === 'return' || key === 'space' || key === 'z' || key === 'k' || key === 'x') && cine.difficultySel >= 0) {
+      if (key === 'return' || key === 'space' || key === 'z' || key === 'k' || key === 'x') {
         saveDifficulty(cine.difficultySel === 1 ? 'easy' : 'normal');
         initLevel(2);
         return;
