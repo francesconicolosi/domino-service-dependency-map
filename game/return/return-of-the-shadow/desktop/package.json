@@ -6,6 +6,10 @@
   "license": "MIT",
   "private": true,
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/francesconicolosi/itsm.git"
+  },
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
@@ -59,7 +63,7 @@
       ]
     },
     "publish": [
-      { "provider": "github" }
+      { "provider": "github", "owner": "francesconicolosi", "repo": "itsm" }
     ]
   }
 }
