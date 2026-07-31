@@ -25,6 +25,27 @@ python3 -m http.server 8000
 
 Audio starts on the first key press / tap (browser autoplay policy).
 
+## Desktop downloads (macOS / Windows / Linux / Steam Deck)
+
+Native desktop builds are published to the repo's **[GitHub Releases](../../releases)**.
+They wrap the exact web game in a window (Electron) — see [`desktop/`](desktop/) and the
+`Desktop Release (Electron)` GitHub Action. A release is cut by pushing a `vX.Y.Z` tag; each
+release carries a macOS `.dmg`, Windows installer + portable `.exe`, and a Linux `.AppImage`
++ `.tar.gz`.
+
+The builds are **unsigned**, so the OS shows a one-time warning the first time you run them:
+
+- **macOS** — right-click the app → **Open** (or run `xattr -dr com.apple.quarantine "Return of the Shadow.app"`).
+- **Windows** — SmartScreen → **More info** → **Run anyway** (or just run the portable `.exe`).
+- **Linux** — `chmod +x *.AppImage && ./Return*.AppImage`.
+
+**Steam Deck:** download the Linux `.AppImage`, mark it executable, and add it to Steam as a
+**non-Steam game** (runs natively). Alternatively add the Windows portable `.exe` and run it
+through **Proton** (Properties → Compatibility).
+
+Build locally from `desktop/`: `npm install` then `npm start` (run) or `npm run build`
+(package for your current OS into `desktop/dist/`).
+
 ## Controls
 
 | Action | Keys |

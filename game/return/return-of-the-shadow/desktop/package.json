@@ -1,0 +1,65 @@
+{
+  "name": "return-of-the-shadow-desktop",
+  "version": "0.1.0",
+  "description": "Native desktop build (Electron) of the game Return of the Shadow.",
+  "author": "Francesco Nicolosi",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish always"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.francesconicolosi.returnoftheshadow",
+    "productName": "Return of the Shadow",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js"
+    ],
+    "extraResources": [
+      {
+        "from": "..",
+        "to": "game",
+        "filter": [
+          "index.html",
+          "love-shim.js",
+          "touch.js",
+          "battle-theme.mp3",
+          "src/**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ]
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "linux": {
+      "category": "Game",
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "tar.gz", "arch": ["x64"] }
+      ]
+    },
+    "publish": [
+      { "provider": "github" }
+    ]
+  }
+}

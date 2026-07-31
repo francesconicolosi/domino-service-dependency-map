@@ -1,0 +1,65 @@
+name: Desktop Release (Electron)
+
+# Builds native desktop bundles of "Return of the Shadow" for macOS, Windows and
+# Linux and publishes them to a GitHub Release. Triggered by pushing a version
+# tag (e.g. v0.1.0); workflow_dispatch runs a dry-run that only uploads the
+# installers as workflow artifacts (no Release). The every-push GitHub Pages
+# deploy in webpack.yml is unaffected.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed for electron-builder to publish the GitHub Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: game/return/return-of-the-shadow/desktop
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Keep the built release version in step with the pushed tag so the
+      # GitHub Release electron-builder creates matches (tag v1.2.3 -> 1.2.3).
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      # electron-builder auto-selects the current OS's targets. On a tag push it
+      # publishes to the GitHub Release; otherwise it just builds (dry-run).
+      - name: Build and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # unsigned builds; don't hunt for a Developer ID
+        run: npx --no-install electron-builder --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+
+      - name: Upload installers as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: return-of-the-shadow-${{ matrix.os }}
+          if-no-files-found: ignore
+          path: |
+            game/return/return-of-the-shadow/desktop/dist/*.dmg
+            game/return/return-of-the-shadow/desktop/dist/*.zip
+            game/return/return-of-the-shadow/desktop/dist/*.exe
+            game/return/return-of-the-shadow/desktop/dist/*.AppImage
+            game/return/return-of-the-shadow/desktop/dist/*.tar.gz

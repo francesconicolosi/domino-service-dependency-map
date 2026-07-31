@@ -75,7 +75,9 @@ module.exports = {
                 {from: 'src/robots.txt', to: 'robots.txt'},
                 {from: 'src/sitemap.xml', to: 'sitemap.xml'},
                 { from: 'assets', to: 'assets' },
-                { from: 'game', to: 'game' },
+                // Ship the games to Pages, but not the Electron desktop project
+                // (its source/build artifacts aren't part of the website).
+                { from: 'game', to: 'game', globOptions: { ignore: ['**/desktop/**'] } },
             ],
         }),
         new webpack.DefinePlugin({

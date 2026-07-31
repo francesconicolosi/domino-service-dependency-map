@@ -33,3 +33,7 @@ node_modules
 
 ### SMS port third-party toolchain (devkitSMS + rebuilt libs) ###
 smstoolchain/
+
+### Electron desktop build (Return of the Shadow) ###
+game/return/return-of-the-shadow/desktop/node_modules/
+game/return/return-of-the-shadow/desktop/dist/
