@@ -67,6 +67,7 @@ export class DominoApp {
         document.getElementById('act-clear')?.addEventListener('click', () => {
             this.graph.clickedNode = null;
             this.search.searchTerm = '';
+            this.search._refreshChips();
             const input = document.getElementById('drawer-search-input');
             if (input) input.value = '';
             setSearchQuery('');
@@ -92,6 +93,7 @@ export class DominoApp {
         });
 
         document.getElementById('drawer-search-go')?.addEventListener('click', () => {
+            this.autocomplete?.hideDropdown();
             const chipBar = this.search._chipBar;
             const composed = chipBar?.getRevealModeQuery();
             if (composed) {

@@ -584,6 +584,7 @@ export class SolitaireApp {
         });
 
         document.getElementById('drawer-search-go')?.addEventListener('click', () => {
+            this.autocomplete?.hideDropdown();
             const chipBar = this.search._chipBar;
             const composed = chipBar?.getRevealModeQuery();
             if (composed) {
