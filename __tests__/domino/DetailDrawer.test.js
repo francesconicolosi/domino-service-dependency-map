@@ -423,3 +423,49 @@ describe('DetailDrawer.showAbout', () => {
         expect(() => dd.showAbout()).not.toThrow();
     });
 });
+
+// ─── getPeopleDbLink — field-scoped URL ───────────────────────────────────────
+
+describe('DetailDrawer.getPeopleDbLink — fieldKey param', () => {
+    test('generates field-scoped search URL when fieldKey is provided', () => {
+        const dd = new DetailDrawer(makeApp());
+        const html = dd.getPeopleDbLink('Engineering', 'theme');
+        expect(html).toContain(encodeURIComponent('theme:"Engineering"'));
+        expect(html).toContain('Engineering');
+    });
+
+    test('retains legacy lowercase bare URL when no fieldKey given', () => {
+        const dd = new DetailDrawer(makeApp());
+        const html = dd.getPeopleDbLink('Alice Smith');
+        expect(html).toContain('alice+smith');
+        expect(html).not.toContain('name%3A');
+    });
+});
+
+// ─── renderValueCell — field-scoped Solitaire links ──────────────────────────
+
+describe('DetailDrawer.renderValueCell — SEARCHABLE_ATTRS field-scoped links', () => {
+    test('renders Theme field with theme: scoped solitaire link', () => {
+        const dd = new DetailDrawer(makeApp());
+        const td = dd.renderValueCell('Theme', 'Engineering', '');
+        expect(td.innerHTML).toContain(encodeURIComponent('theme:"Engineering"'));
+    });
+
+    test('renders Stream field with stream: scoped solitaire link', () => {
+        const dd = new DetailDrawer(makeApp());
+        const td = dd.renderValueCell('Stream', 'Retail', '');
+        expect(td.innerHTML).toContain(encodeURIComponent('stream:"Retail"'));
+    });
+
+    test('renders Owner field with name: scoped solitaire link', () => {
+        const dd = new DetailDrawer(makeApp());
+        const td = dd.renderValueCell('Owner', 'Alice Smith', '');
+        expect(td.innerHTML).toContain(encodeURIComponent('name:"Alice Smith"'));
+    });
+
+    test('renders Service Manager field with name: scoped solitaire link', () => {
+        const dd = new DetailDrawer(makeApp());
+        const td = dd.renderValueCell('Service Manager', 'Bob Jones', '');
+        expect(td.innerHTML).toContain(encodeURIComponent('name:"Bob Jones"'));
+    });
+});

@@ -6,6 +6,7 @@ import {
     ROLE_FIELD_WITH_MAPPING,
     COMPANY_FIELD,
     LOCATION_FIELD,
+    BUSINESS_FUNCTION_FIELD,
     firstLevelNA,
     secondLevelNA,
     thirdLevelNA,
@@ -28,9 +29,10 @@ export function makeKeyColorScale(keys, topKey) {
 }
 
 export function getLegendTitleFor(fieldName) {
-    if (fieldName === ROLE_FIELD_WITH_MAPPING) return 'Roles';
-    if (fieldName === COMPANY_FIELD)           return 'Companies';
-    if (fieldName === LOCATION_FIELD)          return 'Locations';
+    if (fieldName === ROLE_FIELD_WITH_MAPPING)   return 'Roles';
+    if (fieldName === COMPANY_FIELD)             return 'Companies';
+    if (fieldName === LOCATION_FIELD)            return 'Locations';
+    if (fieldName === BUSINESS_FUNCTION_FIELD)   return 'Functions';
     return 'Legend';
 }
 

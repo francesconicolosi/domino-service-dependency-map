@@ -23,7 +23,7 @@
 #legend .legend__header { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px 6px; cursor: move; }
 #legend .legend__title  { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
 #legend .legend__collapse { background: none; border: none; cursor: pointer; padding: 2px 4px; }
-#legend .legend__collapse .chevron::before { content: '▾'; display: inline-block; transition: transform .2s; }
+#legend .legend__collapse .chevron::before { content: '\25BE'; display: inline-block; transition: transform .2s; transform: rotate(180deg); }
 #legend.legend--collapsed .chevron::before { transform: rotate(-90deg); }
 #legend .legend__list  { padding: 0 4px; overflow-y: auto; }
 #legend .legend__item  { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
@@ -399,13 +399,12 @@ input[type="file"] {
 }
 
 
-input[type="text"]:not(#drawer-search-input) {
+input[type="text"] {
   width: 100%;
   padding: 10px;
   margin: 8px 0;
   box-sizing: border-box;
   border: none;
-  border-bottom: 2px solid black;
   font-size: 16px;
   font-family: var(--brand-font);
 }
@@ -476,6 +475,28 @@ line {
 circle {
   stroke: #000;
   stroke-width: 1px;
+  cursor: pointer;
+}
+.node-icon {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+}
+.node-group:hover .node-icon {
+  opacity: 1;
+  pointer-events: auto;
+}
+.node-icon circle {
+  stroke: #333;
+  stroke-width: 1.5px;
+  fill: none;
+  cursor: pointer;
+}
+.node-icon line {
+  stroke: #333;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
   cursor: pointer;
 }
 .tooltip {
@@ -699,14 +720,37 @@ circle {
   padding-top: 14px;
 }
 
+/* ── Export modal ───────────────────────────────────────────────────────── */
+.export-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+.export-modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 260px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  font-family: var(--brand-font);
+}
+.export-modal-box h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.export-modal-box p  { margin: 0 0 4px; font-size: 14px; color: #555; }
+.export-modal-box button { font-family: var(--brand-font); }
+.export-cancel { background: transparent !important; border-color: transparent !important; color: #888 !important; box-shadow: none !important; font-size: 13px; }
+.export-cancel:hover { color: #333 !important; }
+
 /* === DARK MODE === */
 /* Apple-inspired palette — matches Solitaire exactly */
 html[data-theme="dark"] body     { background: #070b18; color: #f5f5f7; }
-html[data-theme="dark"] .top-bar { background: #0d1120; border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
-html[data-theme="dark"] .top-bar__hamburger,
-html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
-html[data-theme="dark"] .top-bar__hamburger:hover,
-html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; border-color: rgba(255,255,255,0.20); }
+html[data-theme="dark"] .top-bar { background: #0d1120; box-shadow: 0 1px 0 rgba(255,255,255,0.07); color: #f5f5f7; }
 
 /* Side drawer */
 html[data-theme="dark"] #side-drawer   { background: #0d1120; }
@@ -716,10 +760,12 @@ html[data-theme="dark"] .drawer-footer { color: rgba(245,245,247,0.45); border-t
 /* Buttons — base, icon, and side-drawer actions */
 html[data-theme="dark"] button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
 html[data-theme="dark"] button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
-html[data-theme="dark"] .drawer-icon-btn,
-html[data-theme="dark"] #toggle-cta button { background: transparent; border-color: transparent; box-shadow: none; color: rgba(245,245,247,0.65); }
-html[data-theme="dark"] .drawer-icon-btn:hover,
-html[data-theme="dark"] #toggle-cta button:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
+html[data-theme="dark"] .drawer-icon-btn { background: transparent; border-color: transparent; box-shadow: none; color: rgba(245,245,247,0.65); }
+html[data-theme="dark"] .drawer-icon-btn:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
+html[data-theme="dark"] .top-bar__hamburger,
+html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] .top-bar__hamburger:hover,
+html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; border-color: rgba(255,255,255,0.20); }
 html[data-theme="dark"] .switch-label  { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
 html[data-theme="dark"] #side-drawer .actions button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; box-shadow: none; }
 html[data-theme="dark"] #side-drawer .actions button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
@@ -729,18 +775,6 @@ html[data-theme="dark"] a { color: #f5f5f7; }
 html[data-theme="dark"] .fade-link { background: transparent; color: #f5f5f7; border-color: transparent; }
 html[data-theme="dark"] .fade-link:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
 
-/* Top-bar search: input + action buttons */
-html[data-theme="dark"] .search-field { background: #252528; border-color: rgba(255,255,255,0.12); }
-html[data-theme="dark"] .search-field input { color: #f5f5f7; background: transparent; }
-html[data-theme="dark"] .search-field input::placeholder { color: rgba(245,245,247,0.35); }
-html[data-theme="dark"] .top-search input,
-html[data-theme="dark"] #drawer-search-input { background: #252528; border-color: rgba(255,255,255,0.12); color: #f5f5f7; }
-html[data-theme="dark"] .top-search input::placeholder,
-html[data-theme="dark"] #drawer-search-input::placeholder { color: rgba(245,245,247,0.35); }
-html[data-theme="dark"] .top-search button { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }
-html[data-theme="dark"] .top-search button:hover { background: rgba(255,255,255,0.10); color: #f5f5f7; }
-html[data-theme="dark"] .search-chip-key { background: #1e3a5f; color: #7aadff; }
-html[data-theme="dark"] .search-chip { background: #3c3c40; color: #f5f5f7; }
 
 /* Legacy #search-input (list view) */
 html[data-theme="dark"] #search-input { background: #252528; border-bottom-color: rgba(255,255,255,0.15); color: #f5f5f7; }
@@ -756,6 +790,8 @@ html[data-theme="dark"] #map   { background: #070b18; }
 html[data-theme="dark"] text   { fill: #f5f5f7; }
 html[data-theme="dark"] line   { stroke: rgba(140,160,210,0.45); }
 html[data-theme="dark"] circle { stroke: rgba(255,255,255,0.25); stroke-width: 2px; }
+html[data-theme="dark"] .node-icon circle { stroke: #f5f5f7; }
+html[data-theme="dark"] .node-icon line   { stroke: #f5f5f7; }
 
 /* List-view table */
 html[data-theme="dark"] #detail-panel,
@@ -787,6 +823,73 @@ html[data-theme="dark"] .close-drawer:hover { background: rgba(255,255,255,0.08)
 
 /* Shared widgets */
 html[data-theme="dark"] .modal-box   { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.65); }
+html[data-theme="dark"] .export-modal-box { background: #1c1c1e; color: #f5f5f7; }
+html[data-theme="dark"] .export-modal-box p { color: rgba(245,245,247,0.6); }
+html[data-theme="dark"] .export-cancel { color: rgba(245,245,247,0.45) !important; }
+html[data-theme="dark"] .export-cancel:hover { color: #f5f5f7 !important; }
 html[data-theme="dark"] .tooltip     { background: rgba(17,17,19,0.96); color: #f5f5f7; }
 html[data-theme="dark"] .app-tooltip { background: rgba(17,17,19,0.96); color: #f5f5f7; border: 1px solid rgba(255,255,255,0.12); }
 html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
+
+/* ── Domino Jira service badges + popup ──────────────────────────────────── */
+.node-jira-badge,
+.node-group .node-jira-badge,
+.node-group:hover .node-jira-badge {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    display: inline !important;
+}
+
+.node-jira-badge rect {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    stroke: rgba(255,255,255,.95) !important;
+    stroke-width: 1.2px !important;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.45));
+}
+
+.node-jira-badge text {
+    pointer-events: none !important;
+    font-family: var(--brand-font), sans-serif !important;
+    font-weight: 800 !important;
+    dominant-baseline: central;
+}
+
+.node-jira-badge--incident rect { fill: #ef4444 !important; }
+.node-jira-badge--incident text { fill: #fff !important; }
+.node-jira-badge--request rect { fill: #f59e0b !important; }
+.node-jira-badge--request text { fill: #111827 !important; }
+
+.domino-jira-popup,
+.domino-jira-popup * {
+    font-family: var(--brand-font), "Brand Font", sans-serif !important;
+}
+
+.domino-jira-card__services {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 6px;
+}
+
+.domino-jira-card__services strong { margin-right: 2px; }
+
+.domino-jira-card__service-link {
+    appearance: none;
+    border: 1px solid rgba(147, 197, 253, .38);
+    border-radius: 999px;
+    background: rgba(59, 130, 246, .13);
+    color: #111827;
+    padding: 2px 7px;
+    font: inherit;
+    font-size: 11px;
+    line-height: 1.35;
+    cursor: pointer;
+}
+
+.domino-jira-card__service-link:hover {
+    color: #fff;
+    background: rgba(59, 130, 246, .24);
+    border-color: rgba(147, 197, 253, .72);
+}

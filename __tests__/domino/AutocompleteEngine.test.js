@@ -115,40 +115,40 @@ describe('AutocompleteEngine.computeSuggestions', () => {
 });
 
 describe('AutocompleteEngine.refreshSuggestions', () => {
+    let ae;
+
     beforeEach(() => {
-        document.body.innerHTML = '<datalist id="search-suggestions"></datalist>';
+        document.body.innerHTML = '<input id="drawer-search-input"/>';
+        ae = new AutocompleteEngine(makeApp(SAMPLE_NODES));
+        ae.buildIndex();
+        ae.init();
     });
 
     afterEach(() => {
         document.body.innerHTML = '';
     });
 
-    test('populates datalist with option elements', () => {
-        const ae = new AutocompleteEngine(makeApp(SAMPLE_NODES));
-        ae.buildIndex();
+    test('populates dropdown with list items', () => {
         ae.refreshSuggestions('ty');
-        const opts = document.querySelectorAll('#search-suggestions option');
-        expect(opts.length).toBeGreaterThan(0);
+        const items = document.querySelectorAll('#ac-dropdown .ac-item');
+        expect(items.length).toBeGreaterThan(0);
     });
 
-    test('clears datalist before repopulating', () => {
-        const dl = document.getElementById('search-suggestions');
-        dl.innerHTML = '<option value="old"></option>';
-        const ae = new AutocompleteEngine(makeApp(SAMPLE_NODES));
-        ae.buildIndex();
+    test('clears dropdown before repopulating', () => {
+        ae.refreshSuggestions('ty');
         ae.refreshSuggestions('xyz');
-        // If no suggestions, datalist is empty
-        const opts = document.querySelectorAll('#search-suggestions option');
-        opts.forEach(opt => {
-            expect(opt.value).not.toBe('old');
+        // 'xyz' matches nothing, so dropdown should be empty
+        const items = document.querySelectorAll('#ac-dropdown .ac-item');
+        items.forEach(li => {
+            expect(li.dataset.value).not.toBe('old');
         });
     });
 
-    test('does nothing when datalist element is missing', () => {
-        document.body.innerHTML = '';
-        const ae = new AutocompleteEngine(makeApp(SAMPLE_NODES));
-        ae.buildIndex();
-        expect(() => ae.refreshSuggestions('ty')).not.toThrow();
+    test('does nothing when dropdown is not initialised', () => {
+        const ae2 = new AutocompleteEngine(makeApp(SAMPLE_NODES));
+        ae2.buildIndex();
+        // refreshSuggestions without init — _dropdown is null
+        expect(() => ae2.refreshSuggestions('ty')).not.toThrow();
     });
 });
 
@@ -161,14 +161,15 @@ describe('AutocompleteEngine.init', () => {
         document.body.innerHTML = '';
     });
 
-    test('creates datalist and attaches to input', () => {
+    test('creates custom dropdown and wires up input', () => {
         const ae = new AutocompleteEngine(makeApp(SAMPLE_NODES));
         ae.buildIndex();
         ae.init();
-        const dl = document.getElementById('search-suggestions');
-        expect(dl).toBeTruthy();
+        const dropdown = document.getElementById('ac-dropdown');
+        expect(dropdown).toBeTruthy();
         const input = document.getElementById('drawer-search-input');
-        expect(input.getAttribute('list')).toBe('search-suggestions');
+        // list attribute should not be set (custom dropdown, not datalist)
+        expect(input.getAttribute('list')).toBeNull();
     });
 
     test('does nothing when input is missing', () => {

@@ -226,6 +226,9 @@ export class InteractionController {
             if (!this.isDraggable) return;
             if (this.mode !== 'select') return;
             if (e.button !== 0) return;
+            // Don't intercept pointerdown on HTML content inside foreignObject (clickable card fields).
+            // composedPath() includes foreignObject in the path for events originating from HTML inside it.
+            if (e.composedPath?.().some(el => el.tagName?.toLowerCase?.() === 'foreignobject')) return;
 
             const g = e.target?.closest?.('g.draggable');
             if (g && (this.isSelected(g) || e.shiftKey)) {

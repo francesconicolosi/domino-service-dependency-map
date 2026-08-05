@@ -1,5 +1,5 @@
 import { ColorLegend } from '../../js/solitaire/ColorLegend.js';
-import { ROLE_FIELD_WITH_MAPPING, COMPANY_FIELD, LOCATION_FIELD, NEUTRAL_COLOR, TEAM_MEMBER_LEGENDA_LABEL } from '../../js/solitaire/constants.js';
+import { ROLE_FIELD_WITH_MAPPING, COMPANY_FIELD, LOCATION_FIELD, BUSINESS_FUNCTION_FIELD, NEUTRAL_COLOR, TEAM_MEMBER_LEGENDA_LABEL } from '../../js/solitaire/constants.js';
 import { BRAND } from '../../brand-specific/brand.js';
 import * as d3 from 'd3';
 
@@ -105,6 +105,14 @@ describe('ColorLegend.getCardFill', () => {
         cl.colorScale = jest.fn(() => '#0000ff');
         const g = { attr: jest.fn((name) => name === 'data-location' ? 'Florence' : null) };
         expect(cl.getCardFill(g)).toBe('#0000ff');
+    });
+
+    test('returns color from scale for Business Function field', () => {
+        const cl = new ColorLegend(makeApp());
+        cl.colorBy = BUSINESS_FUNCTION_FIELD;
+        cl.colorScale = jest.fn(() => '#abcdef');
+        const g = { attr: jest.fn((name) => name === 'data-function' ? 'IT' : null) };
+        expect(cl.getCardFill(g)).toBe('#abcdef');
     });
 
     test('returns NEUTRAL_COLOR when scale returns non-string', () => {
@@ -222,6 +230,7 @@ describe('ColorLegend.setMode', () => {
             <input id="toggle-color-role" type="radio"/>
             <input id="toggle-color-company" type="radio"/>
             <input id="toggle-color-location" type="radio"/>
+            <input id="toggle-color-function" type="radio"/>
         `;
     }
 
@@ -251,6 +260,17 @@ describe('ColorLegend.setMode', () => {
         const cl = new ColorLegend(makeApp());
         cl.setMode(LOCATION_FIELD);
         expect(document.getElementById('toggle-color-location').checked).toBe(true);
+        expect(document.getElementById('toggle-color-function').checked).toBe(false);
+    });
+
+    test('checks business-function radio for BUSINESS_FUNCTION_FIELD', () => {
+        setupRadios();
+        const cl = new ColorLegend(makeApp());
+        cl.setMode(BUSINESS_FUNCTION_FIELD);
+        expect(document.getElementById('toggle-color-function').checked).toBe(true);
+        expect(document.getElementById('toggle-color-role').checked).toBe(false);
+        expect(document.getElementById('toggle-color-company').checked).toBe(false);
+        expect(document.getElementById('toggle-color-location').checked).toBe(false);
     });
 });
 

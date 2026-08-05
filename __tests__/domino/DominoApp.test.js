@@ -1,7 +1,7 @@
 import { DominoApp } from '../../js/domino/DominoApp.js';
 import { ServiceCatalogStore } from '../../js/domino/ServiceCatalogStore.js';
 import { SearchEngine } from '../../js/domino/SearchEngine.js';
-import { AutocompleteEngine } from '../../js/domino/AutocompleteEngine.js';
+import { AutocompleteEngine } from '../../js/shared/AutocompleteEngine.js';
 import { GraphRenderer } from '../../js/domino/GraphRenderer.js';
 import { ListView } from '../../js/domino/ListView.js';
 import { DetailDrawer } from '../../js/domino/DetailDrawer.js';

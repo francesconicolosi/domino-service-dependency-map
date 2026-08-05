@@ -580,7 +580,7 @@ describe('isMobileDevice', () => {
 describe('openOutlookWebCompose', () => {
     test('calls window.open with an Outlook URL', () => {
         const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
-        openOutlookWebCompose({ to: ['alice@nycosoft.com'], subject: 'Hello', body: 'World' });
+        openOutlookWebCompose({ to: ['alice@gucci.com'], subject: 'Hello', body: 'World' });
         expect(openSpy).toHaveBeenCalledWith(
             expect.stringContaining('outlook.office.com'),
             '_blank',
@@ -846,5 +846,130 @@ describe('renderUrlPartsIntoCell', () => {
         const items = td.querySelectorAll('li');
         expect(items[0].textContent).toBe('Active');
         expect(items[0].querySelector('a')).toBeNull();
+    });
+});
+
+// ─── createFormattedLongTextElementsFrom — task list (checkboxes) ─────────────
+
+describe('createFormattedLongTextElementsFrom — task items', () => {
+    test('unchecked item renders .jenga-task-list with unchecked checkbox', () => {
+        const els = createFormattedLongTextElementsFrom('[ ] do the thing');
+        const ul = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(ul).toBeTruthy();
+        const cb = ul.querySelector('input[type="checkbox"]');
+        expect(cb).not.toBeNull();
+        expect(cb.checked).toBe(false);
+    });
+
+    test('checked item renders checkbox with checked attribute', () => {
+        const els = createFormattedLongTextElementsFrom('[x] done task');
+        const ul = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(ul).toBeTruthy();
+        const cb = ul.querySelector('input[type="checkbox"]');
+        expect(cb).not.toBeNull();
+        expect(cb.checked).toBe(true);
+    });
+
+    test('[X] uppercase also treated as checked', () => {
+        const els = createFormattedLongTextElementsFrom('[X] also done');
+        const ul = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(ul).toBeTruthy();
+        expect(ul.querySelector('input[type="checkbox"]').checked).toBe(true);
+    });
+
+    test('consecutive task items grouped into single .jenga-task-list', () => {
+        const els = createFormattedLongTextElementsFrom('[ ] first\n[x] second\n[ ] third');
+        const lists = els.filter(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(lists).toHaveLength(1);
+        expect(lists[0].querySelectorAll('li')).toHaveLength(3);
+    });
+
+    test('task item text is rendered inside a span', () => {
+        const els = createFormattedLongTextElementsFrom('[ ] my task label');
+        const ul = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(ul.textContent).toContain('my task label');
+    });
+
+    test('mixed: paragraph + task items + bullet list — three separate elements', () => {
+        const text = 'Intro paragraph\n[ ] task one\n[x] task two\n- bullet item';
+        const els = createFormattedLongTextElementsFrom(text);
+        const taskList = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        const bulletList = els.find(el => el.tagName === 'UL' && !(el.classList && el.classList.contains('jenga-task-list')));
+        const para = els.find(el => el.tagName === 'P');
+        expect(taskList).toBeTruthy();
+        expect(bulletList).toBeTruthy();
+        expect(para).toBeTruthy();
+    });
+
+    test('task item with inline link text renders an anchor inside the li', () => {
+        const els = createFormattedLongTextElementsFrom('[ ] see <a href="https://example.com">docs</a>');
+        const ul = els.find(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(ul).toBeTruthy();
+        const link = ul.querySelector('a');
+        expect(link).not.toBeNull();
+        expect(link.href).toContain('example.com');
+    });
+
+    test('|| separator produces separate task items in same list when consecutive', () => {
+        const text = '[ ] alpha||[x] beta';
+        const els = createFormattedLongTextElementsFrom(text);
+        // || becomes \n\n so items are separated by a blank line — each forms its own list
+        const lists = els.filter(el => el.classList && el.classList.contains('jenga-task-list'));
+        expect(lists.length).toBeGreaterThanOrEqual(1);
+        const allCheckboxes = els.flatMap(el => Array.from(el.querySelectorAll ? el.querySelectorAll('input[type="checkbox"]') : []));
+        expect(allCheckboxes.length).toBe(2);
+    });
+});
+
+// ─── createFormattedLongTextElementsFrom — table rendering ───────────────────
+
+describe('createFormattedLongTextElementsFrom — tables', () => {
+    test('line starting with <table produces a <table> element', () => {
+        const els = createFormattedLongTextElementsFrom('<table class="jenga-desc-table"><tr><td>cell</td></tr></table>');
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(table).toBeTruthy();
+    });
+
+    test('table class is preserved', () => {
+        const els = createFormattedLongTextElementsFrom('<table class="jenga-desc-table"><tr><td>x</td></tr></table>');
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(table.className).toBe('jenga-desc-table');
+    });
+
+    test('th cell becomes <th> element', () => {
+        const els = createFormattedLongTextElementsFrom('<table class="jenga-desc-table"><tr><th>Header</th><td>Value</td></tr></table>');
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(table.querySelector('th')).not.toBeNull();
+        expect(table.querySelector('th').textContent).toBe('Header');
+    });
+
+    test('td cell becomes <td> element', () => {
+        const els = createFormattedLongTextElementsFrom('<table class="jenga-desc-table"><tr><th>H</th><td>Val</td></tr></table>');
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(table.querySelector('td').textContent).toBe('Val');
+    });
+
+    test('anchor link inside cell is preserved', () => {
+        const els = createFormattedLongTextElementsFrom('<table class="jenga-desc-table"><tr><td><a href="https://example.com">link</a></td></tr></table>');
+        const table = els.find(el => el.tagName === 'TABLE');
+        const link = table.querySelector('a');
+        expect(link).not.toBeNull();
+        expect(link.href).toContain('example.com');
+    });
+
+    test('table after a paragraph — both appear in result', () => {
+        const text = 'Intro paragraph\n<table class="jenga-desc-table"><tr><td>cell</td></tr></table>';
+        const els = createFormattedLongTextElementsFrom(text);
+        const para = els.find(el => el.tagName === 'P');
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(para).toBeTruthy();
+        expect(table).toBeTruthy();
+    });
+
+    test('multiple rows render correct number of tr elements', () => {
+        const html = '<table class="jenga-desc-table"><tr><th>A</th><td>1</td></tr><tr><th>B</th><td>2</td></tr></table>';
+        const els = createFormattedLongTextElementsFrom(html);
+        const table = els.find(el => el.tagName === 'TABLE');
+        expect(table.querySelectorAll('tr')).toHaveLength(2);
     });
 });

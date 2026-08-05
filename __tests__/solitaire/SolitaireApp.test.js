@@ -414,6 +414,7 @@ describe('SolitaireApp.init', () => {
             <input id="toggle-color-role" type="radio"/>
             <input id="toggle-color-company" type="radio"/>
             <input id="toggle-color-location" type="radio"/>
+            <input id="toggle-color-function" type="radio"/>
         `;
     }
 
@@ -603,15 +604,24 @@ describe('SolitaireApp._initSideDrawerEvents handlers', () => {
         expect(app.legend.setMode).toHaveBeenCalledWith('Location');
     });
 
-    test('drawer-search-go click calls search.search with value', () => {
-        document.body.innerHTML = `
-            <button id="drawer-search-go"></button>
-            <input id="drawer-search-input" value="alice"/>
-        `;
+    test('toggle-color-function change calls legend.setMode with Function', () => {
+        document.body.innerHTML = '<input id="toggle-color-function" type="radio" checked/>';
+        const app = new SolitaireApp();
+        app.legend.setMode = jest.fn();
+        app._initSideDrawerEvents();
+        const radio = document.getElementById('toggle-color-function');
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+        expect(app.legend.setMode).toHaveBeenCalledWith('Function');
+    });
+
+    test('search input Enter key calls search.search with value', () => {
+        document.body.innerHTML = `<input id="drawer-search-input" value="alice"/>`;
         const app = new SolitaireApp();
         app.search.search = jest.fn();
-        app._initSideDrawerEvents();
-        document.getElementById('drawer-search-go').click();
+        app._initSearchInput();
+        const input = document.getElementById('drawer-search-input');
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         expect(app.search.search).toHaveBeenCalledWith('alice');
     });
 
@@ -922,18 +932,21 @@ describe('SolitaireApp sub-drawer', () => {
                 <button id="sub-close"></button>
                 <nav>
                     <ul id="sub-content-legend" style="display:none"></ul>
+                    <ul id="sub-content-display" style="display:none"></ul>
                     <ul id="sub-content-scenario" style="display:none"></ul>
                 </nav>
             </div>
             <div id="side-overlay" class="visible"></div>
             <button id="act-legend"></button>
             <button id="act-scenario"></button>
+            <button id="act-scenario-mgr"></button>
             <button id="act-scenario-save"></button>
             <button id="act-scenario-import"></button>
             <button id="act-scenario-reset"></button>
             <input id="toggle-color-role" type="radio"/>
             <input id="toggle-color-company" type="radio"/>
             <input id="toggle-color-location" type="radio"/>
+            <input id="toggle-color-function" type="radio"/>
             <input id="drawer-search-input"/>
         `;
     }
@@ -949,17 +962,30 @@ describe('SolitaireApp sub-drawer', () => {
         document.getElementById('act-legend').click();
         expect(document.getElementById('side-drawer').classList.contains('sub-open')).toBe(true);
         expect(document.getElementById('sub-content-legend').style.display).toBe('');
+        expect(document.getElementById('sub-content-display').style.display).toBe('none');
         expect(document.getElementById('sub-content-scenario').style.display).toBe('none');
     });
 
-    test('clicking act-scenario adds sub-open to side-drawer and shows scenario panel', () => {
+    test('clicking act-scenario adds sub-open to side-drawer and shows display panel', () => {
         setupSubDrawerDOM();
         const app = new SolitaireApp();
         app._initSubDrawerEvents();
         document.getElementById('act-scenario').click();
         expect(document.getElementById('side-drawer').classList.contains('sub-open')).toBe(true);
+        expect(document.getElementById('sub-content-display').style.display).toBe('');
+        expect(document.getElementById('sub-content-legend').style.display).toBe('none');
+        expect(document.getElementById('sub-content-scenario').style.display).toBe('none');
+    });
+
+    test('clicking act-scenario-mgr adds sub-open to side-drawer and shows scenario panel', () => {
+        setupSubDrawerDOM();
+        const app = new SolitaireApp();
+        app._initSubDrawerEvents();
+        document.getElementById('act-scenario-mgr').click();
+        expect(document.getElementById('side-drawer').classList.contains('sub-open')).toBe(true);
         expect(document.getElementById('sub-content-scenario').style.display).toBe('');
         expect(document.getElementById('sub-content-legend').style.display).toBe('none');
+        expect(document.getElementById('sub-content-display').style.display).toBe('none');
     });
 
     test('clicking sub-back removes sub-open from side-drawer', () => {

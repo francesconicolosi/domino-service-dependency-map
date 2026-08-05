@@ -708,6 +708,39 @@ describe('OrgChartRenderer.reset — zoom filter and event callbacks', () => {
             expect(e.preventDefault).toHaveBeenCalled();
         }
     });
+
+    test('pan click blocker allows clicks from foreignObject even when suppressClicksUntil is in future', () => {
+        window.__panClickBlockerAttached = false;
+        const { r, app } = setupReset();
+        app.interaction.isDraggable = false;
+        app.interaction.suppressClicksUntil = Date.now() + 10000;
+        // node() returns a new object each call; find the one that had the click listener attached
+        const svgNodeWithListener = r.svg.node.mock.results
+            .map(res => res.value)
+            .find(n => n?.addEventListener?.mock?.calls?.some(c => c[0] === 'click'));
+        const clickFn = svgNodeWithListener?.addEventListener?.mock?.calls?.find(c => c[0] === 'click')?.[1];
+        expect(clickFn).toBeDefined();
+        const foEl = { tagName: 'foreignobject' };
+        const e = {
+            preventDefault: jest.fn(),
+            stopImmediatePropagation: jest.fn(),
+            composedPath: () => [foEl],
+        };
+        clickFn(e);
+        expect(e.preventDefault).not.toHaveBeenCalled();
+        expect(e.stopImmediatePropagation).not.toHaveBeenCalled();
+    });
+
+    test('zoom filter returns false for mousedown originating from inside foreignObject', () => {
+        const { r } = setupReset();
+        const filterFn = r.zoom.filter.mock.calls[0][0];
+        const foEl = { tagName: 'foreignobject' };
+        expect(filterFn({
+            type: 'mousedown',
+            button: 0,
+            composedPath: () => [foEl],
+        })).toBe(false);
+    });
 });
 
 // ─── OrgChartRenderer.fitToContent — zero bbox path ──────────────────────────

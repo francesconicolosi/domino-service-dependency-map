@@ -18,6 +18,8 @@ export class DetailDrawer {
 
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            // If the autocomplete dropdown is open, let AutocompleteEngine consume Escape first.
+            if (document.getElementById('ac-dropdown')?.classList.contains('ac-open')) return;
             const drawer = document.getElementById('drawer');
             if (drawer?.classList.contains('open')) {
                 this.closeDrawer();

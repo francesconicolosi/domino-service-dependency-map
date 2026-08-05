@@ -3,6 +3,7 @@ import {
     buildCompositeKey,
     collectMembersFromOrganization,
     filterOrganizationByStreams,
+    filterOrganizationByQuickFilter,
     getVisiblePeopleForLegend,
     countTeamsForMemberInOrg,
     getNameFromTitleEl,
@@ -235,6 +236,13 @@ describe('getNameFromTitleEl', () => {
         expect(getNameFromTitleEl(null)).toBe('');
         expect(getNameFromTitleEl(undefined)).toBe('');
     });
+
+    test('prefers data-full-name over textContent when present', () => {
+        const el = document.createElement('div');
+        el.setAttribute('data-full-name', 'Full Long Name That Was Truncated');
+        el.textContent = 'Full Long Nam…';
+        expect(getNameFromTitleEl(el)).toBe('Full Long Name That Was Truncated');
+    });
 });
 
 // ─── isOnlyContributorsRow ────────────────────────────────────────────────────
@@ -282,5 +290,155 @@ describe('hasTeamDrawerContent', () => {
 
     test('returns false when description is only whitespace', () => {
         expect(hasTeamDrawerContent({ description: '   ' })).toBe(false);
+    });
+});
+
+// ─── filterOrganizationByQuickFilter ─────────────────────────────────────────
+
+describe('filterOrganizationByQuickFilter', () => {
+    const makeOrg = () => ({
+        'Stream A': {
+            'Theme 1': { 'Team Alpha': ['m1'], 'Team Beta': ['m2'] },
+            'Theme 2': { 'Team Gamma': ['m3'] },
+        },
+        'Stream B': {
+            'Theme 3': { 'Team Delta': ['m4'] },
+        },
+    });
+
+    test('returns org unchanged when constraints is null', () => {
+        const org = makeOrg();
+        expect(filterOrganizationByQuickFilter(org, null)).toEqual(org);
+    });
+
+    test('returns org unchanged when all constraints are null', () => {
+        const org = makeOrg();
+        const constraints = { visibleStreams: null, visibleThemes: null, visibleTeams: null };
+        expect(filterOrganizationByQuickFilter(org, constraints)).toEqual(org);
+    });
+
+    test('filters streams — keeps only allowed streams', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: new Set(['Stream A']), visibleThemes: null, visibleTeams: null });
+        expect(Object.keys(result)).toEqual(['Stream A']);
+        expect(result['Stream B']).toBeUndefined();
+    });
+
+    test('filters streams — case-insensitive match', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: new Set(['stream a']), visibleThemes: null, visibleTeams: null });
+        expect(Object.keys(result)).toContain('Stream A');
+    });
+
+    test('filters themes — keeps only allowed themes within each stream', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: null, visibleThemes: new Set(['Theme 1']), visibleTeams: null });
+        expect(Object.keys(result['Stream A'])).toEqual(['Theme 1']);
+        expect(result['Stream A']['Theme 2']).toBeUndefined();
+    });
+
+    test('filters teams — keeps only allowed teams within each theme', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: null, visibleThemes: null, visibleTeams: new Set(['Team Alpha']) });
+        expect(Object.keys(result['Stream A']['Theme 1'])).toEqual(['Team Alpha']);
+        expect(result['Stream A']['Theme 1']['Team Beta']).toBeUndefined();
+    });
+
+    test('cascading — theme with all teams removed is dropped', () => {
+        const org = makeOrg();
+        // Only keep Team Delta — Theme 1 and Theme 2 have no allowed teams → should disappear
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: null, visibleThemes: null, visibleTeams: new Set(['Team Delta']) });
+        expect(result['Stream A']).toBeUndefined();
+        expect(Object.keys(result['Stream B']['Theme 3'])).toEqual(['Team Delta']);
+    });
+
+    test('cascading — stream with all themes removed is dropped', () => {
+        const org = makeOrg();
+        // Only keep Theme 3 → Stream A has no allowed themes → disappears
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: null, visibleThemes: new Set(['Theme 3']), visibleTeams: null });
+        expect(result['Stream A']).toBeUndefined();
+        expect(result['Stream B']).toBeDefined();
+    });
+
+    test('visibleStreams + visibleTeams constraints combine correctly', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, {
+            visibleStreams: new Set(['Stream A']),
+            visibleThemes: null,
+            visibleTeams: new Set(['Team Alpha']),
+        });
+        expect(Object.keys(result)).toEqual(['Stream A']);
+        expect(Object.keys(result['Stream A']['Theme 1'])).toEqual(['Team Alpha']);
+        expect(result['Stream A']['Theme 2']).toBeUndefined();
+    });
+
+    test('returns empty object when nothing matches', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { visibleStreams: new Set(['Nonexistent']), visibleThemes: null, visibleTeams: null });
+        expect(Object.keys(result)).toHaveLength(0);
+    });
+
+    test('hiddenStreams removes listed streams', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { hiddenStreams: new Set(['Stream A']) });
+        expect(result['Stream A']).toBeUndefined();
+        expect(result['Stream B']).toBeDefined();
+    });
+
+    test('hiddenThemes removes listed themes inside streams', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { hiddenThemes: new Set(['Theme 1']) });
+        expect(result['Stream A']['Theme 1']).toBeUndefined();
+        expect(result['Stream A']['Theme 2']).toBeDefined();
+    });
+
+    test('hiddenTeams removes listed teams', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { hiddenTeams: new Set(['Team Alpha']) });
+        expect(result['Stream A']['Theme 1']['Team Alpha']).toBeUndefined();
+        expect(result['Stream A']['Theme 1']['Team Beta']).toBeDefined();
+    });
+
+    test('hiddenStreams cascades — stream with all themes hidden disappears', () => {
+        const org = makeOrg();
+        const result = filterOrganizationByQuickFilter(org, { hiddenStreams: new Set(['Stream B']) });
+        expect(result['Stream B']).toBeUndefined();
+    });
+
+    test('visiblePeople filters members by name', () => {
+        const org = {
+            'S': { 'T': { 'Team': [{ Name: 'Alice' }, { Name: 'Bob' }] } }
+        };
+        const result = filterOrganizationByQuickFilter(org, { visiblePeople: new Set(['Alice']) });
+        expect(result['S']['T']['Team']).toHaveLength(1);
+        expect(result['S']['T']['Team'][0].Name).toBe('Alice');
+    });
+
+    test('hiddenPeople removes listed members by name', () => {
+        const org = {
+            'S': { 'T': { 'Team': [{ Name: 'Alice' }, { Name: 'Bob' }] } }
+        };
+        const result = filterOrganizationByQuickFilter(org, { hiddenPeople: new Set(['Bob']) });
+        expect(result['S']['T']['Team']).toHaveLength(1);
+        expect(result['S']['T']['Team'][0].Name).toBe('Alice');
+    });
+
+    test('team with all members hidden is itself removed (cascading)', () => {
+        const org = {
+            'S': { 'T': { 'Team': [{ Name: 'Alice' }] } }
+        };
+        const result = filterOrganizationByQuickFilter(org, { hiddenPeople: new Set(['Alice']) });
+        expect(result['S']).toBeUndefined();
+    });
+
+    test('visibleStreams and hiddenStreams combined — whitelist wins first, then blacklist', () => {
+        const org = makeOrg();
+        // Allow A and B, but hide B → only A remains
+        const result = filterOrganizationByQuickFilter(org, {
+            visibleStreams: new Set(['Stream A', 'Stream B']),
+            hiddenStreams: new Set(['Stream B']),
+        });
+        expect(result['Stream A']).toBeDefined();
+        expect(result['Stream B']).toBeUndefined();
     });
 });

@@ -68,6 +68,8 @@ export class SolitaireApp {
 
         window.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            // If the autocomplete dropdown is open, let AutocompleteEngine consume Escape first.
+            if (document.getElementById('ac-dropdown')?.classList.contains('ac-open')) return;
             const drawerOpen = document.body.classList.contains('drawer-open');
             if (drawerOpen) {
                 this.drawer.close();
@@ -477,11 +479,19 @@ export class SolitaireApp {
     _initSearchInput() {
         document.getElementById('drawer-search-input')?.addEventListener('keydown', (e) => {
             if (e.key !== 'Enter') return;
-            const query = e.target.value.trim();
-            if (query) {
-                this.search.search(query);
+            if (this.autocomplete?.hasPendingSelection()) return;
+            const chipBar = this.search._chipBar;
+            const composed = chipBar?.getRevealModeQuery();
+            if (composed) {
+                chipBar.clearRevealMode();
+                this.search.search(composed);
             } else {
-                this.search.clear();
+                const query = e.target.value.trim();
+                if (query) {
+                    this.search.search(query);
+                } else {
+                    this.search.clear();
+                }
             }
             e.preventDefault();
         });
@@ -574,8 +584,15 @@ export class SolitaireApp {
         });
 
         document.getElementById('drawer-search-go')?.addEventListener('click', () => {
-            const q = document.getElementById('drawer-search-input')?.value?.trim();
-            if (q) this.search.search(q);
+            const chipBar = this.search._chipBar;
+            const composed = chipBar?.getRevealModeQuery();
+            if (composed) {
+                chipBar.clearRevealMode();
+                this.search.search(composed);
+            } else {
+                const q = document.getElementById('drawer-search-input')?.value?.trim();
+                if (q) this.search.search(q);
+            }
         });
 
         this._initSubDrawerEvents();

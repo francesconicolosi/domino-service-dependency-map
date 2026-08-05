@@ -5,6 +5,7 @@ import {
     ROLE_FIELD_WITH_MAPPING,
     COMPANY_FIELD,
     LOCATION_FIELD,
+    BUSINESS_FUNCTION_FIELD,
     NEUTRAL_COLOR,
     TEAM_MEMBER_LEGENDA_LABEL,
 } from './constants.js';
@@ -44,6 +45,8 @@ export class ColorLegend extends LegendBase {
             colorKey = normalizeWs(g.attr('data-role')) || TEAM_MEMBER_LEGENDA_LABEL;
         } else if (this.colorBy === COMPANY_FIELD) {
             colorKey = (g.attr('data-company') || 'Unknown');
+        } else if (this.colorBy === BUSINESS_FUNCTION_FIELD) {
+            colorKey = (g.attr('data-function') || 'Unknown');
         } else {
             colorKey = (g.attr('data-location') || 'Unknown');
         }
@@ -105,12 +108,12 @@ export class ColorLegend extends LegendBase {
             const field = (el.getAttribute('data-field') || '').trim();
             const missing = isUnknownKey(el);
 
-            const searchInput = document.getElementById('drawer-search-input');
-            if (searchInput) searchInput.value = missing ? '' : value;
-
-            const normalizedValue = normalizeWs(value).toLowerCase();
             const normalizedField = normalizeWs(field).toLowerCase();
-            const clickKey = `${normalizedField}::${normalizedValue}`;
+
+            // Legend always triggers an exact search using the canonical field:"value" syntax.
+            // Unknown entries use field:"Unknown" which _parseQuery resolves to a missing-value search.
+            const displayValue = missing ? 'Unknown' : value;
+            const queryStr = `${normalizedField}:"${displayValue}"`;
 
             let noZoom = false;
             if (!missing) {
@@ -122,7 +125,7 @@ export class ColorLegend extends LegendBase {
                 this.lastLegendClickAt = now;
             }
 
-            app.search.search(missing ? '' : value, { field, missing, noZoom });
+            app.search.search(queryStr, { noZoom });
         };
 
         this._wireListEvents(list, (el) => activate(el));
@@ -171,22 +174,31 @@ export class ColorLegend extends LegendBase {
     setMode(mode) {
         const roleEl = document.getElementById('toggle-color-role');
         const compEl = document.getElementById('toggle-color-company');
-        const locEl = document.getElementById('toggle-color-location');
+        const locEl  = document.getElementById('toggle-color-location');
+        const bfEl   = document.getElementById('toggle-color-function');
 
         if (!roleEl || !compEl || !locEl) return;
 
         if (mode === ROLE_FIELD_WITH_MAPPING) {
             roleEl.checked = true;
             compEl.checked = false;
-            locEl.checked = false;
+            locEl.checked  = false;
+            if (bfEl) bfEl.checked = false;
         } else if (mode === COMPANY_FIELD) {
             roleEl.checked = false;
             compEl.checked = true;
-            locEl.checked = false;
+            locEl.checked  = false;
+            if (bfEl) bfEl.checked = false;
         } else if (mode === LOCATION_FIELD) {
             roleEl.checked = false;
             compEl.checked = false;
-            locEl.checked = true;
+            locEl.checked  = true;
+            if (bfEl) bfEl.checked = false;
+        } else if (mode === BUSINESS_FUNCTION_FIELD) {
+            roleEl.checked = false;
+            compEl.checked = false;
+            locEl.checked  = false;
+            if (bfEl) bfEl.checked = true;
         }
 
         this.recolor(mode);

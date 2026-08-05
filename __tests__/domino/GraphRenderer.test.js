@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 function makeApp() {
     return {
-        search: { searchTerm: '', hideStoppedServices: true, currentSearchedNodes: new Set(), currentNodes: [], isSearchResultWithKeyValue: jest.fn(() => false), isSearchResultValueOnly: jest.fn(() => false), prepareSearchTerm: jest.fn(), updateSearchAndRefresh: jest.fn(), parseActiveKeyValueSearch: jest.fn(() => null), normalizeForCompare: jest.fn(v => (v || '').toLowerCase()), buildKeyValueSearch: jest.fn(() => '') },
+        search: { searchTerm: '', hideStoppedServices: true, currentSearchedNodes: new Set(), currentNodes: [], isSearchResultWithKeyValue: jest.fn(() => false), isSearchResultValueOnly: jest.fn(() => false), isEffectivelyEmpty: jest.fn(function() { return this.searchTerm === ''; }), prepareSearchTerm: jest.fn(), updateSearchAndRefresh: jest.fn(), parseActiveKeyValueSearch: jest.fn(() => null), normalizeForCompare: jest.fn(v => (v || '').toLowerCase()), buildKeyValueSearch: jest.fn(() => '') },
         store: { nodes: [], links: [], activeServiceNodes: [], activeServiceNodeIds: new Set(), hasLoaded: false },
         drawer: { showNodeDetails: jest.fn(), closeDrawer: jest.fn() },
         listView: { renderListFromSearch: jest.fn() },

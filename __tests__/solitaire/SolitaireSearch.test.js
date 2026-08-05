@@ -71,6 +71,20 @@ describe('SolitaireSearch.clear', () => {
         new SolitaireSearch(app).clear();
         expect(app.searchParam).toBe('');
     });
+
+    test('resets lastSearch to empty string', () => {
+        const ss = new SolitaireSearch(makeApp());
+        ss.lastSearch = 'alice';
+        ss.clear();
+        expect(ss.lastSearch).toBe('');
+    });
+
+    test('resets currentIndex to 0', () => {
+        const ss = new SolitaireSearch(makeApp());
+        ss.currentIndex = 3;
+        ss.clear();
+        expect(ss.currentIndex).toBe(0);
+    });
 });
 
 describe('SolitaireSearch.search — empty query', () => {
@@ -158,6 +172,22 @@ describe('SolitaireSearch.search — with match', () => {
         expect(ss.currentIndex).toBe(0);
         ss.search('alice');
         expect(ss.currentIndex).toBe(1);
+    });
+
+    test('finds team when query matches full name but title is truncated in DOM', () => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="card::s::t::team::longname">
+                    <text class="team-title" data-full-name="Very Long Team Name That Gets Truncated">
+                        Very Long Team Name T…
+                    </text>
+                </g>
+            </svg>
+            <input id="drawer-search-input"/>
+        `;
+        const app = makeApp();
+        new SolitaireSearch(app).search('very long team name that gets truncated');
+        expect(app.showToast).toHaveBeenCalledWith(expect.stringContaining('result'));
     });
 
     test('resets currentIndex when query changes', () => {
@@ -408,5 +438,104 @@ describe('SolitaireSearch — auto-expand collapsed streams', () => {
         app.loadAndRender.mockClear();
         ss.clear();
         expect(app.loadAndRender).toHaveBeenCalled();
+    });
+});
+
+// ─── Re-search after clear regression ────────────────────────────────────────
+
+describe('SolitaireSearch — re-search after clear', () => {
+    beforeEach(() => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="card::s::t::team::alice">
+                    <text class="profile-name">Alice Engineer</text>
+                </g>
+            </svg>
+            <input id="drawer-search-input"/>
+            <span id="output"></span>
+        `;
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+        window.history.pushState({}, '', '/');
+    });
+
+    test('searching the same query after clear triggers a fresh search', () => {
+        const app = makeApp();
+        const ss = new SolitaireSearch(app);
+
+        ss.search('alice');
+        expect(app.showToast).toHaveBeenCalledTimes(1);
+
+        ss.clear();
+        app.showToast.mockClear();
+
+        // Re-search same query — must trigger a new search, not return early
+        ss.search('alice');
+        expect(app.showToast).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ─── name: field support ──────────────────────────────────────────────────────
+
+describe('SolitaireSearch — name: field', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+        window.history.pushState({}, '', '/');
+    });
+
+    test('name: partial match finds matching profile-name elements', () => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="card::s::t::team::0"><text class="profile-name">John Doe</text></g>
+                <g data-key="card::s::t::team::1"><text class="profile-name">Jane Smith</text></g>
+            </svg>
+            <input id="drawer-search-input"/>`;
+        const app = makeApp();
+        new SolitaireSearch(app).search('name:john');
+        expect(app.showToast).toHaveBeenCalledWith(expect.stringContaining('result'));
+        expect(app.renderer.zoomToElement).toHaveBeenCalled();
+    });
+
+    test('name: field searches only profile-name, not team-title elements', () => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="team::s::john-team">
+                    <text class="team-title" data-full-name="John Team">John Team</text>
+                </g>
+                <g data-key="card::s::t::team::0">
+                    <text class="profile-name">Jane Smith</text>
+                </g>
+            </svg>
+            <input id="drawer-search-input"/>`;
+        const app = makeApp();
+        new SolitaireSearch(app).search('name:john');
+        // Only profile-name elements are checked — "John Team" (team-title) must not match
+        expect(app.showToast).toHaveBeenCalledWith(expect.stringContaining('No result'));
+    });
+
+    test('name:"..." exact match returns only the exact match', () => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="card::s::t::team::0"><text class="profile-name">John Doe</text></g>
+                <g data-key="card::s::t::team::1"><text class="profile-name">John Smith</text></g>
+            </svg>
+            <input id="drawer-search-input"/>`;
+        const app = makeApp();
+        new SolitaireSearch(app).search('name:"john doe"');
+        expect(app.showToast).toHaveBeenCalledWith(expect.stringContaining('1 result'));
+    });
+
+    test('noZoom: true suppresses zoom to first match', () => {
+        document.body.innerHTML = `
+            <svg>
+                <g data-key="card::s::t::team::alice"><text class="profile-name">Alice</text></g>
+            </svg>
+            <input id="drawer-search-input"/>`;
+        const app = makeApp();
+        new SolitaireSearch(app).search('alice', { noZoom: true });
+        expect(app.renderer.zoomToElement).not.toHaveBeenCalled();
+        expect(app.renderer.fitElementToView).not.toHaveBeenCalled();
     });
 });

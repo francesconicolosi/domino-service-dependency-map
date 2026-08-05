@@ -1,9 +1,10 @@
 import { splitValues } from './utils.js';
 
-const AUTOCOMPLETE_ID = 'search-suggestions';
+const DROPDOWN_ID = 'ac-dropdown';
 const MAX_KEYS = 50;
 const MAX_VALUES_PER_KEY = 2000;
 const MAX_OPTIONS = 25;
+const TAIL_LENGTH = 44;
 
 export class AutocompleteEngine {
     // Can be constructed two ways:
@@ -25,6 +26,12 @@ export class AutocompleteEngine {
             this.allowMultiValue = opts.allowMultiValue !== false;
             this.allowMultiField = opts.allowMultiField === true;
         }
+        this._input = null;
+        this._dropdown = null;
+        this._activeIdx = -1;
+        this._suggestions = [];
+        this._docMousedownHandler = null;
+        this._docKeydownHandler = null;
     }
 
     // Legacy method used by Domino tests and old DominoApp usage
@@ -132,11 +139,47 @@ export class AutocompleteEngine {
     computeSuggestions(raw) {
         const value = (raw ?? '').toString();
 
-        if (!this.allowMultiField) {
+        // When ChipBar is in per-clause edit mode, only suggest completions for the
+        // clause being edited — never prepend "&" or show multi-field suggestions.
+        const clauseEditMode = this._input?.dataset?.clauseEditMode === '1';
+
+        if (!this.allowMultiField || clauseEditMode) {
             return this._computeSingleClauseSuggestions(value);
         }
 
         const { prefix, current } = this._splitMultiFieldInput(value);
+
+        // Read active fields set by ChipBar on the input element
+        const activeFieldsAttr = this._input?.dataset?.activeFields ?? '';
+        const activeFields = activeFieldsAttr ? new Set(activeFieldsAttr.split(',').map(s => s.trim()).filter(Boolean)) : new Set();
+
+        // When the current clause has no colon yet (user typing a field name),
+        // split key suggestions into: active fields first (same-clause continuation with ,)
+        // and new fields after (new clause with &).
+        if (!current.includes(':') && activeFields.size > 0 && !prefix) {
+            const leading = (current.match(/^\s*/)?.[0] ?? '');
+            const trimmed = current.trimStart();
+            const bang = trimmed.startsWith('!') ? '!' : '';
+            const keyPrefix = (bang ? trimmed.slice(1) : trimmed).trim();
+            const keys = this.keys.length ? this.keys : ['id'];
+            const matchingKeys = keys.filter(k => k.toLowerCase().startsWith(keyPrefix.toLowerCase()));
+
+            const activeKeysSuggestions = matchingKeys
+                .filter(k => activeFields.has(k))
+                .map(k => `${leading}${bang}${k}:`);
+            const newKeysSuggestions = matchingKeys
+                .filter(k => !activeFields.has(k))
+                .map(k => `& ${leading}${bang}${k}:`);
+            const idValues = this.valuesByKey.get('id') || [];
+            const nameSuggestions = keyPrefix
+                ? idValues
+                    .filter(v => v.toLowerCase().startsWith(keyPrefix.toLowerCase()))
+                    .map(v => `${leading}${bang}${v}`)
+                : [];
+
+            return Array.from(new Set([...nameSuggestions, ...activeKeysSuggestions, ...newKeysSuggestions]));
+        }
+
         const out = [];
         const currentSuggestions = this._computeSingleClauseSuggestions(current)
             .map(s => `${prefix}${s}`);
@@ -153,35 +196,204 @@ export class AutocompleteEngine {
         // Remove duplicates while keeping ranking.
         return Array.from(new Set(out));
     }
+
     refreshSuggestions(raw) {
-        const dl = document.getElementById(AUTOCOMPLETE_ID);
-        if (!dl) return;
-        dl.innerHTML = '';
-        this.computeSuggestions(raw).slice(0, MAX_OPTIONS).forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            dl.appendChild(opt);
+        if (!this._dropdown || !this._input) return;
+
+        this._suggestions = this.computeSuggestions(raw).slice(0, MAX_OPTIONS);
+        this._activeIdx = -1;
+        this._dropdown.innerHTML = '';
+
+        if (!this._suggestions.length) {
+            this._hideDropdown();
+            return;
+        }
+
+        this._suggestions.forEach((s, i) => {
+            const li = document.createElement('li');
+            li.className = 'ac-item';
+            li.title = s;
+            li.dataset.value = s;
+            li.textContent = s.length > TAIL_LENGTH ? '…' + s.slice(-(TAIL_LENGTH)) : s;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this._selectSuggestion(i);
+            });
+            li.addEventListener('mousemove', () => {
+                this._setActive(i);
+            });
+            this._dropdown.appendChild(li);
         });
+
+        this._showDropdown();
+        this._repositionDropdown();
+    }
+
+    _selectSuggestion(idx) {
+        const s = this._suggestions[idx];
+        if (!s || !this._input) return;
+        this._input.value = s;
+        // Dispatch input event to refresh suggestions with the new value — keep dropdown open.
+        this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        this._input.focus();
+    }
+
+    _setActive(idx) {
+        const items = this._dropdown.querySelectorAll('.ac-item');
+        items.forEach((el, i) => {
+            el.classList.toggle('ac-active', i === idx);
+        });
+        this._activeIdx = idx;
+    }
+
+    _moveActive(dir) {
+        const count = this._suggestions.length;
+        if (!count) return;
+        let next = this._activeIdx + dir;
+        if (next < 0) next = count - 1;
+        if (next >= count) next = 0;
+        this._setActive(next);
+        // Scroll active item into view
+        const items = this._dropdown.querySelectorAll('.ac-item');
+        items[next]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    _showDropdown() {
+        this._dropdown.classList.add('ac-open');
+    }
+
+    _hideDropdown() {
+        this._dropdown.classList.remove('ac-open');
+        this._activeIdx = -1;
+        this._dropdown.querySelectorAll('.ac-item').forEach(el => el.classList.remove('ac-active'));
+    }
+
+    // Public wrapper for external callers (e.g. after committing a search).
+    hideDropdown() {
+        this._hideDropdown();
+    }
+
+    // Returns true when the dropdown is open and a suggestion is actively highlighted.
+    // Used by app-level Enter handlers to skip firing a search while the user is
+    // still picking from the suggestion list.
+    hasPendingSelection() {
+        return this._dropdown?.classList.contains('ac-open') && this._activeIdx >= 0;
+    }
+
+    _repositionDropdown() {
+        if (!this._input || !this._dropdown) return;
+        // Find the search bar container to position below it
+        const bar = this._input.closest('.top-search') || this._input;
+        const barRect = bar.getBoundingClientRect();
+        this._dropdown.style.top = `${barRect.bottom + 2}px`;
+        this._dropdown.style.left = `${barRect.left}px`;
+        this._dropdown.style.minWidth = `${barRect.width}px`;
     }
 
     init() {
         const input = document.getElementById('drawer-search-input');
         if (!input) return;
+        this._input = input;
 
-        let dl = document.getElementById(AUTOCOMPLETE_ID);
-        if (!dl) {
-            dl = document.createElement('datalist');
-            dl.id = AUTOCOMPLETE_ID;
-            document.body.appendChild(dl);
+        // Remove any legacy datalist
+        const oldDl = document.getElementById('search-suggestions');
+        if (oldDl) oldDl.remove();
+        // Remove old list attribute and disable browser native autocomplete/autofill.
+        input.removeAttribute('list');
+        input.setAttribute('autocomplete', 'off');
+
+        let dropdown = document.getElementById(DROPDOWN_ID);
+        if (!dropdown) {
+            dropdown = document.createElement('ul');
+            dropdown.id = DROPDOWN_ID;
+            dropdown.className = 'ac-dropdown';
+            dropdown.setAttribute('role', 'listbox');
+            document.body.appendChild(dropdown);
         }
-        if (!input.getAttribute('list')) input.setAttribute('list', AUTOCOMPLETE_ID);
+        this._dropdown = dropdown;
 
         const update = () => this.refreshSuggestions(input.value || '');
+
         if (!input.dataset.boundAutocomplete) {
             input.dataset.boundAutocomplete = '1';
+
             input.addEventListener('input', update);
             input.addEventListener('focus', update);
+            input.addEventListener('click', update);
+
+            input.addEventListener('blur', () => {
+                // Delay so mousedown on a suggestion fires first (150 ms).
+                // After the delay, keep the dropdown open if focus stayed within
+                // the search bar (e.g. moved to a chip via Alt+Arrow navigation).
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    const bar = input.closest('.top-search') || input;
+                    if (bar.contains(active) || this._dropdown?.contains(active)) return;
+                    this._hideDropdown();
+                }, 150);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (!this._dropdown.classList.contains('ac-open')) return;
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this._moveActive(1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this._moveActive(-1);
+                } else if (e.key === 'Enter') {
+                    if (this._activeIdx >= 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._selectSuggestion(this._activeIdx);
+                    } else {
+                        // User pressed Enter without selecting a suggestion — hide the dropdown
+                        // so the search can proceed.
+                        this._hideDropdown();
+                    }
+                } else if (e.key === 'Escape') {
+                    this._hideDropdown();
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
         }
-        update();
+
+        // Close dropdown when clicking outside the search bar or dropdown.
+        // Remove any previous handler first (e.g. after re-init in Solitaire).
+        if (this._docMousedownHandler) {
+            document.removeEventListener('mousedown', this._docMousedownHandler);
+        }
+        this._docMousedownHandler = (e) => {
+            if (!this._dropdown.classList.contains('ac-open')) return;
+            const bar = input.closest('.top-search') || input;
+            // Use composedPath() so the check works even after refreshSuggestions() has
+            // replaced the dropdown's innerHTML (detached nodes are no longer reachable
+            // via contains(), but the original event path is frozen at dispatch time).
+            const path = e.composedPath ? e.composedPath() : [];
+            const inBar = path.includes(bar) || bar.contains(e.target);
+            const inDropdown = path.includes(this._dropdown) || this._dropdown.contains(e.target);
+            if (!inBar && !inDropdown) {
+                this._hideDropdown();
+            }
+        };
+        document.addEventListener('mousedown', this._docMousedownHandler);
+
+        // Close dropdown on ESC from anywhere (e.g. when focus is on a chip).
+        if (this._docKeydownHandler) {
+            document.removeEventListener('keydown', this._docKeydownHandler, true);
+        }
+        this._docKeydownHandler = (e) => {
+            if (e.key === 'Escape' && this._dropdown.classList.contains('ac-open')) {
+                this._hideDropdown();
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        // Use capture phase so this fires before other document/window bubble-phase
+        // Escape handlers (e.g. DetailDrawer, SolitaireApp) that would clear the search.
+        document.addEventListener('keydown', this._docKeydownHandler, true);
+
+        // Do NOT call update() here — dropdown should only appear after user interaction.
     }
 }

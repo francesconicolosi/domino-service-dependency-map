@@ -142,3 +142,52 @@ html[data-theme="dark"] .search-chip { background: #3c3c40; color: #f5f5f7; }
 .search-chip-overflow:hover { background: #ccc; color: #333; }
 html[data-theme="dark"] .search-chip-overflow { background: #4a4a50; color: #c0c0c8; }
 html[data-theme="dark"] .search-chip-overflow:hover { background: #5a5a62; color: #f5f5f7; }
+
+/* ── Chip focus ring ─────────────────────────────────────────────────────── */
+.search-chip:focus,
+.search-chip-key:focus {
+    outline: 2px solid #1a6fc4;
+    outline-offset: 1px;
+}
+html[data-theme="dark"] .search-chip:focus,
+html[data-theme="dark"] .search-chip-key:focus {
+    outline-color: #7aadff;
+}
+
+/* ── Custom autocomplete dropdown ────────────────────────────────────────── */
+.ac-dropdown {
+    position: fixed;
+    z-index: 9999;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    max-height: 280px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    min-width: 220px;
+    max-width: 460px;
+    display: none;
+}
+.ac-dropdown.ac-open { display: block; }
+.ac-item {
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    font-family: var(--brand-font, inherit);
+    color: #333;
+}
+.ac-item:hover,
+.ac-item.ac-active { background: #f0f4ff; }
+html[data-theme="dark"] .ac-dropdown {
+    background: #252528;
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+html[data-theme="dark"] .ac-item { color: #f5f5f7; }
+html[data-theme="dark"] .ac-item:hover,
+html[data-theme="dark"] .ac-item.ac-active { background: #2d3748; }

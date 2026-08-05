@@ -521,9 +521,11 @@ export function initCommonActions() {
     // Overlay and close button always close everything immediately
     overlay?.addEventListener('click', closeSideDrawer);
     closeBtn?.addEventListener('click', closeSideDrawer);
-    // ESC is layered: closes sub-panel first, then main drawer
+    // ESC is layered: closes sub-panel first, then main drawer.
+    // If the autocomplete dropdown is open, let AutocompleteEngine consume Escape first.
     window.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
+        if (document.getElementById('ac-dropdown')?.classList.contains('ac-open')) return;
         const drawer = document.getElementById('side-drawer');
         if (drawer?.classList.contains('sub-open')) {
             drawer.classList.remove('sub-open');

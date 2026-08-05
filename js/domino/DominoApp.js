@@ -92,14 +92,29 @@ export class DominoApp {
         });
 
         document.getElementById('drawer-search-go')?.addEventListener('click', () => {
-            const q = document.getElementById('drawer-search-input')?.value?.trim();
-            if (q !== undefined) this.search.handleQuery(q, false);
+            const chipBar = this.search._chipBar;
+            const composed = chipBar?.getRevealModeQuery();
+            if (composed) {
+                chipBar.clearRevealMode();
+                this.search.handleQuery(composed, false);
+            } else {
+                const q = document.getElementById('drawer-search-input')?.value?.trim();
+                if (q !== undefined) this.search.handleQuery(q, false);
+            }
         });
 
         document.getElementById('drawer-search-input')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                const q = e.target.value ? e.target.value.trim() : '';
-                this.search.handleQuery(q, false);
+                if (this.autocomplete?.hasPendingSelection()) return;
+                const chipBar = this.search._chipBar;
+                const composed = chipBar?.getRevealModeQuery();
+                if (composed) {
+                    chipBar.clearRevealMode();
+                    this.search.handleQuery(composed, false);
+                } else {
+                    const q = e.target.value ? e.target.value.trim() : '';
+                    this.search.handleQuery(q, false);
+                }
                 e.preventDefault();
             }
         });
