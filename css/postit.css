@@ -156,26 +156,38 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    position: relative; /* anchor for absolutely-positioned displayEl */
 }
 
-/* ── Display mode (rendered content with clickable URLs) ─────────────────── */
+/* ── Display mode (ghost layer — always present, renders HTML with links) ─── */
+/* Sits absolutely behind the textarea. pointer-events: none while editing;    */
+/* gets pointer-events back (--interactive) when textarea loses focus.         */
 
 .postit-display {
-    flex: 1;
+    position: absolute;
+    inset: 0;
     padding: 8px 10px;
     font-family: var(--brand-font, Arial, sans-serif);
     font-size: 13px;
     color: #1a1a1a;
     line-height: 1.55;
     overflow-y: auto;
+    scrollbar-width: none;       /* hide scrollbar — textarea's scrollbar is shown */
     white-space: pre-wrap;
     word-break: break-word;
-    cursor: text;
     min-height: 0;
     box-sizing: border-box;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
 }
 
-.postit-display--empty {
+.postit-display::-webkit-scrollbar { display: none; }
+
+/* When textarea is NOT focused: links are clickable */
+.postit-display--interactive {
+    pointer-events: auto;
+    user-select: text;
     cursor: text;
 }
 
@@ -198,16 +210,19 @@
     color: #1d4ed8;
 }
 
-/* ── Edit mode textarea ───────────────────────────────────────────────────── */
+/* ── Textarea — sits on top of displayEl, transparent text so displayEl shows */
 
 .postit-textarea {
+    position: relative;
+    z-index: 1;
     flex: 1;
     border: none;
     background: transparent;
     padding: 8px 10px;
     font-family: var(--brand-font, Arial, sans-serif);
     font-size: 13px;
-    color: #1a1a1a;
+    color: transparent;        /* text hidden — rendered by displayEl below */
+    caret-color: #78350f;      /* cursor visible in amber to match the note theme */
     line-height: 1.55;
     outline: none;
     resize: none;
@@ -217,8 +232,8 @@
 }
 
 .postit-textarea::placeholder {
-    color: #a68a3e;
-    opacity: 0.7;
+    color: transparent; /* placeholder shown via displayEl instead */
+    opacity: 0;
 }
 
 /* ─── Dark mode — yellow in all themes ──────────────────────────────────────
@@ -226,6 +241,12 @@
    is still a light yellow.                                                   */
 
 @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .postit-link {
+        color: #1e3a8a;
+    }
+    :root:not([data-theme="light"]) .postit-link:hover {
+        color: #1e40af;
+    }
     :root:not([data-theme="light"]) .postit-note {
         background: #fef08a;
         box-shadow: 3px 3px 14px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.08);
@@ -242,12 +263,10 @@
         border-color: rgba(120, 53, 15, 0.5);
         color: #78350f;
     }
-    :root:not([data-theme="light"]) .postit-display,
-    :root:not([data-theme="light"]) .postit-textarea {
+    :root:not([data-theme="light"]) .postit-display {
         color: #1a1200;
     }
-    :root:not([data-theme="light"]) .postit-display__placeholder,
-    :root:not([data-theme="light"]) .postit-textarea::placeholder {
+    :root:not([data-theme="light"]) .postit-display__placeholder {
         color: #a68a3e;
         opacity: 0.65;
     }
@@ -257,6 +276,9 @@
         color: #78350f;
     }
 }
+
+:root[data-theme="dark"] .postit-link { color: #1e3a8a; }
+:root[data-theme="dark"] .postit-link:hover { color: #1e40af; }
 
 :root[data-theme="dark"] .postit-note {
     background: #fef08a;
@@ -272,10 +294,8 @@
     border-color: rgba(120, 53, 15, 0.5);
     color: #78350f;
 }
-:root[data-theme="dark"] .postit-display,
-:root[data-theme="dark"] .postit-textarea { color: #1a1200; }
-:root[data-theme="dark"] .postit-display__placeholder,
-:root[data-theme="dark"] .postit-textarea::placeholder { color: #a68a3e; opacity: 0.65; }
+:root[data-theme="dark"] .postit-display { color: #1a1200; }
+:root[data-theme="dark"] .postit-display__placeholder { color: #a68a3e; opacity: 0.65; }
 :root[data-theme="dark"] .postit-minimize {
     background: rgba(120, 53, 15, 0.22);
     border-color: rgba(120, 53, 15, 0.45);

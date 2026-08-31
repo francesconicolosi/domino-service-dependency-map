@@ -74,15 +74,9 @@ export class PostItNote {
         };
         this._renderNote(state);
         this._save();
-        // Enter body edit mode immediately on a fresh note
+        // Focus the textarea immediately on a fresh note
         const noteData = this._notes.get(id);
-        const displayEl = noteData?.el.querySelector('.postit-display');
-        const textarea  = noteData?.el.querySelector('.postit-textarea');
-        if (displayEl && textarea) {
-            displayEl.style.display = 'none';
-            textarea.style.display  = '';
-            textarea.focus();
-        }
+        noteData?.el.querySelector('.postit-textarea')?.focus();
     }
 
     attachContextMenu(element) {
@@ -181,12 +175,12 @@ export class PostItNote {
 
         const displayEl = document.createElement('div');
         _updateDisplayEl(displayEl, state.content ?? '');
+        // Start interactive (links clickable); focus on textarea will remove this
+        displayEl.classList.add('postit-display--interactive');
 
         const textarea = document.createElement('textarea');
-        textarea.className      = 'postit-textarea';
-        textarea.placeholder    = 'Type your note here…';
-        textarea.value          = state.content ?? '';
-        textarea.style.display  = 'none';
+        textarea.className   = 'postit-textarea';
+        textarea.value       = state.content ?? '';
 
         body.appendChild(displayEl);
         body.appendChild(textarea);
@@ -236,23 +230,32 @@ export class PostItNote {
             e.stopPropagation();
         });
 
-        // Body: click display → edit mode
+        // Ghost-textarea pattern: textarea and displayEl are always both visible.
+        // displayEl renders HTML (with clickable links) behind the transparent textarea.
+        // Clicking displayEl focuses textarea; textarea focus/blur toggles link interactivity.
+
         displayEl.addEventListener('click', (e) => {
-            if (e.target.tagName === 'A') return;
+            if (e.target.tagName === 'A') return; // let link open
             if (state.minimized) return;
-            displayEl.style.display = 'none';
-            textarea.style.display  = '';
             textarea.focus();
         });
 
-        const leaveBodyEdit = () => {
+        textarea.addEventListener('focus', () => {
+            displayEl.classList.remove('postit-display--interactive');
+        });
+        textarea.addEventListener('blur', () => {
             state.content = textarea.value;
+            this._save();
+            displayEl.classList.add('postit-display--interactive');
+        });
+        textarea.addEventListener('scroll', () => {
+            displayEl.scrollTop = textarea.scrollTop;
+        });
+        textarea.addEventListener('input', () => {
+            state.content = textarea.value;
+            this._save();
             _updateDisplayEl(displayEl, state.content);
-            textarea.style.display  = 'none';
-            displayEl.style.display = '';
-        };
-        textarea.addEventListener('blur',  leaveBodyEdit);
-        textarea.addEventListener('input', () => { state.content = textarea.value; this._save(); });
+        });
 
         this._initDrag(header, state);
         this._initResize(el, state, noteData);
@@ -324,15 +327,9 @@ export class PostItNote {
         btn.setAttribute('title',      label);
 
         if (nowMinimized) {
-            // Commit any in-progress body edit before collapsing
-            const ta  = el.querySelector('.postit-textarea');
-            const div = el.querySelector('.postit-display');
-            if (ta && ta.style.display !== 'none') {
-                state.content  = ta.value;
-                _updateDisplayEl(div, state.content);
-                ta.style.display  = 'none';
-                div.style.display = '';
-            }
+            // Commit latest textarea value before collapsing
+            const ta = el.querySelector('.postit-textarea');
+            if (ta) { state.content = ta.value; this._save(); }
             el.classList.add('postit-note--minimized');
             requestAnimationFrame(() => this._adjustForLegendOverlap(id));
         } else {
