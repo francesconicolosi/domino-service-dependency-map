@@ -35,6 +35,8 @@ export class ContextMenu {
   <button data-action="import" data-advanced>📥 Import scenario</button>
   <button data-action="export" data-advanced>📤 Export scenario</button>
   <button data-action="reset" data-advanced>♻ Reset scenario</button>
+  <hr/>
+  <button data-action="postit">📝 Add a post-it</button>
 `;
         document.body.appendChild(this.menuEl);
 
@@ -50,6 +52,10 @@ export class ContextMenu {
 
             if (btn.dataset.action) {
                 this.hide();
+                if (btn.dataset.action === 'postit') {
+                    this.app.postIt.create(this._menuX, this._menuY);
+                    return;
+                }
                 this.app.scenario.handleAction(btn.dataset.action).then(() => {});
             }
         });
@@ -76,6 +82,8 @@ export class ContextMenu {
     }
 
     show(x, y) {
+        this._menuX = x;
+        this._menuY = y;
         const m = this.ensureMenu();
         m.style.left = `${x}px`;
         m.style.top = `${y}px`;
@@ -84,6 +92,11 @@ export class ContextMenu {
         m.querySelectorAll('[data-advanced]').forEach(el => {
             el.style.display = this.app.isAdvanced ? '' : 'none';
         });
+        const postitBtn = m.querySelector('[data-action="postit"]');
+        if (postitBtn) {
+            postitBtn.disabled = this.app.postIt?.isActive() ?? false;
+            postitBtn.title = postitBtn.disabled ? 'A post-it note is already open' : '';
+        }
     }
 
     hide() {

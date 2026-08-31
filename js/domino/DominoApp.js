@@ -8,6 +8,7 @@ import { GraphRenderer } from './GraphRenderer.js';
 import { ListView } from './ListView.js';
 import { DetailDrawer } from './DetailDrawer.js';
 import { DominoLegend } from './DominoLegend.js';
+import { PostItNote } from '../shared/PostItNote.js';
 
 export class DominoApp {
     constructor() {
@@ -19,6 +20,7 @@ export class DominoApp {
         this.legend = new DominoLegend(this);
         this.listView = new ListView(this);
         this.drawer = new DetailDrawer(this);
+        this.postIt = new PostItNote('domino');
     }
 
     init() {
@@ -44,6 +46,8 @@ export class DominoApp {
         this._initFileUpload();
         this._initKeyboardShortcut();
         this._initLoadEvent();
+        this.postIt.init();
+        this.postIt.attachContextMenu(document.body);
     }
 
     _initSideDrawerEvents() {

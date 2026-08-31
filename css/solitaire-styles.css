@@ -1726,6 +1726,16 @@ body.side-drawer-open #legend-root {
     font-weight: 650;
 }
 
+#canvas-context-menu button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#canvas-context-menu button:disabled:hover {
+    background: transparent;
+    color: inherit;
+}
+
 /* selected highlight: bordo nero forte sul primo rect del gruppo */
 g.draggable.multi-selected rect:first-of-type{
     stroke: #111 !important;
@@ -2044,6 +2054,8 @@ html[data-theme="dark"] .app-tooltip { background: rgba(30,30,32,0.96); color: #
 html[data-theme="dark"] #canvas-context-menu { background: #1c1c1e; border-color: rgba(255,255,255,0.12); box-shadow: 0 8px 32px rgba(0,0,0,0.50); color: #f5f5f7; }
 html[data-theme="dark"] #canvas-context-menu button { background: transparent; border-color: transparent; color: #f5f5f7; }
 html[data-theme="dark"] #canvas-context-menu button:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; }
+html[data-theme="dark"] #canvas-context-menu button:disabled { opacity: 0.45; }
+html[data-theme="dark"] #canvas-context-menu button:disabled:hover { background: transparent; color: #f5f5f7; }
 
 /* — File upload label — */
 html[data-theme="dark"] .custom-file-upload { background: #2e2e32; border-color: rgba(255,255,255,0.10); color: #f5f5f7; }

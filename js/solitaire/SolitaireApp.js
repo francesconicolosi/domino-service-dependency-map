@@ -22,6 +22,7 @@ import { ColorLegend } from './ColorLegend.js';
 import { TeamDetailDrawer } from './TeamDetailDrawer.js';
 import { ContextMenu } from './ContextMenu.js';
 import { QuickFilters } from './QuickFilters.js';
+import { PostItNote } from '../shared/PostItNote.js';
 
 export class SolitaireApp {
     constructor() {
@@ -33,6 +34,7 @@ export class SolitaireApp {
         this.legend = new ColorLegend(this);
         this.drawer = new TeamDetailDrawer(this);
         this.contextMenu = new ContextMenu(this);
+        this.postIt = new PostItNote('solitaire');
 
         this.quickFilters = new QuickFilters(this);
 
@@ -65,6 +67,7 @@ export class SolitaireApp {
         this._initFileInput();
         this._initToggleDraggable();
         enableGlobalFindShortcut({ inputSelector: '#drawer-search-input' });
+        this.postIt.init();
 
         window.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
