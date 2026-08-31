@@ -1,4 +1,4 @@
-/* ─── Post-it note — shared across Domino, Solitaire, Jenga, Monopoli ──────── */
+/* ─── Post-it notes — shared across Domino, Solitaire, Jenga, Monopoli ─────── */
 
 .postit-note {
     position: fixed;
@@ -19,7 +19,7 @@
     cursor: default;
 }
 
-/* ── Minimized state — collapse to header only ────────────────────────────── */
+/* ── Minimized state ──────────────────────────────────────────────────────── */
 
 .postit-note--minimized {
     resize: none !important;
@@ -27,7 +27,7 @@
     min-height: 0 !important;
 }
 
-.postit-note--minimized .postit-textarea {
+.postit-note--minimized .postit-body {
     display: none;
 }
 
@@ -50,6 +50,8 @@
     cursor: grabbing;
 }
 
+/* Title label — truncates with ellipsis */
+
 .postit-label {
     font-family: var(--brand-font, Arial, sans-serif);
     font-size: 10px;
@@ -62,6 +64,33 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    cursor: text;
+}
+
+.postit-label:hover {
+    text-decoration: underline dotted rgba(120, 53, 15, 0.5);
+}
+
+/* Title edit textarea */
+
+.postit-title-edit {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid rgba(120, 53, 15, 0.45);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.55);
+    padding: 2px 5px;
+    font-family: var(--brand-font, Arial, sans-serif);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #78350f;
+    resize: none;
+    outline: none;
+    overflow-y: hidden;
+    line-height: 1.4;
+    box-sizing: border-box;
 }
 
 /* ── Minimize button ──────────────────────────────────────────────────────── */
@@ -119,7 +148,57 @@
     transform: scale(0.92);
 }
 
-/* ── Textarea ─────────────────────────────────────────────────────────────── */
+/* ── Body container ───────────────────────────────────────────────────────── */
+
+.postit-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* ── Display mode (rendered content with clickable URLs) ─────────────────── */
+
+.postit-display {
+    flex: 1;
+    padding: 8px 10px;
+    font-family: var(--brand-font, Arial, sans-serif);
+    font-size: 13px;
+    color: #1a1a1a;
+    line-height: 1.55;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    cursor: text;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.postit-display--empty {
+    cursor: text;
+}
+
+.postit-display__placeholder {
+    color: #a68a3e;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Clickable URLs inside display */
+
+.postit-link {
+    color: #1e40af;
+    text-decoration: underline;
+    cursor: pointer;
+    word-break: break-all;
+}
+
+.postit-link:hover {
+    color: #1d4ed8;
+}
+
+/* ── Edit mode textarea ───────────────────────────────────────────────────── */
 
 .postit-textarea {
     flex: 1;
@@ -143,9 +222,8 @@
 }
 
 /* ─── Dark mode — yellow in all themes ──────────────────────────────────────
-   Keep the post-it recognisably yellow. Use a slightly more saturated shade
-   so it reads clearly against dark page backgrounds. Text stays dark (#1a1200)
-   since the background itself is still a light yellow.                       */
+   Keep the post-it recognisably yellow. Text stays dark since the background
+   is still a light yellow.                                                   */
 
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .postit-note {
@@ -159,9 +237,16 @@
     :root:not([data-theme="light"]) .postit-label {
         color: #78350f;
     }
+    :root:not([data-theme="light"]) .postit-title-edit {
+        background: rgba(255, 255, 255, 0.55);
+        border-color: rgba(120, 53, 15, 0.5);
+        color: #78350f;
+    }
+    :root:not([data-theme="light"]) .postit-display,
     :root:not([data-theme="light"]) .postit-textarea {
         color: #1a1200;
     }
+    :root:not([data-theme="light"]) .postit-display__placeholder,
     :root:not([data-theme="light"]) .postit-textarea::placeholder {
         color: #a68a3e;
         opacity: 0.65;
@@ -181,25 +266,23 @@
     background: #fbbf24;
     border-bottom-color: rgba(0, 0, 0, 0.10);
 }
-:root[data-theme="dark"] .postit-label {
+:root[data-theme="dark"] .postit-label { color: #78350f; }
+:root[data-theme="dark"] .postit-title-edit {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(120, 53, 15, 0.5);
     color: #78350f;
 }
-:root[data-theme="dark"] .postit-textarea {
-    color: #1a1200;
-}
-:root[data-theme="dark"] .postit-textarea::placeholder {
-    color: #a68a3e;
-    opacity: 0.65;
-}
+:root[data-theme="dark"] .postit-display,
+:root[data-theme="dark"] .postit-textarea { color: #1a1200; }
+:root[data-theme="dark"] .postit-display__placeholder,
+:root[data-theme="dark"] .postit-textarea::placeholder { color: #a68a3e; opacity: 0.65; }
 :root[data-theme="dark"] .postit-minimize {
     background: rgba(120, 53, 15, 0.22);
     border-color: rgba(120, 53, 15, 0.45);
     color: #78350f;
 }
 
-/* ─── Confirmation modal — inline copy so it works in apps that don't load
-       solitaire-styles.css (Domino, Jenga, Monopoli). Solitaire has these
-       definitions already; duplicate declarations are harmless in CSS.      ── */
+/* ─── Confirmation modal — inline so it works in apps without solitaire CSS ─ */
 
 .simple-modal__overlay {
     position: fixed;
@@ -221,16 +304,8 @@
     font-family: var(--brand-font, Arial, sans-serif);
 }
 
-.simple-modal h3 {
-    margin: 0 0 8px;
-    font-size: 18px;
-}
-
-.simple-modal p {
-    margin: 0 0 16px;
-    color: #333;
-    line-height: 1.35;
-}
+.simple-modal h3 { margin: 0 0 8px; font-size: 18px; }
+.simple-modal p  { margin: 0 0 16px; color: #333; line-height: 1.35; }
 
 .simple-modal__buttons {
     display: flex;
@@ -250,16 +325,8 @@
     font-family: var(--brand-font, Arial, sans-serif);
 }
 
-.simple-modal__btn--primary {
-    background: #111;
-    color: #fff;
-    border-color: #111;
-}
-
-.simple-modal__btn:focus {
-    outline: 2px solid #4c9ffe;
-    outline-offset: 2px;
-}
+.simple-modal__btn--primary { background: #111; color: #fff; border-color: #111; }
+.simple-modal__btn:focus    { outline: 2px solid #4c9ffe; outline-offset: 2px; }
 
 /* ─── Mini context menu (Domino, Jenga, Monopoli) ───────────────────────────── */
 
@@ -319,13 +386,6 @@
     }
 }
 
-:root[data-theme="dark"] .postit-context-menu {
-    background: #1f2937;
-    border-color: #374151;
-}
-:root[data-theme="dark"] .postit-context-menu button {
-    color: #f9fafb;
-}
-:root[data-theme="dark"] .postit-context-menu button:hover {
-    background: #374151;
-}
+:root[data-theme="dark"] .postit-context-menu { background: #1f2937; border-color: #374151; }
+:root[data-theme="dark"] .postit-context-menu button { color: #f9fafb; }
+:root[data-theme="dark"] .postit-context-menu button:hover { background: #374151; }

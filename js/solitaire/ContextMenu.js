@@ -92,11 +92,6 @@ export class ContextMenu {
         m.querySelectorAll('[data-advanced]').forEach(el => {
             el.style.display = this.app.isAdvanced ? '' : 'none';
         });
-        const postitBtn = m.querySelector('[data-action="postit"]');
-        if (postitBtn) {
-            postitBtn.disabled = this.app.postIt?.isActive() ?? false;
-            postitBtn.title = postitBtn.disabled ? 'A post-it note is already open' : '';
-        }
     }
 
     hide() {
