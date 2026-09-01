@@ -23,6 +23,7 @@ import { TeamDetailDrawer } from './TeamDetailDrawer.js';
 import { ContextMenu } from './ContextMenu.js';
 import { QuickFilters } from './QuickFilters.js';
 import { PostItNote } from '../shared/PostItNote.js';
+import { AnnouncementBar } from '../shared/AnnouncementBar.js';
 
 export class SolitaireApp {
     constructor() {
@@ -35,6 +36,7 @@ export class SolitaireApp {
         this.drawer = new TeamDetailDrawer(this);
         this.contextMenu = new ContextMenu(this);
         this.postIt = new PostItNote('solitaire');
+        this.announcementBar = new AnnouncementBar();
 
         this.quickFilters = new QuickFilters(this);
 
@@ -48,6 +50,7 @@ export class SolitaireApp {
     }
 
     init() {
+        this.announcementBar.init();
         renderBrandLogo();
         const theme = loadSavedTheme();
         const dmToggle = document.getElementById('toggle-dark-mode');

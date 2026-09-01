@@ -9,6 +9,7 @@ import { ListView } from './ListView.js';
 import { DetailDrawer } from './DetailDrawer.js';
 import { DominoLegend } from './DominoLegend.js';
 import { PostItNote } from '../shared/PostItNote.js';
+import { AnnouncementBar } from '../shared/AnnouncementBar.js';
 
 export class DominoApp {
     constructor() {
@@ -21,9 +22,11 @@ export class DominoApp {
         this.listView = new ListView(this);
         this.drawer = new DetailDrawer(this);
         this.postIt = new PostItNote('domino');
+        this.announcementBar = new AnnouncementBar();
     }
 
     init() {
+        this.announcementBar.init();
         renderBrandLogo();
         this.graph.initDOM();
         this.listView.initDOM();
