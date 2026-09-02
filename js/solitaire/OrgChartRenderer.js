@@ -48,12 +48,12 @@ const LOD_K_MAX = 0.3;
 // Height of a stream box when collapsed — shows header only.
 const STREAM_COLLAPSED_HEIGHT = 130;
 // Vertical centre of each level's header title (baseline - fontSize × 0.35).
-const STREAM_ICON_Y = 46; // stream baseline=70, font=67px
+const STREAM_ICON_Y = 75; // stream baseline=105, font=87px
 const THEME_ICON_Y  = 62; // theme  baseline=85, font=65px
 const TEAM_ICON_Y   = 53; // team   baseline=70, font=50px
 // Positions for title/icons when a stream is collapsed to STREAM_COLLAPSED_HEIGHT.
 const STREAM_COLLAPSED_ICON_Y  = 65;  // STREAM_COLLAPSED_HEIGHT / 2
-const STREAM_COLLAPSED_TITLE_Y = 89;  // 65 + 67 * 0.35 (centres text glyphs in 130px box)
+const STREAM_COLLAPSED_TITLE_Y = 95;  // 65 + 87 * 0.35 (centres text glyphs in 130px box)
 
 // SVG path data for action icons (centred at 0,0, ~54px bounding box at the chart's SVG scale).
 const ICON_CHEVRON_DOWN = 'M -22 -10 L 0 12 L 22 -10';
@@ -741,7 +741,7 @@ export class OrgChartRenderer {
             const fullHeight =
                 layoutRows.reduce((acc, r) => acc + r.themeBoxHeight, 0) +
                 (layoutRows.length > 1 ? (layoutRows.length - 1) * secondLevelRowPadY : 0) +
-                140;
+                175;
             const firstLevelBoxHeight = isCollapsed ? STREAM_COLLAPSED_HEIGHT : fullHeight;
 
             const isStreamCommunity = Object.values(organization[firstLevel] || {})
@@ -761,7 +761,7 @@ export class OrgChartRenderer {
 
             this.makeResizable(firstLevelGroup, streamRect, { minWidth: 600, minHeight: 300 });
 
-            const titleY = isCollapsed ? STREAM_COLLAPSED_TITLE_Y : 70;
+            const titleY = isCollapsed ? STREAM_COLLAPSED_TITLE_Y : 105;
             const iconY  = isCollapsed ? STREAM_COLLAPSED_ICON_Y  : STREAM_ICON_Y;
 
             const titleText = firstLevelGroup.append('text')
@@ -855,7 +855,7 @@ export class OrgChartRenderer {
                     .on('click', openStreamDrawer);
             }
 
-            let secondLevelYBase = streamY + 100;
+            let secondLevelYBase = streamY + 135;
 
             layoutRows.forEach((r) => {
                 let secondLevelX = 60;
@@ -1146,7 +1146,7 @@ export class OrgChartRenderer {
 
                             const adjustNameAndInfoHeights = () => {
                                 const measured = nameDiv.node()?.scrollHeight || defaultNameBoxH;
-                                const nameBoxH = Math.max(defaultNameBoxH, Math.ceil(measured) + 2);
+                                const nameBoxH = Math.max(defaultNameBoxH, Math.ceil(measured) + 6);
                                 nameFO.attr('height', nameBoxH);
                                 const infoStartY = nameY + nameBoxH + 4;
                                 const infoFOExisting = group.select('foreignObject .info').node()
@@ -1360,7 +1360,7 @@ export class OrgChartRenderer {
         this.fitToContent(0.9);
         app.interaction.applyDraggableToggleState();
         requestAnimationFrame(() => {
-            app.legend.setMode(ROLE_FIELD_WITH_MAPPING);
+            app.legend.setMode(app.legend.colorBy);
         });
     }
 

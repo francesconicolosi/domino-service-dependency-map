@@ -107,6 +107,7 @@ export class ServiceCatalogStore {
                 summary,
                 roi,
                 metaPriority,
+                priority: (row.Priority || '').split('/')[0].trim(),
                 status: row.Status || '',
                 impactedServices,
                 jiraUrl: row.JiraUrl || row.URL || row.Url || '',

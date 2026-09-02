@@ -9,8 +9,8 @@ export class QuickFilters {
         this.filters = [];
         this.activeFilters = new Set();
         this.builtinFilters = [
-            { key: 'communities-only', name: 'Communities Only' },
-            { key: 'teams-only',       name: 'Teams Only'       },
+            { key: 'communities-only', name: 'Communities' },
+            { key: 'teams-only',       name: 'Teams'       },
         ];
         this.activeBuiltin = new Set();
         this.chipsVisible = localStorage.getItem(LS_KEY_CHIPS_VISIBLE) !== 'false'; // default true
@@ -286,17 +286,13 @@ export class QuickFilters {
             menu.appendChild(item);
         }
 
-        // — Builtin "Type" section —
+        // — Builtin filters (Communities / Teams) —
         if (this.builtinFilters.length) {
             if (this.filters.length) {
                 const builtinDivider = document.createElement('div');
                 builtinDivider.className = 'qf-dropdown-divider';
                 menu.appendChild(builtinDivider);
             }
-            const sectionLabel = document.createElement('div');
-            sectionLabel.className = 'qf-dropdown-section-label';
-            sectionLabel.textContent = 'Type';
-            menu.appendChild(sectionLabel);
 
             for (const bf of this.builtinFilters) {
                 const isActive = this.activeBuiltin.has(bf.key);
@@ -304,12 +300,12 @@ export class QuickFilters {
                 item.className = 'qf-dropdown-item';
                 if (isActive) item.classList.add('qf-dropdown-item--active');
                 item.setAttribute('data-builtin-key', bf.key);
-                item.setAttribute('role', 'option');
-                item.setAttribute('aria-selected', String(isActive));
+                item.setAttribute('role', 'radio');
+                item.setAttribute('aria-checked', String(isActive));
 
                 const check = document.createElement('span');
                 check.className = 'qf-checkmark';
-                check.textContent = isActive ? '✓' : '';
+                check.textContent = isActive ? '●' : '○';
 
                 const label = document.createElement('span');
                 label.textContent = bf.name;

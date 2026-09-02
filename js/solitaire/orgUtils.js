@@ -104,6 +104,27 @@ export function filterOrganizationByQuickFilter(org, constraints, rawOrg = null)
     return result;
 }
 
+export function filterDismissedTeams(org, referenceDate = new Date()) {
+    const result = {};
+    for (const [stream, themeMap] of Object.entries(org || {})) {
+        const filteredThemes = {};
+        for (const [theme, teamMap] of Object.entries(themeMap || {})) {
+            const filteredTeams = {};
+            for (const [team, members] of Object.entries(teamMap || {})) {
+                const dismissedOn = (members || []).find(m => !m.guestRole && m['Team Dismissed On'])?.['Team Dismissed On'];
+                if (dismissedOn) {
+                    const d = new Date(dismissedOn);
+                    if (!isNaN(d) && d < referenceDate) continue;
+                }
+                filteredTeams[team] = members;
+            }
+            if (Object.keys(filteredTeams).length > 0) filteredThemes[theme] = filteredTeams;
+        }
+        if (Object.keys(filteredThemes).length > 0) result[stream] = filteredThemes;
+    }
+    return result;
+}
+
 export function filterOrganizationByStreams(org, allowed) {
     if (!allowed || allowed.size === 0) return org;
     const out = {};

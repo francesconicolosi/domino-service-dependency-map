@@ -73,8 +73,8 @@ export class GraphRenderer {
         this.g.append('defs').append('marker')
             .attr('id', 'arrow')
             .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 15).attr('refY', 0)
-            .attr('markerWidth', 10).attr('markerHeight', 10)
+            .attr('refX', 0).attr('refY', 0)
+            .attr('markerWidth', 6).attr('markerHeight', 6)
             .attr('orient', 'auto')
             .append('path')
             .attr('d', 'M0,-5L10,0L0,5')
@@ -204,13 +204,13 @@ export class GraphRenderer {
                     const dx = d.target.x - d.source.x;
                     const dy = d.target.y - d.source.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    return d.target.x - (dx / dist) * 5;
+                    return d.target.x - (dx / dist) * 31;
                 })
                 .attr('y2', d => {
                     const dx = d.target.x - d.source.x;
                     const dy = d.target.y - d.source.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    return d.target.y - (dy / dist) * 5;
+                    return d.target.y - (dy / dist) * 31;
                 });
             this.nodeGraph.attr('transform', d => `translate(${d.x},${d.y})`);
             this.labels.attr('x', d => d.x).attr('y', d => d.y - 30);
@@ -298,9 +298,14 @@ export class GraphRenderer {
             .attr('transform', d => `translate(${d.x},${d.y})`)
             .style('cursor', 'pointer')
             .on('mouseover', (event, d) => {
+                event.stopPropagation();
+                const counts = { P1: 0, P2: 0, P3: 0, P4: 0 };
+                d.cards.forEach(c => { if (counts[c.priority] !== undefined) counts[c.priority]++; });
+                const parts = ['P1', 'P2', 'P3', 'P4'].filter(p => counts[p] > 0).map(p => `${counts[p]} ${p}`);
+                const breakdown = parts.length ? parts.join(', ') : String(d.cards.length);
                 const tooltip = d3.select('#tooltip');
                 tooltip.transition().duration(120).style('opacity', .9);
-                tooltip.html(`${d.title}: ${d.cards.length}`)
+                tooltip.html(`<strong>${d.title}</strong><br>${breakdown}`)
                     .style('left', (event.pageX + 5) + 'px')
                     .style('top', (event.pageY - 28) + 'px');
             })
@@ -384,8 +389,12 @@ export class GraphRenderer {
         popup.classList.toggle('domino-jira-popup--request', !isIncident);
         title.textContent = `${safeCards.length} ${isIncident ? 'open incident' : 'open service request'}${safeCards.length === 1 ? '' : 's'} · ${node.id}`;
 
-        body.innerHTML = safeCards.length
-            ? safeCards.map(card => this._jiraCardHtml(card)).join('')
+        const PRIORITY_ORDER = { P1: 0, P2: 1, P3: 2, P4: 3 };
+        const sortedCards = [...safeCards].sort((a, b) =>
+            (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99)
+        );
+        body.innerHTML = sortedCards.length
+            ? sortedCards.map(card => this._jiraCardHtml(card)).join('')
             : '<div class="domino-jira-popup__empty">No open items found for this service.</div>';
 
         const x = Math.min((event?.pageX ?? 40) + 16, window.scrollX + window.innerWidth - 460);
@@ -414,6 +423,9 @@ export class GraphRenderer {
         const summary = escape(card.summary || 'No summary');
         const status = escape(card.status || '');
         const roiBadge = card.roi ? `<span class="domino-jira-card__roi">${escape(card.roi)}</span>` : '';
+        const priorityBadge = card.priority
+            ? `<span class="domino-jira-card__priority domino-jira-card__priority--${card.priority.toLowerCase()}">${escape(card.priority)}</span>`
+            : '';
         const internalUrl = String(card.jiraUrl || '').trim();
         const url = internalUrl.replace("browse", "servicedesk/customer/portal/1");
         const keyHtml = url
@@ -432,7 +444,10 @@ export class GraphRenderer {
         return `
             <article class="domino-jira-card">
                 <div class="domino-jira-card__topline">
-                    <span class="domino-jira-card__key">${keyHtml}</span>
+                    <span class="domino-jira-card__key-group">
+                        <span class="domino-jira-card__key">${keyHtml}</span>
+                        ${priorityBadge}
+                    </span>
                     ${status ? `<span class="domino-jira-card__status">${status}</span>` : ''}
                 </div>
                 <div class="domino-jira-card__summary">${summary}</div>
@@ -581,6 +596,12 @@ export class GraphRenderer {
                 justify-content: space-between;
                 gap: 10px;
                 margin-bottom: 6px;
+            }
+            .domino-jira-card__key-group {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                min-width: 0;
             }
             .domino-jira-card__key,
             .domino-jira-card__key a {

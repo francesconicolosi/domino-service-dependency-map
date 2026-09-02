@@ -863,7 +863,7 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
 
 .domino-jira-popup,
 .domino-jira-popup * {
-    font-family: var(--brand-font), "Brand Font", sans-serif !important;
+    font-family: var(--brand-font), "Brand Font", "GucciSansPro", Arial, sans-serif !important;
 }
 
 .domino-jira-card__services {
@@ -893,3 +893,18 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
     background: rgba(59, 130, 246, .24);
     border-color: rgba(147, 197, 253, .72);
 }
+
+.domino-jira-card__priority {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: #fff;
+    flex-shrink: 0;
+}
+.domino-jira-card__priority--p1 { background: #dc2626; }
+.domino-jira-card__priority--p2 { background: #ea580c; }
+.domino-jira-card__priority--p3 { background: #ca8a04; }
+.domino-jira-card__priority--p4 { background: #6b7280; }

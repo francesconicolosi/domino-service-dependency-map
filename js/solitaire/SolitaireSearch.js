@@ -256,9 +256,9 @@ export class SolitaireSearch {
                 'g[data-key^="stream::"], g[data-key^="theme::"], g[data-key^="team::"]'
             );
             if (containerGroup) {
-                renderer.fitElementToView(containerGroup, 600);
+                renderer.fitElementToView(containerGroup, 750);
             } else {
-                renderer.zoomToElement(zoomTarget, 1, 600);
+                renderer.zoomToElement(zoomTarget, 1, 750);
             }
         }
     }
@@ -351,6 +351,8 @@ export class SolitaireSearch {
 
             if (this._allMatchDescs.length === 0) {
                 clearSearchDimming();
+                setSearchQuery(raw);
+                removeQueryParam('missing');
                 app.showToast(missing ? 'No result found for Unknown' : `No result found for "${q}"`);
                 return;
             }

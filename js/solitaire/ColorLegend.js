@@ -58,7 +58,7 @@ export class ColorLegend extends LegendBase {
     renderAll({ title, fieldName = LOCATION_FIELD, keys, counts, topKey, colorOf, maxVisible = 11 }) {
         const { app } = this;
         const root = this._getOrCreateRoot('legend-root');
-        this._buildShell(root, title);
+        this._buildShell(root, `${keys.length} ${title}`);
         const collapsedKey = `legend-collapsed-v1::${String(this.colorBy || fieldName || 'legend').toLowerCase()}`;
         const { list } = this._wireCollapse(root, collapsedKey);
 

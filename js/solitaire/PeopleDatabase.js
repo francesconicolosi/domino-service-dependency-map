@@ -21,6 +21,7 @@ import {
 
 import {
     buildCompositeKey,
+    filterDismissedTeams,
     filterOrganizationByStreams,
     filterOrganizationByQuickFilter,
     getAllowedStreamsSet,
@@ -95,16 +96,17 @@ export class PeopleDatabase {
 
         const { organization, streamBoosts, themeBoosts, teamBoosts } = this._buildOrganization(this.people);
         const organizationWithManagers = this._addGuestManagersTo(organization);
+        const organizationAfterDismissed = filterDismissedTeams(organizationWithManagers);
         const filteredStreams = getAllowedStreamsSet();
 
-        const allStreamNames = Object.keys(organizationWithManagers || {})
+        const allStreamNames = Object.keys(organizationAfterDismissed || {})
             .filter(s => s && !s.includes(firstLevelNA));
 
         const visibleStreamNames = (filteredStreams && filteredStreams.size > 0)
             ? allStreamNames.filter(s => filteredStreams.has(s) || filteredStreams.has(normalizeKey(s)))
             : allStreamNames;
 
-        const streamFilteredOrg = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
+        const streamFilteredOrg = filterOrganizationByStreams(organizationAfterDismissed, filteredStreams);
         const qfConstraints = this.app.quickFilters?.getConstraints?.() ?? null;
         const visibleOrg = qfConstraints
             ? filterOrganizationByQuickFilter(streamFilteredOrg, qfConstraints, organization)
