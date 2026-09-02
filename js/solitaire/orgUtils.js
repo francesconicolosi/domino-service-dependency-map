@@ -28,7 +28,7 @@ export function collectMembersFromOrganization(filteredOrg) {
     return out;
 }
 
-export function filterOrganizationByQuickFilter(org, constraints) {
+export function filterOrganizationByQuickFilter(org, constraints, rawOrg = null) {
     if (!constraints) return org;
     const {
         visibleStreams, visibleThemes, visibleTeams, visiblePeople,
@@ -74,7 +74,10 @@ export function filterOrganizationByQuickFilter(org, constraints) {
                 if (!passHidden(hdTeams,  team)) continue;
 
                 if (communityFilter) {
-                    const isCommunity = (members || []).some(m => !m.guestRole && m['Team Community'] === 'true');
+                    let isCommunity = (members || []).some(m => !m.guestRole && m['Team Community'] === 'true');
+                    if (!isCommunity && rawOrg) {
+                        isCommunity = (rawOrg[stream]?.[theme]?.[team] || []).some(m => m['Team Community'] === 'true');
+                    }
                     if (communityFilter === 'communities-only' && !isCommunity) continue;
                     if (communityFilter === 'teams-only'       &&  isCommunity) continue;
                 }

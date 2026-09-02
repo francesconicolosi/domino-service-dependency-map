@@ -107,7 +107,7 @@ export class PeopleDatabase {
         const streamFilteredOrg = filterOrganizationByStreams(organizationWithManagers, filteredStreams);
         const qfConstraints = this.app.quickFilters?.getConstraints?.() ?? null;
         const visibleOrg = qfConstraints
-            ? filterOrganizationByQuickFilter(streamFilteredOrg, qfConstraints)
+            ? filterOrganizationByQuickFilter(streamFilteredOrg, qfConstraints, organization)
             : streamFilteredOrg;
         this.app.visibleOrg = visibleOrg;
 
