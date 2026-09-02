@@ -1,5 +1,5 @@
 import '../../css/announcement-bar.css';
-import { CHANGELOG } from './changelog.js';
+import { ANNOUNCEMENTS } from './announcement.js';
 
 const DISMISSED_KEY = 'dsm-announcement-dismissed-v1';
 
@@ -10,7 +10,7 @@ export class AnnouncementBar {
     }
 
     init() {
-        const latest = CHANGELOG[0];
+        const latest = ANNOUNCEMENTS[0];
         if (!latest) return;
 
         const dismissedId = localStorage.getItem(DISMISSED_KEY);
@@ -20,26 +20,34 @@ export class AnnouncementBar {
     }
 
     _render(entry) {
+        const isChangelog = entry.type !== 'announcement';
+        const icon = isChangelog ? '🚀' : '📢';
+        const prefix = isChangelog ? 'What’s new: ' : '';
+        const hasItems = Array.isArray(entry.items) && entry.items.length > 0;
+
         const bar = document.createElement('div');
         bar.className = 'announcement-bar';
         bar.setAttribute('role', 'banner');
-        bar.innerHTML = `
-            <div class="announcement-bar__collapsed">
-                <span class="announcement-bar__icon" aria-hidden="true">🚀</span>
-                <span class="announcement-bar__title">What&#8217;s new: ${this._escape(entry.title)}</span>
-                <button class="announcement-bar__toggle" aria-expanded="false">See all the changes ▾</button>
-                <button class="announcement-bar__dismiss" title="Dismiss" aria-label="Dismiss announcement">✕</button>
-            </div>
-            <div class="announcement-bar__details" hidden>
-                <ul>${entry.changes.map(c => `<li>${this._escape(c)}</li>`).join('')}</ul>
-            </div>
-        `;
+        bar.innerHTML =
+            '<div class="announcement-bar__collapsed">' +
+                '<span class="announcement-bar__icon" aria-hidden="true">' + icon + '</span>' +
+                '<span class="announcement-bar__title">' + prefix + this._escape(entry.title) + '</span>' +
+                (hasItems ? '<button class="announcement-bar__toggle" aria-expanded="false">See details &#9662;</button>' : '') +
+                '<button class="announcement-bar__dismiss" title="Dismiss" aria-label="Dismiss announcement">&#x2715;</button>' +
+            '</div>' +
+            (hasItems
+                ? '<div class="announcement-bar__details" hidden><ul>' +
+                  entry.items.map(c => '<li>' + this._escape(c) + '</li>').join('') +
+                  '</ul></div>'
+                : '');
 
         document.body.insertBefore(bar, document.body.firstChild);
         this._el = bar;
         this._updateHeightVar();
 
-        bar.querySelector('.announcement-bar__toggle').addEventListener('click', () => this._toggle());
+        if (hasItems) {
+            bar.querySelector('.announcement-bar__toggle').addEventListener('click', () => this._toggle());
+        }
         bar.querySelector('.announcement-bar__dismiss').addEventListener('click', () => this._dismiss(entry.id));
     }
 
@@ -49,7 +57,7 @@ export class AnnouncementBar {
         const btn = this._el.querySelector('.announcement-bar__toggle');
         details.hidden = !this._expanded;
         btn.setAttribute('aria-expanded', String(this._expanded));
-        btn.innerHTML = this._expanded ? 'Collapse ▴' : 'See all the changes ▾';
+        btn.innerHTML = this._expanded ? 'Collapse &#9652;' : 'See details &#9662;';
         this._updateHeightVar();
     }
 

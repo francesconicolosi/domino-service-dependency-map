@@ -2,7 +2,7 @@
 
 .postit-note {
     position: fixed;
-    background: #fef9c3;
+    background: #fef3c7;
     border-radius: 2px 2px 2px 14px;
     box-shadow:
         3px 3px 12px rgba(0, 0, 0, 0.18),
@@ -34,7 +34,7 @@
 /* ── Header / drag handle ─────────────────────────────────────────────────── */
 
 .postit-header {
-    background: #fde047;
+    background: #fcd34d;
     padding: 5px 8px 5px 10px;
     cursor: grab;
     display: flex;
@@ -248,11 +248,11 @@
         color: #1e40af;
     }
     :root:not([data-theme="light"]) .postit-note {
-        background: #fef08a;
+        background: #fef3c7;
         box-shadow: 3px 3px 14px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.08);
     }
     :root:not([data-theme="light"]) .postit-header {
-        background: #fbbf24;
+        background: #fcd34d;
         border-bottom-color: rgba(0, 0, 0, 0.10);
     }
     :root:not([data-theme="light"]) .postit-label {
@@ -281,11 +281,11 @@
 :root[data-theme="dark"] .postit-link:hover { color: #1e40af; }
 
 :root[data-theme="dark"] .postit-note {
-    background: #fef08a;
+    background: #fef3c7;
     box-shadow: 3px 3px 14px rgba(0, 0, 0, 0.35), inset 0 -2px 4px rgba(0, 0, 0, 0.08);
 }
 :root[data-theme="dark"] .postit-header {
-    background: #fbbf24;
+    background: #fcd34d;
     border-bottom-color: rgba(0, 0, 0, 0.10);
 }
 :root[data-theme="dark"] .postit-label { color: #78350f; }
