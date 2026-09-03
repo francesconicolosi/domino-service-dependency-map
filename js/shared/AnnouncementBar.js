@@ -61,6 +61,17 @@ export class AnnouncementBar {
         this._updateHeightVar();
     }
 
+    show() {
+        const latest = ANNOUNCEMENTS[0];
+        if (!latest) return;
+        if (this._el) {
+            if (!this._expanded) this._toggle();
+            return;
+        }
+        localStorage.removeItem(DISMISSED_KEY);
+        this._render(latest);
+    }
+
     _dismiss(id) {
         localStorage.setItem(DISMISSED_KEY, id);
         this._el.remove();
@@ -70,8 +81,10 @@ export class AnnouncementBar {
 
     _updateHeightVar() {
         requestAnimationFrame(() => {
-            if (!this._el) return;
-            const h = this._el.getBoundingClientRect().height;
+            let h = 0;
+            document.querySelectorAll('.announcement-bar, .monopoli-beta-bar').forEach(el => {
+                h += el.getBoundingClientRect().height;
+            });
             document.documentElement.style.setProperty('--announcement-bar-height', h + 'px');
         });
     }

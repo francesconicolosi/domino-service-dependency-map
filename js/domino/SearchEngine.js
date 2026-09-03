@@ -99,6 +99,7 @@ export class SearchEngine {
         // Keep the legacy method non-disruptive: consumers that expect a single
         // active key/value search still receive one only when the query is unambiguous.
         if (clauses.length !== 1) return null;
+        if (clauses[0].isNegation) return null;
         const { key, values, quoted } = clauses[0];
         return { key, values, quoted };
     }
@@ -113,7 +114,7 @@ export class SearchEngine {
         const { key, values, quoted, isNegation } = clause;
         if (!Object.keys(node).includes(key)) return isNegation;
 
-        if (isNegation && values.length === 0) return (node[key] ?? '').trim() === '';
+        if (isNegation && values.length === 0) return (node[key] ?? '').trim() !== '';
         if (!values.length) return true;
 
         const expectedValues = values.map(v => this.getTermToCompare(v));

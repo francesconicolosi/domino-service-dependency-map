@@ -62,7 +62,18 @@ export class SolitaireApp {
         this.interaction.setupLongPress();
         this._handleAdvancedMode();
         const buildInfoEl = document.getElementById('build-info');
-        if (buildInfoEl) buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
+        if (buildInfoEl) {
+            buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
+            buildInfoEl.style.cursor = 'pointer';
+            buildInfoEl.title = 'Click to show changelog';
+            buildInfoEl.addEventListener('click', () => this.announcementBar.show());
+        }
+        const lastUpdateEl = document.getElementById('side-last-update');
+        if (lastUpdateEl) {
+            lastUpdateEl.style.cursor = 'pointer';
+            lastUpdateEl.title = 'Click to show changelog';
+            lastUpdateEl.addEventListener('click', () => this.announcementBar.show());
+        }
         this._enableAppPinchZoomOnly();
         this._setupGlobalTooltip();
         this._initSearchInput();
@@ -98,6 +109,7 @@ export class SolitaireApp {
                         this.quickFilters.initEvents();
                     }
                     this.loadAndRender(csvData);
+                    requestAnimationFrame(() => this._hideSpinner());
                     this.searchParam = getQueryParam('search');
                     if (this.searchParam) {
                         const inp = document.getElementById('drawer-search-input');
@@ -114,6 +126,13 @@ export class SolitaireApp {
                 })
                 .catch(err => console.error('Error loading CSV files:', err));
         });
+    }
+
+    _hideSpinner() {
+        const el = document.getElementById('app-spinner');
+        if (!el) return;
+        el.classList.add('is-hidden');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
     }
 
     loadAndRender(csvText) {
@@ -500,6 +519,19 @@ export class SolitaireApp {
                 }
             }
             e.preventDefault();
+        });
+
+        document.getElementById('drawer-search-input')?.addEventListener('ac-confirm', (e) => {
+            this.autocomplete?.hideDropdown();
+            const chipBar = this.search._chipBar;
+            const composed = chipBar?.getRevealModeQuery();
+            if (composed) {
+                chipBar.clearRevealMode();
+                this.search.search(composed);
+            } else {
+                const query = e.target.value ? e.target.value.trim() : '';
+                if (query) this.search.search(query);
+            }
         });
     }
 

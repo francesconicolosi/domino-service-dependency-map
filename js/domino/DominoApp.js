@@ -38,7 +38,18 @@ export class DominoApp {
         }
 
         const buildInfoEl = document.getElementById('build-info');
-        if (buildInfoEl) buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
+        if (buildInfoEl) {
+            buildInfoEl.textContent = `Build ${__APP_BUILD__} · ${__BUILD_DATE__}`;
+            buildInfoEl.style.cursor = 'pointer';
+            buildInfoEl.title = 'Click to show changelog';
+            buildInfoEl.addEventListener('click', () => this.announcementBar.show());
+        }
+        const lastUpdateEl = document.getElementById('side-last-update');
+        if (lastUpdateEl) {
+            lastUpdateEl.style.cursor = 'pointer';
+            lastUpdateEl.title = 'Click to show changelog';
+            lastUpdateEl.addEventListener('click', () => this.announcementBar.show());
+        }
 
         const theme = loadSavedTheme();
         const dmToggle = document.getElementById('toggle-dark-mode');
@@ -125,6 +136,19 @@ export class DominoApp {
                     this.search.handleQuery(q, false);
                 }
                 e.preventDefault();
+            }
+        });
+
+        document.getElementById('drawer-search-input')?.addEventListener('ac-confirm', (e) => {
+            this.autocomplete?.hideDropdown();
+            const chipBar = this.search._chipBar;
+            const composed = chipBar?.getRevealModeQuery();
+            if (composed) {
+                chipBar.clearRevealMode();
+                this.search.handleQuery(composed, false);
+            } else {
+                const q = e.target.value ? e.target.value.trim() : '';
+                if (q !== undefined) this.search.handleQuery(q, false);
             }
         });
 
@@ -268,6 +292,7 @@ export class DominoApp {
                             const node = this.store.nodes.find(n => n.id === id);
                             if (node) this.drawer.showNodeDetails(node, true);
                         }
+                        requestAnimationFrame(() => this._hideSpinner());
                     };
 
                     if (searchParam) {
@@ -283,5 +308,12 @@ export class DominoApp {
                 })
                 .catch(error => console.error('Error loading the CSV file:', error));
         });
+    }
+
+    _hideSpinner() {
+        const el = document.getElementById('app-spinner');
+        if (!el) return;
+        el.classList.add('is-hidden');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
     }
 }

@@ -200,7 +200,8 @@ export class AutocompleteEngine {
     refreshSuggestions(raw) {
         if (!this._dropdown || !this._input) return;
 
-        this._suggestions = this.computeSuggestions(raw).slice(0, MAX_OPTIONS);
+        const rawStr = (raw ?? '').toString();
+        this._suggestions = this.computeSuggestions(rawStr).slice(0, MAX_OPTIONS);
         this._activeIdx = -1;
         this._dropdown.innerHTML = '';
 
@@ -232,9 +233,14 @@ export class AutocompleteEngine {
     _selectSuggestion(idx) {
         const s = this._suggestions[idx];
         if (!s || !this._input) return;
+        const isConfirm = s === this._input.value;
         this._input.value = s;
-        // Dispatch input event to refresh suggestions with the new value — keep dropdown open.
-        this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (isConfirm) {
+            this._hideDropdown();
+            this._input.dispatchEvent(new CustomEvent('ac-confirm', { bubbles: true }));
+        } else {
+            this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         this._input.focus();
     }
 
@@ -263,6 +269,7 @@ export class AutocompleteEngine {
     }
 
     _hideDropdown() {
+        if (!this._dropdown) return;
         this._dropdown.classList.remove('ac-open');
         this._activeIdx = -1;
         this._dropdown.querySelectorAll('.ac-item').forEach(el => el.classList.remove('ac-active'));

@@ -29,7 +29,7 @@ export class DetailDrawer {
             const search = this.app.search;
             if (typeof search.searchTerm === 'string' && search.searchTerm.trim() !== '') {
                 search.searchTerm = '';
-                search._refreshChips();
+                if (typeof search._refreshChips === 'function') search._refreshChips();
                 const input = document.getElementById('drawer-search-input');
                 if (input) input.value = '';
                 setSearchQuery('');
