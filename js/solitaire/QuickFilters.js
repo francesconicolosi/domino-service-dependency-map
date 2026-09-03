@@ -1,7 +1,9 @@
 import { splitValues } from '../shared/utils.js';
 
-const LS_KEY_FILTERS  = 'dsm-quick-filters-v1';
+const LS_KEY_FILTERS       = 'dsm-quick-filters-v1';
 const LS_KEY_CHIPS_VISIBLE = 'dsm-quick-filters-chips-v1';
+const LS_KEY_BUILTIN       = 'dsm-quick-filters-builtin-v1';
+const URL_PARAM_BUILTIN    = 'builtin';
 
 export class QuickFilters {
     constructor(app) {
@@ -149,6 +151,7 @@ export class QuickFilters {
             this.activeBuiltin.clear();
             this.activeBuiltin.add(key);
         }
+        this._persistBuiltin();
         this.render();
         this.app.loadAndRender(this.app.db.cachedCsvText);
     }
@@ -157,6 +160,7 @@ export class QuickFilters {
         this.activeFilters.clear();
         this.activeBuiltin.clear();
         this._persist();
+        this._persistBuiltin();
         this.render();
         this.app.loadAndRender(this.app.db.cachedCsvText);
     }
@@ -171,6 +175,19 @@ export class QuickFilters {
     _persist() {
         localStorage.setItem(this.LS_KEY, [...this.activeFilters].join(','));
         this._updateUrlParam();
+    }
+
+    _persistBuiltin() {
+        const key = [...this.activeBuiltin][0] || '';
+        localStorage.setItem(LS_KEY_BUILTIN, key);
+        const params = new URLSearchParams(window.location.search);
+        if (key) {
+            params.set(URL_PARAM_BUILTIN, key);
+        } else {
+            params.delete(URL_PARAM_BUILTIN);
+        }
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', newUrl);
     }
 
     _updateUrlParam() {
@@ -188,18 +205,32 @@ export class QuickFilters {
     }
 
     _restore() {
+        // Restore CSV-based filters
         const saved = localStorage.getItem(this.LS_KEY) || '';
         const savedNames = saved.split(',').map(s => s.trim()).filter(Boolean);
         const validNames = savedNames.filter(n => this.filters.some(f => f.name === n));
-        if (validNames.length) { this.activeFilters = new Set(validNames); return; }
-
-        const params = new URLSearchParams(window.location.search);
-        const urlKeys = (params.get(this.URL_PARAM) || '').split(',').map(s => s.trim()).filter(Boolean);
-        if (urlKeys.length) {
+        if (validNames.length) {
+            this.activeFilters = new Set(validNames);
+        } else {
+            const params = new URLSearchParams(window.location.search);
+            const urlKeys = (params.get(this.URL_PARAM) || '').split(',').map(s => s.trim()).filter(Boolean);
             const matches = this.filters.filter(f => f.key && urlKeys.includes(f.key)).map(f => f.name);
-            if (matches.length) { this.activeFilters = new Set(matches); return; }
+            this.activeFilters = new Set(matches);
         }
-        this.activeFilters = new Set();
+
+        // Restore builtin filters (Communities / Teams)
+        const savedBuiltin = localStorage.getItem(LS_KEY_BUILTIN) || '';
+        if (savedBuiltin && this.builtinFilters.some(f => f.key === savedBuiltin)) {
+            this.activeBuiltin = new Set([savedBuiltin]);
+        } else {
+            const params = new URLSearchParams(window.location.search);
+            const urlBuiltin = params.get(URL_PARAM_BUILTIN) || '';
+            if (urlBuiltin && this.builtinFilters.some(f => f.key === urlBuiltin)) {
+                this.activeBuiltin = new Set([urlBuiltin]);
+            } else {
+                this.activeBuiltin = new Set();
+            }
+        }
     }
 
     render() {
